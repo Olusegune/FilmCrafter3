@@ -53,6 +53,8 @@ import { FilmContinuity } from "../FilmContinuity";
 import { AssistSheet } from "../AssistSheet";
 import { ShotSuggestionSheet } from "../ShotSuggestionSheet";
 import { Studio, ShotInspector } from "../Studio";
+import { AgentStudio } from "../AgentStudio";
+import { DirectorStyleSheet } from "../DirectorStyle";
 import { ShotLook, saveShotLook } from "../ShotLook";
 import { shotLookToSave } from "../styleStale";
 import renderFixture from "./render-fixture.json";
@@ -252,6 +254,16 @@ mockWindows("main");
 mockIPC((cmd, a) => {
   const x = (a ?? {}) as { action?: string; data?: Record<string, unknown> };
   switch (cmd) {
+    case "agent_studio": return { version: 1, paused: false, current: "direction", updated: now,
+      brief: { story: "A young man faces the memories he has avoided and chooses to come home.", style: "Cinematic storybook", duration: "3–4 minutes", aspect: "2.39:1", budget_limit: 30, checkin_mode: "balanced", checkpoints: ["story", "direction", "first_scene", "preview"] },
+      stages: ["story", "direction", "storyboard", "first_scene", "scenes", "audio", "preview", "export"].map((id, i) => ({ id, label: ["Story & shot plan", "Cast & visual direction", "Storyboard & keyframes", "First scene preview", "Remaining scenes", "Voices & sound", "Preview cut", "Final review & export"][i], state: i === 0 ? "complete" : i === 1 ? "needs_approval" : "not_started" })),
+      approvals: [{ id: "ap1", stage: "story", at: now - 60, asset_versions: ["plan-v1"] }], revisions: [], activity: [{ id: "a1", at: now, kind: "plan", text: "Cast and visual direction are ready to review." }, { id: "a2", at: now - 60, kind: "approval", text: "Story and shot plan approved." }],
+      existing: { scenes: 2, shots: 8 }, spending: { actual: 3.33, committed: 0, limit: 30, pricing_known: true }, jobs: { ready: 3, working: 0, failed: 0 } };
+    case "director_style": return { current: "ryan-coogler", styles: [
+      { id: "ryan-coogler", name: "Ryan Coogler", region: "North America", origin: "USA · grounded, kinetic, community-centred", known_for: "Warm community, intimate faces, mythic scale", palette: ["gold", "deep green"], traits: { camera: "Long moving takes through lived-in places; steady close-ups for feeling.", light: "Warm natural light on skin and golden-hour exteriors.", editing: "Cut for the emotional beat.", movement: "Grounded physical action.", design: "Culturally specific places and wardrobe." } },
+      { id: "christopher-nolan", name: "Christopher Nolan", region: "North America", origin: "UK and USA · large-format practical spectacle", known_for: "Large-format scale and temporal precision", palette: ["steel blue", "amber"], traits: { camera: "Large-format wides, controlled dolly movement and deep staging.", light: "Hard directional daylight and strong practical sources.", editing: "Parallel action converges with exact timing.", movement: "Physical weight and purpose." } },
+      { id: "kemi-adetiba", name: "Kemi Adetiba", region: "Africa", origin: "Nigeria · bold glamour and forceful drama", known_for: "Commanding portraits, glamour and dramatic power", palette: ["gold", "black"], traits: { camera: "Low heroic angles and polished close-ups.", light: "Warm skin, strong rim light and jewel-toned interiors." } }
+    ] };
     case "stylebible": { if (x.action === "set_shot_options") { const d = x.data as { shot: string; keep_cast: boolean }; if (d.keep_cast) sbKeep[d.shot] = true; else delete sbKeep[d.shot]; }
       if (x.action === "set_shot") { const d = x.data as { shot: string; style: string | null }; if (d.style) sbShots[d.shot] = d.style; else delete sbShots[d.shot]; } return sbRead(); }
     case "film_choreography": return x.action === "types" ? { types: [{ id: "fight", label: "Fist fight", blurb: "Two people, no weapons.", needs_b: true, good_for: "Close, handheld shots." }, { id: "chase", label: "Foot chase", blurb: "One runs, one follows.", needs_b: true, good_for: "Tracking shots." }], outcomes: [{ id: "a_wins", label: "The first side wins" }, { id: "draw", label: "Neither wins" }], intensity: [{ id: "grounded", label: "Grounded" }, { id: "heightened", label: "Heightened" }], limits: { min_beats: 4, max_beats: 14 }, advice: [] }
@@ -741,6 +753,8 @@ const keys = { openai: true, fal: true, kie: true, google: false, elevenlabs: fa
 const take = (id: string, _shot: string, n: number, over: Record<string, unknown> = {}) => ({ id, n, state: "ready", provider: "kie", model: "bytedance/seedance-2", output: `v${n}.mp4`, kind: "video", created: n, cost: n === 1 ? 50 : 38, cost_unit: "credits", approved: n === 1, ...over });
 const card = (children: ReactNode, width = 480) => <div className="sheet glass" style={{ width }}>{children}</div>;
 const scenes: Record<string, () => ReactNode> = {
+  agentstudio: () => <AgentStudio project={{ dir: DIR, ...(renderFixture as object), directed: null, jobs: reviewJobs.slice(0, 3), keyframes: {}, concepts: null, treatment: null, song_path: DIR + "/soundtrack.wav", doc: null } as never} onHome={noop} onManual={noop} />,
+  directorstyle: () => <DirectorStyleSheet dir={DIR} onClose={noop} />,
   exportsheet: () => <ExportSheet dir="f1" projectAspect="16:9" shots={6} rendered={6} onClose={noop} />,
   exportdraft: () => <ExportSheet dir="f-draft" projectAspect="16:9" shots={6} rendered={3} onClose={noop} />,
   guide: () => <FirstFilm dir={DIR} pro={true} onGo={noop} onClose={noop} progress={{ story: { kind: "screenplay", locked: true, as_is: true }, cast: { characters: 2, places: 2, pictures: 2, style: true }, shots: { count: 6, edited: 1 }, make: { shots: 6, storyboard: 6, keyframe: 6, video: 6 } }} />,

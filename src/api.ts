@@ -45,6 +45,18 @@ export type LoadedProject = {
   concepts?: { concepts: Concept[]; model?: string } | null;
   treatment?: { concept: Concept; notes?: string } | null;
 };
+export type AgentStageState = "not_started" | "ready" | "working" | "needs_approval" | "complete" | "failed" | "paused";
+export type AgentStage = { id: string; label: string; state: AgentStageState };
+export type AgentStudioState = {
+  version: number; paused: boolean; current: string; updated: number;
+  brief: { story: string; style: string; duration: string; aspect: string; budget_limit: number; checkin_mode: "guided" | "balanced" | "custom"; checkpoints: string[] };
+  stages: AgentStage[]; approvals: { id: string; stage: string; at: number; asset_versions: string[] }[];
+  revisions: { id: string; stage: string; note: string; affected: string[]; at: number; state: string }[];
+  activity: { id: string; at: number; kind: string; text: string }[];
+  existing: { scenes: number; shots: number }; spending: { actual: number; committed: number; limit: number; pricing_known: boolean };
+  jobs: { ready: number; working: number; failed: number };
+};
+export type DirectorStyle = { id: string; name: string; region: string; origin: string; known_for: string; palette: string[]; traits: Record<string, string> };
 export type Concept = {
   title: string; premise: string; mood: string; performance_approach: string; cinematic_style: string; palette: string[];
   environment: string; wardrobe: string; movement: string; narrative_level: "performance" | "hybrid" | "narrative";
@@ -193,6 +205,9 @@ function noteChange<T>(command: string, action: string, p: Promise<T>): Promise<
 }
 
 export const api = {
+  directorStyle: <T = { styles: DirectorStyle[]; current: string | null }>(dir: string, action: "list" | "set" | "clear", data: Record<string, unknown> = {}) => invoke<T>("director_style", { dir, action, data }),
+  agentStudio: (dir: string, action: "state" | "update_brief" | "create_plan" | "approve" | "request_changes" | "pause" | "resume", data: Record<string, unknown> = {}) =>
+    invoke<AgentStudioState>("agent_studio", { dir, action, data }),
   media: <T = unknown>(dir: string, action: "import" | "fill" | "stills" | "motion" | "transition" | "plan", data: Record<string, unknown> = {}) =>
     invoke<T>("media", { dir, action, data }),
   continuity: <T = unknown>(dir: string, action: "get" | "set" | "shot" | "chain" | "check" | "ai_check", data: Record<string, unknown> = {}) =>
