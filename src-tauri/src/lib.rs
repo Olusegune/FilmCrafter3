@@ -1075,6 +1075,15 @@ async fn direction_library(app: AppHandle, action: String, dir: Option<String>, 
     tauri::async_runtime::spawn_blocking(move || run_engine_result(&app, "directions", &args, &[])).await.map_err(err)?
 }
 
+/// Optional filmmaker craft traits. Names stay in the project/UI; render prompts receive only traits.
+#[tauri::command]
+async fn director_style(app: AppHandle, dir: String, action: String, data: Value) -> Result<Value, String> {
+    if !["list", "set", "clear"].contains(&action.as_str()) { return Err("Unknown director style action.".into()); }
+    let d = project_dir(&dir)?.to_string_lossy().to_string();
+    let args = vec!["-m".into(), "filmcrafter_engine.directorstyle".into(), action, d, "--data".into(), data.to_string()];
+    tauri::async_runtime::spawn_blocking(move || run_engine_result(&app, "director_style", &args, &[])).await.map_err(err)?
+}
+
 /// Golden-path helpers (filmcrafter_engine.golden): take status per shot, free preview, Kie/fal split.
 #[tauri::command]
 async fn golden(app: AppHandle, dir: String, action: String, data: Option<Value>) -> Result<Value, String> {
@@ -1938,6 +1947,19 @@ async fn refgen(app: AppHandle, dir: String, action: String, data: Value) -> Res
     Ok(res)
 }
 
+/// Agent Studio's local workflow ledger. It may plan, pause and record approvals,
+/// but it never queues provider work; paid execution remains behind confirm_spend.
+#[tauri::command]
+async fn agent_studio(app: AppHandle, dir: String, action: String, data: Value) -> Result<Value, String> {
+    const ACTIONS: [&str; 7] = ["state", "update_brief", "create_plan", "approve", "request_changes", "pause", "resume"];
+    if !ACTIONS.contains(&action.as_str()) {
+        return Err("Unknown Agent Studio action.".into());
+    }
+    let d = project_dir(&dir)?.to_string_lossy().to_string();
+    let args = vec!["-m".into(), "filmcrafter_engine.agent_studio".into(), action, d, "--data".into(), data.to_string()];
+    tauri::async_runtime::spawn_blocking(move || run_engine_result(&app, "agent_studio", &args, &[])).await.map_err(err)?
+}
+
 
 /// Is there a newer FilmCrafter? (filmcrafter_engine.updates) One read-only request to the project's public release list; sends nothing about the user.
 #[tauri::command]
@@ -2459,7 +2481,7 @@ pub fn run() {
             ensure_renderer, render_catalog, render_preview,
             queue_render, confirm_spend, resolve_job, export_project, list_styles, set_look, app_ready, render_estimate,
             save_project, save_project_as, pack_film, backups, film_backup, frames, film, film_bible, film_shots, film_make, film_voice, film_cast_voice, film_voice_direct, film_audio, film_cues, film_audiogen, film_mix, film_materials, film_choreography, film_placecare, film_audioplan, film_readiness, film_pacing, film_composition, film_spending, film_outdated, model_registry, prepare_update, save_voice_take, film_check, film_assist, film_interchange, is_film, launch_path, engine_status, setup_engine, engine_setup_size, set_project_settings, import_reference, set_keyframe, director_command, undo_command, library, parse_action, providers,
-            set_onboarding, adopt_script, lighting, ai_brain, budget, diagnostics, media, continuity, performance, routing, local_models, supervisor, direction_library, recents, hidden_count, pack_project, open_pulse, golden, lipsync_check, review_backlog, comfy_setup, comfy_install, compose, overnight, refgen, overlays, captions, director_audit, fonts, editor_export, camera, check_update, stylebible, performance_director, title_card, cleanup, custom_frame, layer_kit, colour_match, grading, editing, proxies, smart_editor, presets, series, shot_sound, acting, track, upscale, proof, shot_history, retry_cheaper, keyframe_set, hand_fix
+            set_onboarding, adopt_script, lighting, ai_brain, budget, diagnostics, media, continuity, performance, routing, local_models, supervisor, direction_library, director_style, recents, hidden_count, pack_project, open_pulse, golden, lipsync_check, review_backlog, comfy_setup, comfy_install, compose, overnight, refgen, agent_studio, overlays, captions, director_audit, fonts, editor_export, camera, check_update, stylebible, performance_director, title_card, cleanup, custom_frame, layer_kit, colour_match, grading, editing, proxies, smart_editor, presets, series, shot_sound, acting, track, upscale, proof, shot_history, retry_cheaper, keyframe_set, hand_fix
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

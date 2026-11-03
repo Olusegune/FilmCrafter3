@@ -1178,7 +1178,9 @@ def compile_request(shot: dict, scene: dict | None, plan: dict, project: dict, m
         blocks.append((8, acting))
     if perf and perf.get("extra") and not custom:   # micro-animation for video; the matching expression for a still
         blocks.append((7, perf["extra"]))
-    brief = (project.get("direction_brief") or {}) if not custom else {}
+    # A selected director style is optional and wins over the older all-in-one direction brief.
+    # Its saved name is for the UI only; providers receive the bounded craft traits below.
+    brief = ((project.get("director_style") or {}).get("traits") or project.get("direction_brief") or {}) if not custom else {}
     if brief and not only:                          # the filmmaker's approach the person applied (camera, light, rhythm, movement): traits only, in whatever look the film has
         bits = [f"{k}: {str(brief[k]).rstrip('.')}" for k in ("camera", "light", "movement", "editing") if brief.get(k) and brief.get(k) != "—"]
         if bits:

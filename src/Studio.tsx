@@ -49,6 +49,7 @@ import { applyCut } from "./cutMath";
 import { beatGrid } from "./overlayMotion";
 import { UpgradePanel } from "./Upgrade";
 import { DirectionLibrarySheet } from "./DirectionLibrary";
+import { DirectorStyleSheet } from "./DirectorStyle";
 import { CommandToast, DirectorCommand, type CommandResult } from "./Command";
 import { ApproveKeyframes, LibrarySheet, ShotViewer, StoryCards, useBoard } from "./Board";
 import { SelectReview } from "./SelectReview";
@@ -64,6 +65,7 @@ import { useVoiceDrop } from "./VoiceDrop";
 import { useVoiceStatus } from "./voiceHooks";
 import { isRenderDir } from "./filmPaths";
 import { ask } from "./ask";
+import { AgentStudio } from "./AgentStudio";
 
 type Selection = { kind: "shot"; id: string } | { kind: "section"; index: number } | null;
 
@@ -71,6 +73,10 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
   project: LoadedProject; onHome: () => void; onFilm?: (stage: string) => void; onSettings: () => void; onReload: () => void;
   startSheet?: StudioSheet | null; onStartSheetShown?: () => void;           // the guide sends you straight to a sheet: it opens once, on arrival
 }) {
+  const [workspace, setWorkspace] = useState<"agent" | "manual">(() => {
+    try { return localStorage.getItem(`fc-workspace:${project.dir}`) === "agent" ? "agent" : "manual"; } catch { return "manual"; }
+  });
+  const chooseWorkspace = (next: "agent" | "manual") => { setWorkspace(next); try { localStorage.setItem(`fc-workspace:${project.dir}`, next); } catch { /* private storage */ } };
   const map = project.song_map;
   const plan: Plan | null = project.directed ?? project.production;
   const scenes = plan?.scenes ?? [];
@@ -223,6 +229,7 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
     try { const { getCurrentWindow } = await import("@tauri-apps/api/window"); await getCurrentWindow().setFullscreen(on); } catch { /* browser preview */ }
   }, []);
   const [dlOpen, setDlOpen] = useState(false);
+  const [directorStyleOpen, setDirectorStyleOpen] = useState(false);
   useEffect(() => { const f = () => setDlOpen(true); window.addEventListener("pf-open-directions", f); return () => window.removeEventListener("pf-open-directions", f); }, []);
   useEffect(() => { const f = () => setSupOpen(true); window.addEventListener("pf-open-supervisor", f); return () => window.removeEventListener("pf-open-supervisor", f); }, []);
   const { route } = useRouting(project.dir);
@@ -495,6 +502,8 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
     catch (e) { setError(errorText(e)); }
   };
 
+  if (workspace === "agent") return <AgentStudio project={{ ...project, jobs }} onHome={onHome} onManual={() => chooseWorkspace("manual")} />;
+
   return (
     <div className={`studio ${focus ? "focus" : ""}`}>
       {focus && <button className="btn ghost focus-exit" onClick={() => setFocusMode(false)}>Exit full screen (Esc)</button>}
@@ -534,6 +543,8 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
               {isFilm ? " · Film" : project.directed ? " · Directed" : plan ? " · Planned from script" : ""}</div>}
           </div>
           {filmSwitch}
+          <button className="btn ghost" onClick={() => chooseWorkspace("agent")} title="Guided production with milestone approvals">Agent Studio</button>
+          <button className="btn ghost" onClick={() => setDirectorStyleOpen(true)} title="Optional camera, lens, light and pace traits from a worldwide filmmaker">Director style</button>
           <div className="grow" />
           {!(isFilm && narrowBar) && <div className="mode-toggle" role="group" aria-label="Mode">
             <button className={!director ? "on" : ""} onClick={() => setDirector(false)}>Simple</button>
@@ -758,6 +769,7 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
                                       onDone={(id) => { setFrameOpen(false); onReload(); if (id) setSel({ kind: "shot", id }); }} />}
       {cleanOpen && <CleanupSheet dir={project.dir} onClose={() => setCleanOpen(false)} onChanged={mediaChanged} />}
       {dlOpen && <DirectionLibrarySheet dir={project.dir} onClose={() => setDlOpen(false)} onApplied={onReload} />}
+      {directorStyleOpen && <DirectorStyleSheet dir={project.dir} onClose={() => setDirectorStyleOpen(false)} onChanged={onReload} />}
       {supOpen && <SupervisorSheet dir={project.dir} onClose={() => setSupOpen(false)} onChanged={mediaChanged}
                                    onReview={(id) => { setSel({ kind: "shot", id }); setViewing(id); }} />}
       {paletteOpen && <Palette onClose={() => setPaletteOpen(false)}
@@ -784,6 +796,7 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
           plan && { id: "lighting", label: "Light the story", hint: "Read each shot's mood and plan the light to match (free)", run: () => setLightOpen(true) },
           { id: "library", label: "Reference library", hint: "Characters, places, props", run: () => setLibraryOpen(true) },
           { id: "directions", label: "Directions", run: () => setDlOpen(true) },
+          { id: "director-style", label: "Director style", hint: "Optional camera, lens, light, pace and performance traits", run: () => setDirectorStyleOpen(true) },
           { id: "project", label: "Project page", hint: "Title, tempo, cast, look", run: () => { setSel(null); setInspector(true); } },
           { id: "play", label: playing ? "Pause" : "Play", keys: "Space", run: toggle },
           { id: "mute", label: muted ? "Unmute the player" : "Mute the player", keys: "M", run: () => setMuted((m) => !m) },
