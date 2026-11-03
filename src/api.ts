@@ -185,7 +185,9 @@ export type ChoreoPlan = { concept: string; dancers: string[]; bpm: number; sour
 export type Choreography = { mode: "none" | "upload" | "written" | "style" | "ai" | null; style: string | null; notes: string;
   files: string[]; sections: { section: string; performers: string[]; notes: string }[]; precise: boolean; plan?: ChoreoPlan };
 
-export type Brain = { provider: "openai" | "openrouter" | "ollama" | "lmstudio"; base_url: string; model: string; vision_model: string };
+export type Brain = { provider: "openai" | "openrouter" | "gemini" | "ollama" | "lmstudio"; base_url: string; model: string; vision_model: string };
+export type AgentProposal = { id: string; tool: string; args: Record<string, unknown>; risk: "write" | "spend"; state: "pending" | "applied" | "rejected" | "stale"; created: number };
+export type DirectorTurn = { reply: string; model: string; steps: { tool: string; result: unknown }[]; proposals: AgentProposal[] };
 
 export type Balance = { provider: string; amount: number | null; unit: "usd" | "credits" | null; known: boolean; usd?: number };
 export type BudgetStatus = { balances: Record<string, Balance>;
@@ -208,6 +210,8 @@ export const api = {
   directorStyle: <T = { styles: DirectorStyle[]; current: string | null }>(dir: string, action: "list" | "set" | "clear", data: Record<string, unknown> = {}) => invoke<T>("director_style", { dir, action, data }),
   agentStudio: (dir: string, action: "state" | "update_brief" | "create_plan" | "approve" | "request_changes" | "pause" | "resume", data: Record<string, unknown> = {}) =>
     invoke<AgentStudioState>("agent_studio", { dir, action, data }),
+  directorChat: <T = DirectorTurn>(dir: string, action: "turn" | "proposals" | "apply" | "reject", data: Record<string, unknown> = {}) =>
+    invoke<T>("director_chat", { dir, action, data }),
   media: <T = unknown>(dir: string, action: "import" | "fill" | "stills" | "motion" | "transition" | "plan", data: Record<string, unknown> = {}) =>
     invoke<T>("media", { dir, action, data }),
   continuity: <T = unknown>(dir: string, action: "get" | "set" | "shot" | "chain" | "check" | "ai_check", data: Record<string, unknown> = {}) =>
@@ -253,6 +257,7 @@ export const api = {
     const [k, b] = await Promise.all([invoke<KeyStatus>("key_status"), invoke<Brain>("ai_brain", { action: "get", data: {} }).catch(() => null)]);
     if (!b || b.provider === "openai") return !!k.openai;                                  // OpenAI: its key
     if (b.provider === "openrouter") return !!k.openrouter && !!b.model;                     // OpenRouter: its key and a model chosen
+    if (b.provider === "gemini") return !!k.google && !!b.model;                             // Gemini: Google key and a model chosen
     return !!b.model;                                                                         // Ollama / LM Studio: a model chosen
   },
   titleCard: <T = TitleCardState>(dir: string, action: "state" | "preview" | "make" | "remove" | "intro_shot", data: Record<string, unknown> = {}) => invoke<T>("title_card", { dir, action, data }),

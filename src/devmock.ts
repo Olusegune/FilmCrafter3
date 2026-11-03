@@ -87,6 +87,11 @@ export async function installMock() {
           brief: { story: "A young man faces the memories he has avoided and chooses to come home.", style: "Cinematic storybook", duration: "3–4 minutes", aspect: "2.39:1", budget_limit: 30, checkin_mode: "balanced", checkpoints: ["story", "direction", "first_scene", "preview"] },
           stages, approvals: [], revisions: [], activity: [{ id: "a1", at: Date.now() / 1000, kind: "plan", text: "Production plan prepared. No paid work was submitted." }], existing: { scenes: production.scenes.length, shots: production.scenes.flatMap((s: { shots: unknown[] }) => s.shots).length }, spending: { actual: 3.33, committed: 0, limit: 30, pricing_known: true }, jobs: { ready: 1, working: 0, failed: 0 } };
       }
+      case "director_chat": {
+        if (a.action === "proposals") return [];
+        if (a.action === "turn") return { reply: "Your plan is coherent. I would preserve approved shots and focus next on the missing keyframes.", model: "gpt-5", steps: [], proposals: [] };
+        return { proposal: { ...(a.data ?? {}), state: a.action === "apply" ? "applied" : "rejected" } };
+      }
       case "director_style": return { current: null, styles: [
         { id: "ryan-coogler", name: "Ryan Coogler", region: "North America", origin: "USA", known_for: "Warm community, intimate faces, mythic scale", palette: ["gold", "green"], traits: { camera: "Long moving takes through lived-in places; steady close-ups for feeling.", light: "Warm natural light on skin and golden-hour exteriors.", editing: "Cut for the emotional beat.", movement: "Grounded physical action." } },
         { id: "christopher-nolan", name: "Christopher Nolan", region: "North America", origin: "UK and USA", known_for: "Large-format scale and temporal precision", palette: ["steel blue", "amber"], traits: { camera: "Large-format wides, controlled dolly movement and deep staging.", light: "Hard directional daylight and strong practical sources.", editing: "Parallel action converges with exact timing.", movement: "Physical weight and purpose." } },

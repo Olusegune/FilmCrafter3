@@ -43,7 +43,7 @@ export function Settings({ onClose, onHelp }: { onClose: () => void; onHelp?: ()
                    onSave={async (id, key) => { await api.setKey(id, key); await refresh(); }}
                    onRemove={async (id) => { await api.deleteKey(id); await refresh(); }} />
         <InterfaceSize />
-        <BrainPanel openaiKey={status.openai} openrouterKey={!!status.openrouter} />
+        <BrainPanel openaiKey={status.openai} openrouterKey={!!status.openrouter} googleKey={!!status.google} />
         <ComfyPanel />
         <ProviderOverview keys={status} />
         <Diagnostics keys={status} />
@@ -262,12 +262,13 @@ function Diagnostics({ keys }: { keys: KeyStatus }) {
 const BRAINS: { id: Brain["provider"]; name: string; url: string; blurb: string }[] = [
   { id: "openai", name: "OpenAI", url: "", blurb: "Cloud. Best plans and reviews; uses your OpenAI key and credits." },
   { id: "openrouter", name: "OpenRouter", url: "https://openrouter.ai/api/v1", blurb: "Cloud, one key (set it in Connections above). Hundreds of models, many far cheaper than OpenAI: pick one by price. Plans and reviews are only as good as the model you choose." },
+  { id: "gemini", name: "Google Gemini", url: "https://generativelanguage.googleapis.com/v1beta/openai", blurb: "Cloud. Uses your Google Gemini key through Google's official OpenAI-compatible endpoint." },
   { id: "lmstudio", name: "LM Studio", url: "http://127.0.0.1:1234/v1", blurb: "Free, on this PC. An app: download a model in its Discover tab, then turn on the local server (Developer tab)." },
   { id: "ollama", name: "Ollama", url: "http://127.0.0.1:11434/v1", blurb: "Free, on this PC. Pick and download models in the Ollama app, then leave it running." },
 ];
 
 /** Which AI plans, directs, choreographs and reviews: OpenAI, or a local model via Ollama / LM Studio. */
-function BrainPanel({ openaiKey, openrouterKey }: { openaiKey: boolean; openrouterKey: boolean }) {
+function BrainPanel({ openaiKey, openrouterKey, googleKey }: { openaiKey: boolean; openrouterKey: boolean; googleKey: boolean }) {
   const [b, setB] = useState<Brain | null>(null);
   const [models, setModels] = useState<string[]>([]);
   const [vision, setVision] = useState<string[]>([]);
@@ -314,7 +315,7 @@ function BrainPanel({ openaiKey, openrouterKey }: { openaiKey: boolean; openrout
       </label>
       <div className="seg" role="radiogroup" aria-label="AI brain" style={{ marginBottom: 8 }}>
         {BRAINS.map((x) => <button key={x.id} role="radio" aria-checked={b.provider === x.id} className={b.provider === x.id ? "on" : ""} onClick={() => pick(x.id)}>
-          {x.name}{x.id === "openai" && !openaiKey && <span className="dim"> · no key</span>}{x.id === "openrouter" && !openrouterKey && <span className="dim"> · no key</span>}</button>)}
+          {x.name}{x.id === "openai" && !openaiKey && <span className="dim"> · no key</span>}{x.id === "openrouter" && !openrouterKey && <span className="dim"> · no key</span>}{x.id === "gemini" && !googleKey && <span className="dim"> · no key</span>}</button>)}
       </div>
       <p className="dim" style={{ margin: "0 0 8px", fontSize: 12.5 }}>{BRAINS.find((x) => x.id === b.provider)!.blurb}</p>
       {local && <>
@@ -324,6 +325,7 @@ function BrainPanel({ openaiKey, openrouterKey }: { openaiKey: boolean; openrout
           <button className="btn" onClick={find} disabled={!!busy}>{busy === "Looking…" ? busy : routed ? "Find models and prices" : "Find models"}</button>
         </div>
         {routed && !openrouterKey && <p className="mp-warn" role="note">Add your OpenRouter key under Connections above, then press Test.</p>}
+        {b.provider === "gemini" && !googleKey && <p className="mp-warn" role="note">Add your Google Gemini key under Connections above, then press Test.</p>}
         {routed && models.length > 0 && <input className="text-input" aria-label="Search models" placeholder="Search models, for example gemini, deepseek, qwen" value={filter} onChange={(e) => setFilter(e.target.value)} style={{ marginTop: 8 }} />}
         {(models.length > 0 || b.model) && <div className="brain-models">
           <label className="wiz-label" htmlFor="brain-model">Model for planning and direction</label>
@@ -341,7 +343,7 @@ function BrainPanel({ openaiKey, openrouterKey }: { openaiKey: boolean; openrout
           <button className="btn primary" onClick={() => save()} disabled={!b.model || !!busy}>Use this model</button>
           <button className="btn" onClick={test} disabled={!b.model || !!busy}>{busy === "Testing…" ? busy : "Test"}</button>
         </div>
-        {routed ? <p className="dim" style={{ fontSize: 12, marginTop: 6 }}>Good cheap starting points: <b>google/gemini-2.5-flash</b> (sees images too), <b>deepseek/deepseek-chat-v3.1</b> or <b>openai/gpt-4.1-mini</b> for planning. Models marked “may not return clean JSON” can fail on the Director's structured plans; the Test button tells you before you spend anything real.</p> : <p className="dim" style={{ fontSize: 12, marginTop: 6 }}>For a 12 GB graphics card, good choices: <b>qwen2.5 14B</b> or <b>qwen3 14B</b> for planning,
+        {routed ? <p className="dim" style={{ fontSize: 12, marginTop: 6 }}>Good cheap starting points: <b>google/gemini-2.5-flash</b> (sees images too), <b>deepseek/deepseek-chat-v3.1</b> or <b>openai/gpt-4.1-mini</b> for planning. Models marked “may not return clean JSON” can fail on the Director's structured plans; the Test button tells you before you spend anything real.</p> : b.provider === "gemini" ? <p className="dim" style={{ fontSize: 12, marginTop: 6 }}>Choose a Gemini model that supports structured JSON. The Test button makes one small text request before you rely on it.</p> : <p className="dim" style={{ fontSize: 12, marginTop: 6 }}>For a 12 GB graphics card, good choices: <b>qwen2.5 14B</b> or <b>qwen3 14B</b> for planning,
           <b> gemma3 12B</b> (also sees images) or <b>llava</b> for reviews. DeepSeek-R1 14B works but thinks slowly. Local models are free and private,
           but plans are simpler than GPT-5’s; you can switch back any time.</p>}
       </>}

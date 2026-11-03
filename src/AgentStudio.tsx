@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { api, errorText, type AgentStudioState, type LoadedProject } from "./api";
+import { DirectorChat } from "./DirectorChat";
 import "./agent-studio.css";
 
 const STATUS: Record<string, string> = { not_started: "Not started", ready: "Ready", working: "Working", needs_approval: "Needs approval", complete: "Complete", failed: "Failed", paused: "Paused" };
@@ -12,6 +13,7 @@ export function AgentStudio({ project, onManual, onHome }: { project: LoadedProj
   const [revision, setRevision] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [chat, setChat] = useState(false);
   const load = () => api.agentStudio(project.dir, "state").then((s) => { setState(s); setDraft(s.brief); }).catch((e) => setError(errorText(e)));
   useEffect(() => { void load(); }, [project.dir]); // eslint-disable-line react-hooks/exhaustive-deps
   const run = async (action: Parameters<typeof api.agentStudio>[1], data: Record<string, unknown> = {}) => {
@@ -40,6 +42,7 @@ export function AgentStudio({ project, onManual, onHome }: { project: LoadedProj
       <div className="agent-switch" role="group" aria-label="Workspace">
         <button className="on" aria-pressed="true">Agent Studio</button><button onClick={onManual}>Manual Studio</button>
       </div>
+      <button className="btn ghost" onClick={() => setChat(true)}>Ask the director</button>
       <button className="btn ghost" disabled={busy} onClick={() => run(state.paused ? "resume" : "pause")}>{state.paused ? "▶ Resume" : "Ⅱ Pause"}</button>
       <span className="agent-saved">● Saved</span>
     </header>
@@ -80,6 +83,7 @@ export function AgentStudio({ project, onManual, onHome }: { project: LoadedProj
       </aside>
     </main>}
     {error && <div className="agent-error" role="alert">{error}<button onClick={() => setError("")} aria-label="Dismiss">×</button></div>}
+    {chat && <DirectorChat dir={project.dir} onClose={() => setChat(false)} onChanged={load} />}
   </div>;
 }
 

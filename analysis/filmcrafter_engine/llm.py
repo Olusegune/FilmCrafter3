@@ -21,8 +21,8 @@ import sys
 import types
 
 CONFIG = os.path.join(os.path.expanduser("~"), ".filmcrafter", "llm.json")
-DEFAULT_URLS = {"ollama": "http://127.0.0.1:11434/v1", "lmstudio": "http://127.0.0.1:1234/v1", "openrouter": "https://openrouter.ai/api/v1"}
-NAMES = {"openai": "OpenAI", "openrouter": "OpenRouter", "ollama": "Ollama", "lmstudio": "LM Studio"}
+DEFAULT_URLS = {"ollama": "http://127.0.0.1:11434/v1", "lmstudio": "http://127.0.0.1:1234/v1", "openrouter": "https://openrouter.ai/api/v1", "gemini": "https://generativelanguage.googleapis.com/v1beta/openai"}
+NAMES = {"openai": "OpenAI", "openrouter": "OpenRouter", "gemini": "Google Gemini", "ollama": "Ollama", "lmstudio": "LM Studio"}
 LOCAL = ("ollama", "lmstudio")        # run on this computer: free
 MODELS_CACHE = os.path.join(os.path.expanduser("~"), ".filmcrafter", "openrouter_models.json")
 
@@ -41,15 +41,15 @@ def config() -> dict:
 def save(c: dict) -> dict:
     prov = c.get("provider")
     if prov not in NAMES:
-        raise SystemExit("Choose OpenAI, OpenRouter, Ollama or LM Studio.")
+        raise SystemExit("Choose OpenAI, OpenRouter, Ollama or LM Studio, or Google Gemini.")
     url = (c.get("base_url") or DEFAULT_URLS.get(prov, "")).strip().rstrip("/")
     if prov != "openai":
         if not re.match(r"^https?://[^\s/]+(:\d+)?(/.*)?$", url):
             raise SystemExit("Enter the server address, e.g. http://127.0.0.1:11434/v1")
-        if not url.endswith("/v1"):
+        if prov != "gemini" and not url.endswith("/v1"):
             url += "/v1"   # both servers expose the OpenAI API under /v1
-        if prov == "openrouter" and url != DEFAULT_URLS["openrouter"] and not url.startswith("https://"):
-            raise SystemExit("OpenRouter is reached over https.")
+        if prov in {"openrouter", "gemini"} and not url.startswith("https://"):
+            raise SystemExit(f"{NAMES[prov]} is reached over https.")
         if not (c.get("model") or "").strip():
             raise SystemExit("Choose which model to use." if prov == "openrouter" else "Choose which local model to use.")
     out = {"provider": prov, "base_url": url if prov != "openai" else "", "model": (c.get("model") or "").strip(),
@@ -76,6 +76,8 @@ def visual_ready() -> bool:
         return bool(os.environ.get("FILMCRAFTER_OPENAI_KEY"))
     if cfg["provider"] == "openrouter":
         return bool(os.environ.get("FILMCRAFTER_OPENROUTER_KEY")) and bool(cfg["vision_model"])
+    if cfg["provider"] == "gemini":
+        return bool(os.environ.get("GEMINI_API_KEY")) and bool(cfg["vision_model"])
     return True                       # a local brain says plainly in local_model() when no vision model is chosen
 
 
@@ -156,6 +158,19 @@ def _openrouter_key() -> str:
     return key
 
 
+def _gemini_key() -> str:
+    key = os.environ.get("GEMINI_API_KEY")
+    if not key:
+        try:
+            import keyring
+            key = keyring.get_password("filmcrafter", "google")
+        except Exception:
+            key = None
+    if not key:
+        raise SystemExit("Add your Google Gemini key in Settings, or choose another AI brain.")
+    return key
+
+
 class _Local:
     """Any chat-completions server behind the same interface: Ollama / LM Studio on this computer, or OpenRouter in the cloud."""
 
@@ -163,7 +178,8 @@ class _Local:
         from openai import OpenAI
         self.cfg = cfg
         routed = cfg["provider"] == "openrouter"
-        self._oa = OpenAI(base_url=cfg["base_url"], api_key=_openrouter_key() if routed else (os.environ.get("FILMCRAFTER_LOCAL_KEY") or "local"),
+        key = _openrouter_key() if routed else _gemini_key() if cfg["provider"] == "gemini" else (os.environ.get("FILMCRAFTER_LOCAL_KEY") or "local")
+        self._oa = OpenAI(base_url=cfg["base_url"], api_key=key,
                           default_headers={"HTTP-Referer": "https://github.com/Olusegune/FilmCrafterCode", "X-Title": "FilmCrafter"} if routed else None)
         self.responses = _LocalResponses(self._oa.chat)
         self.models = self._oa.models
@@ -191,7 +207,7 @@ def local_model(c, vision: bool = False) -> str | None:
     cfg = c.cfg
     if vision:
         if not cfg["vision_model"]:
-            hint = "(for example google/gemini-2.5-flash)" if cfg["provider"] == "openrouter" else "(e.g. llava, qwen2.5-vl, gemma3)"
+            hint = "(for example google/gemini-2.5-flash)" if cfg["provider"] == "openrouter" else "(for example gemini-2.5-flash)" if cfg["provider"] == "gemini" else "(e.g. llava, qwen2.5-vl, gemma3)"
             raise SystemExit(f"Visual review needs a {NAMES[cfg['provider']]} model that can see images {hint}. Choose one in Settings, or use OpenAI.")
         return cfg["vision_model"]
     return cfg["model"]
@@ -262,8 +278,16 @@ def list_models(c: dict) -> dict:
             return openrouter_models()
         except Exception as e:
             raise SystemExit(f"Couldn't reach OpenRouter ({type(e).__name__}). Check your internet connection and try again.")
+    if prov == "gemini":
+        try:
+            cfg = {**config(), **c, "provider": "gemini", "base_url": (c.get("base_url") or DEFAULT_URLS["gemini"]).rstrip("/")}
+            ids = sorted(m.id for m in _Local(cfg).models.list().data)
+            return {"base_url": cfg["base_url"], "models": ids, "vision_capable": ids}
+        except SystemExit: raise
+        except Exception as e:
+            raise SystemExit(f"Couldn't reach Google Gemini ({type(e).__name__}). Check the key and internet connection.")
     url = (c.get("base_url") or DEFAULT_URLS.get(prov, "")).rstrip("/")
-    if not url.endswith("/v1"):
+    if prov in LOCAL and not url.endswith("/v1"):
         url += "/v1"
     try:
         r = requests.get(url + "/models", timeout=4)
@@ -280,15 +304,15 @@ def test(c: dict) -> dict:
     """A tiny structured request through exactly the path the app uses."""
     import time
     cfg = {**config(), **{k: v for k, v in c.items() if v}}
-    if cfg["provider"] == "openrouter" and not cfg.get("base_url"):
-        cfg["base_url"] = DEFAULT_URLS["openrouter"]
+    if cfg["provider"] in {"openrouter", "gemini"} and not cfg.get("base_url"):
+        cfg["base_url"] = DEFAULT_URLS[cfg["provider"]]
     if cfg["provider"] == "openai":
         cl = client()
         model = "gpt-5"
         from .director import resolve_model
         model = resolve_model(cl, model)
     else:
-        if not cfg["base_url"].endswith("/v1"):
+        if cfg["provider"] in LOCAL and not cfg["base_url"].endswith("/v1"):
             cfg["base_url"] = cfg["base_url"].rstrip("/") + "/v1"
         cl = _Local(cfg)
         model = cfg["model"]

@@ -2279,6 +2279,11 @@ async fn stylebible(app: AppHandle, dir: String, action: String, data: Value) ->
 
 /// The AI brain's environment: the OpenAI key, or nothing when a local model (Ollama / LM Studio) is chosen.
 fn openai_env() -> Result<Vec<(&'static str, String)>, String> {
+    if brain_provider() == "gemini" {
+        let key = keyring::Entry::new(KEY_SERVICE, "google").and_then(|e| e.get_password()).ok().filter(|k| !k.is_empty())
+            .ok_or_else(|| "Add your Google Gemini key in Settings, or choose another AI brain.".to_string())?;
+        return Ok(vec![("GEMINI_API_KEY", key)]);
+    }
     if brain_provider() == "openrouter" {
         // OpenRouter: one key, hundreds of cheaper models. The OpenAI key (if any) still goes along for the things that use OpenAI directly.
         let key = keyring::Entry::new(KEY_SERVICE, "openrouter").and_then(|e| e.get_password()).ok().filter(|k| !k.is_empty())
@@ -2302,7 +2307,7 @@ fn brain_provider() -> String {
     dirs_home().map(|h| h.join(".filmcrafter").join("llm.json"))
         .and_then(|p| read_json(&p))
         .and_then(|v| v["provider"].as_str().map(String::from))
-        .filter(|p| ["openai", "openrouter", "ollama", "lmstudio"].contains(&p.as_str()))
+        .filter(|p| ["openai", "openrouter", "gemini", "ollama", "lmstudio"].contains(&p.as_str()))
         .unwrap_or_else(|| "openai".into())
 }
 
@@ -2321,11 +2326,23 @@ async fn ai_brain(app: AppHandle, action: String, data: Option<Value>) -> Result
     if !["get", "set", "models", "test"].contains(&action.as_str()) {
         return Err("Unknown action.".into());
     }
-    let env = if action == "test" { openai_env().unwrap_or_default() } else { vec![] };
+    let env = if action == "models" { provider_env() } else if action == "test" { openai_env().unwrap_or_default() } else { vec![] };
     tauri::async_runtime::spawn_blocking(move || {
         run_engine_result(&app, "brain", &["-m".into(), "filmcrafter_engine.llm".into(), action,
                                            data.unwrap_or_else(|| json!({})).to_string()], &env)
     }).await.map_err(err)?
+}
+
+/// Safe Agent Studio chat. The model may read project summaries and create suggestions;
+/// paid work is never submitted here and writes remain reviewable unless explicitly enabled.
+#[tauri::command]
+async fn director_chat(app: AppHandle, dir: String, action: String, data: Option<Value>) -> Result<Value, String> {
+    if !["turn", "proposals", "apply", "reject"].contains(&action.as_str()) { return Err("Unknown action.".into()); }
+    let d = project_dir(&dir)?.to_string_lossy().to_string();
+    let env = if action == "turn" { openai_env()? } else { vec![] };
+    tauri::async_runtime::spawn_blocking(move || run_engine_result(&app, "director-chat", &[
+        "-m".into(), "filmcrafter_engine.directorchat".into(), action, d, "--data".into(), data.unwrap_or_else(|| json!({})).to_string()
+    ], &env)).await.map_err(err)?
 }
 
 // ---------- director command ----------
@@ -2481,7 +2498,7 @@ pub fn run() {
             ensure_renderer, render_catalog, render_preview,
             queue_render, confirm_spend, resolve_job, export_project, list_styles, set_look, app_ready, render_estimate,
             save_project, save_project_as, pack_film, backups, film_backup, frames, film, film_bible, film_shots, film_make, film_voice, film_cast_voice, film_voice_direct, film_audio, film_cues, film_audiogen, film_mix, film_materials, film_choreography, film_placecare, film_audioplan, film_readiness, film_pacing, film_composition, film_spending, film_outdated, model_registry, prepare_update, save_voice_take, film_check, film_assist, film_interchange, is_film, launch_path, engine_status, setup_engine, engine_setup_size, set_project_settings, import_reference, set_keyframe, director_command, undo_command, library, parse_action, providers,
-            set_onboarding, adopt_script, lighting, ai_brain, budget, diagnostics, media, continuity, performance, routing, local_models, supervisor, direction_library, director_style, recents, hidden_count, pack_project, open_pulse, golden, lipsync_check, review_backlog, comfy_setup, comfy_install, compose, overnight, refgen, agent_studio, overlays, captions, director_audit, fonts, editor_export, camera, check_update, stylebible, performance_director, title_card, cleanup, custom_frame, layer_kit, colour_match, grading, editing, proxies, smart_editor, presets, series, shot_sound, acting, track, upscale, proof, shot_history, retry_cheaper, keyframe_set, hand_fix
+            set_onboarding, adopt_script, lighting, ai_brain, director_chat, budget, diagnostics, media, continuity, performance, routing, local_models, supervisor, direction_library, director_style, recents, hidden_count, pack_project, open_pulse, golden, lipsync_check, review_backlog, comfy_setup, comfy_install, compose, overnight, refgen, agent_studio, overlays, captions, director_audit, fonts, editor_export, camera, check_update, stylebible, performance_director, title_card, cleanup, custom_frame, layer_kit, colour_match, grading, editing, proxies, smart_editor, presets, series, shot_sound, acting, track, upscale, proof, shot_history, retry_cheaper, keyframe_set, hand_fix
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

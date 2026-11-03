@@ -21,6 +21,12 @@ In Manual Studio, choose **Director style** to browse the worldwide filmmaker li
 5. Use **Request changes** for a focused revision. The request is recorded without replacing approved work. Paid revision execution still shows affected scope and price in FilmCrafter's existing confirmation UI.
 6. Choose **Manual Studio** whenever an individual shot, take, reference, sound or edit needs precise control.
 
+## Ask the director
+
+**Ask the director** connects Agent Studio to the AI brain selected in Settings: OpenAI, Google Gemini, OpenRouter, Ollama or LM Studio. The chat can summarize the project, inspect shots and keyframes, read the optional filmmaker craft profile, and prepare focused revisions or generation requests. Project details and chat messages go to the selected cloud provider; Ollama and LM Studio keep them on the local server.
+
+Changes are suggestions by default. Review each one and choose **Apply** or **Reject**. The optional **Make non-paid changes straight away** switch applies only local project changes; it never applies to a generation request. Every paid request remains a proposal and must be opened in Manual Studio, priced against the current provider settings, and confirmed through the existing one-use spend token.
+
 ## Safety and recovery
 
 - Workflow state is written atomically to `agent-studio.json` inside the project and reloads after a restart.
@@ -28,7 +34,8 @@ In Manual Studio, choose **Director style** to browse the worldwide filmmaker li
 - Actual completed costs, committed active-job estimates and the user's limit are separate values.
 - Agent Studio has no provider-submission command. Paid jobs continue to require the existing short-lived, single-use spend token bound to the displayed batch.
 - Approvals and revision requests are append-only records. A revision does not erase earlier approvals, takes or assets.
+- The chat has a fixed tool allow-list with strict argument schemas. It has no path, shell, delete or export tool. Its activity is recorded in `agent/log.jsonl`; suggestions and their resolution are recorded in `agent/proposals.json`.
 
 ## Current limitation
 
-This release provides the persistent shell, story intake, plan, checkpoints, budget status, pause/restart recovery, activity history and Manual Studio handoff. Automatic dependency expansion, affected-asset previews for natural-language revisions, budget reservation across a newly proposed Agent batch, and automatic execution of the next confirmed stage remain to be connected to the existing generation commands. Until then, Agent Studio routes detailed production work to Manual Studio and never claims unsupported work is running.
+The director currently exposes a deliberately small first tool set. It does not yet expand revision dependencies, preview affected assets, reserve a budget across a proposed batch, or automatically execute the next confirmed stage. Generation requests route to Manual Studio and never claim unsupported work is running.
