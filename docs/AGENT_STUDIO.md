@@ -25,6 +25,8 @@ After a shot plan exists, Agent Studio isolates its first scene as a bounded pro
 
 If either route is a cloud provider, Agent Studio does not queue it. **Review price & make first scene** opens Manual Studio, where the live price, project budget and one-use spend token remain mandatory. This separation prevents a broad automation instruction from becoming permission to spend.
 
+The proof card also tracks **Picture, Dialogue, Score, SFX, Graphics, Mix and Preview**. **Prepare sound & graphics** stores the first-scene department plan in the durable run and places suggested titles as disabled Motion Graphics drafts. The creator must enable or edit them; preparing never calls an audio provider. Voice, music and SFX marked **needs cost review** continue through their existing department screens, with separate price, rights and confirmation checks. When the visual proof is complete, **Build local preview** exports only that scene through the existing overlay and audio-mix pipeline.
+
 ## Whole-film departments and model choice
 
 The analysis package covers characters (appearance, wardrobe and voice direction), locations/sets and lighting, continuity props, scenes, a provider-neutral score prompt, sound direction, SFX/ambience cues, and useful titles or motion graphics. Before analysis, **Production models** lets the creator choose independent models/providers for reference and keyframe images, shot video, voices, music/score and SFX. Automatic follows the project's Plan & budget router. Accepted image/video choices are pinned into that router; every department choice and approved design is saved in `agent-production.json` so the run can resume after restart.

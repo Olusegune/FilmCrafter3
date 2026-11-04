@@ -1951,7 +1951,7 @@ async fn refgen(app: AppHandle, dir: String, action: String, data: Value) -> Res
 /// on free local ComfyUI. Paid execution remains behind queue_render's spend token.
 #[tauri::command]
 async fn agent_studio(app: AppHandle, dir: String, action: String, data: Value) -> Result<Value, String> {
-    const ACTIONS: [&str; 14] = ["state", "update_brief", "analyze", "accept_analysis", "create_plan", "approve", "request_changes", "impact", "inbox", "orchestrate", "plan_first_scene", "start_first_scene", "pause", "resume"];
+    const ACTIONS: [&str; 16] = ["state", "update_brief", "analyze", "accept_analysis", "create_plan", "approve", "request_changes", "impact", "inbox", "orchestrate", "plan_first_scene", "start_first_scene", "prepare_first_scene_departments", "build_first_scene_preview", "pause", "resume"];
     if !ACTIONS.contains(&action.as_str()) {
         return Err("Unknown Agent Studio action.".into());
     }

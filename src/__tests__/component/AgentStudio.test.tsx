@@ -67,7 +67,7 @@ describe("Agent Studio", () => {
   it("starts only the local first-scene proof and explains that later scenes stay untouched", async () => {
     invoke.mockResolvedValue(state(true));
     render(<AgentStudio project={project} onHome={() => {}} onManual={() => {}} />);
-    expect(await screen.findByText("Remaining scenes stay untouched until this scene is approved.")).toBeInTheDocument();
+    expect(await screen.findByText(/Remaining scenes stay untouched/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Make first scene locally" }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("agent_studio", { dir: "p", action: "start_first_scene", data: {} }));
   });

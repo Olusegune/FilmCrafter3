@@ -154,3 +154,19 @@ def test_local_first_scene_queues_only_its_keyframes_and_persists_resume_record(
     assert queued == ["S01-01", "S01-02"]
     run = json.load(open(os.path.join(d, A.RUN_FILE), encoding="utf-8"))
     assert run["step"] == "keyframes" and run["shots"] == queued
+
+
+def test_proof_departments_prepare_disabled_graphics_and_never_generate_audio(tmp_path, monkeypatch):
+    d = project(tmp_path)
+    proof = {"scene": 1, "shots": ["S01-01"], "departments": {
+        "dialogue": {"status": "needs_cost_review", "items": 1},
+        "score": {"status": "needs_cost_review", "items": 1, "prompt": "quiet strings"},
+        "sfx": {"status": "needs_cost_review", "items": 1},
+        "graphics": {"status": "ready", "items": 1, "suggestions": [{"type": "Title", "text": "Paper Bird", "when": "Opening"}]}}}
+    monkeypatch.setattr(A, "_first_scene_proof", lambda _d: proof)
+    A.prepare_first_scene_departments(d)
+    layers = json.load(open(os.path.join(d, "overlays.json"), encoding="utf-8"))["overlays"]
+    assert layers[0]["text"] == "Paper Bird" and layers[0]["enabled"] is False and layers[0]["group"] == "agent-proof"
+    run = json.load(open(os.path.join(d, A.RUN_FILE), encoding="utf-8"))
+    assert run["departments"]["score"]["prompt"] == "quiet strings"
+    assert json.load(open(os.path.join(d, "jobs.json")))["jobs"] == []

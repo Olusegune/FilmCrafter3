@@ -280,13 +280,88 @@ def _first_scene_proof(d):
     cloud = (bool(missing_keyframes) and image.get("provider") != "comfyui") or (bool(missing_video) and video.get("provider") != "comfyui")
     run = _read(os.path.join(d, RUN_FILE), {}) or {}
     state_name = "complete" if complete else "failed" if failed and not active else "working" if active else "blocked" if blockers else "ready"
+    departments = _proof_departments(d, scene, ids, complete)
     return {"state": state_name, "scene": scene.get("number"), "heading": scene.get("heading", "First scene"), "shots": ids,
             "missing_keyframes": missing_keyframes, "missing_video": missing_video, "active_jobs": len(active), "failed_jobs": len(failed),
             "image_route": image, "video_route": video, "estimated_usd": round(image_cost + video_cost, 2),
             "requires_cost_review": cloud, "can_start_local": not cloud and not blockers and not complete and not active,
-            "blockers": blockers, "run": run, "message": ("The first scene is ready for approval." if complete else
+            "blockers": blockers, "run": run, "departments": departments, "message": ("The first scene is ready for approval." if complete else
             "Review the live cost in Manual Studio before cloud work starts." if cloud else
             "This proof scene can run locally without provider charges." if not blockers else blockers[0])}
+
+
+def _proof_departments(d, scene, ids, visual_complete=False):
+    manifest = _read(os.path.join(d, "agent-production.json"), {}) or {}
+    creative = manifest.get("creative", {}) if isinstance(manifest, dict) else {}
+    brief = (_load(d).get("brief", {}) if os.path.exists(_path(d)) else _base(d)["brief"])
+    run = _read(os.path.join(d, RUN_FILE), {}) or {}
+    prepared = run.get("departments") if isinstance(run.get("departments"), dict) else {}
+    scene_blob = json.dumps(scene, ensure_ascii=False).casefold()
+    dialogue_shots = sum(1 for s in scene.get("shots", []) if s.get("dialogue") or "dialogue" in json.dumps(s).casefold())
+    score = _clean(creative.get("score_prompt"), 1500)
+    sfx = [x for x in creative.get("sfx_plan", []) if isinstance(x, dict) and
+           (not x.get("scene") or str(x.get("scene")).casefold() in scene_blob or str(scene.get("number")) == str(x.get("scene")))]
+    graphics = [x for x in creative.get("motion_graphics", []) if isinstance(x, dict)][:20]
+    def paid_status(provider, has_work):
+        if not has_work or provider == "none": return "skipped"
+        if provider in ("own", "library"): return "needs_media"
+        return "needs_cost_review"
+    preview = run.get("preview")
+    return {
+        "visuals": {"status": "complete" if visual_complete else "working" if run.get("state") == "working" else "ready", "items": len(ids)},
+        "dialogue": {"status": paid_status(brief.get("voice_provider"), dialogue_shots), "items": dialogue_shots,
+                     "provider": brief.get("voice_provider", "auto"), "note": "Record/import voices or review TTS cost per line." if dialogue_shots else "No dialogue detected in this scene."},
+        "score": {"status": paid_status(brief.get("music_provider"), bool(score)), "items": 1 if score else 0,
+                  "provider": brief.get("music_provider", "auto"), "prompt": score},
+        "sfx": {"status": paid_status(brief.get("sfx_provider"), bool(sfx)), "items": len(sfx),
+                "provider": brief.get("sfx_provider", "auto"), "prompts": sfx},
+        "graphics": {"status": "prepared" if prepared.get("graphics") else "ready" if graphics else "skipped", "items": len(graphics), "suggestions": graphics},
+        "mix": {"status": "ready" if visual_complete else "blocked", "items": 1},
+        "preview": {"status": "complete" if preview and os.path.isfile(os.path.join(d, preview)) else "ready" if visual_complete else "blocked", "items": 1,
+                    "file": preview},
+    }
+
+
+def prepare_first_scene_departments(d):
+    proof = _first_scene_proof(d)
+    if not proof.get("shots"): raise SystemExit("Create a first-scene shot plan before preparing departments.")
+    run = _read(os.path.join(d, RUN_FILE), {}) or {"schema": 1, "scene": proof.get("scene"), "shots": proof["shots"], "state": "planned"}
+    deps = proof.get("departments", {})
+    run["departments"] = {"prepared": int(time.time()),
+        "dialogue": deps.get("dialogue"), "score": deps.get("score"), "sfx": deps.get("sfx"), "graphics": deps.get("graphics")}
+    # Graphics are drafted as disabled layers: visible in Motion Graphics, never silently put in the film.
+    from . import overlays
+    existing = overlays.load(d)
+    existing_text = {str(x.get("text", "")).strip() for x in existing if x.get("group") == "agent-proof"}
+    added = 0
+    for i, item in enumerate((deps.get("graphics") or {}).get("suggestions", [])):
+        text = _clean(item.get("text"), 300)
+        if not text or text in existing_text: continue
+        overlays.add(d, {"kind": "text", "text": text, "name": _clean(item.get("type"), 60) or "Agent title",
+                         "start": float(i * 4), "end": float(i * 4 + 3.5), "x": .5, "y": .82,
+                         "anim": "fade", "group": "agent-proof", "enabled": False})
+        existing_text.add(text); added += 1
+    run["departments"]["graphics"]["drafts_added"] = added
+    run["updated"] = int(time.time()); _write(os.path.join(d, RUN_FILE), run)
+    return proof
+
+
+def build_first_scene_preview(d):
+    proof = _first_scene_proof(d)
+    if proof.get("state") != "complete": raise SystemExit("Finish the first scene's visual shots before building its preview.")
+    scene = next((x for x in _plan(d).get("scenes", []) if x.get("number") == proof.get("scene")), None)
+    if not scene: raise SystemExit("The first scene is no longer in the shot plan.")
+    starts = [float(x.get("start", 0)) for x in scene.get("shots", [])]
+    ends = [float(x.get("end", x.get("start", 0))) for x in scene.get("shots", [])]
+    if not starts or max(ends) <= min(starts): raise SystemExit("The first scene needs valid shot timing before a preview can be built.")
+    from .export import build, preset_for
+    preset = preset_for(_project(d).get("aspect_ratio"))
+    result = build(d, preset, window=(min(starts), max(ends)))
+    path = os.path.abspath(result["path"])
+    rel = os.path.relpath(path, d).replace("\\", "/") if os.path.commonpath([os.path.realpath(d), os.path.realpath(path)]) == os.path.realpath(d) else path
+    run = _read(os.path.join(d, RUN_FILE), {}) or {}
+    run.update(preview=rel, preview_at=int(time.time()), updated=int(time.time())); _write(os.path.join(d, RUN_FILE), run)
+    return _first_scene_proof(d)
 
 
 def start_first_scene(d):
@@ -478,6 +553,14 @@ def run(action, d, data):
         start_first_scene(d)
         w = _load(d); _activity(w, "first_scene_started", "Local first-scene proof started. Remaining scenes were left untouched.")
         return _save(d, w)
+    if action == "prepare_first_scene_departments":
+        prepare_first_scene_departments(d)
+        w = _load(d); _activity(w, "departments_prepared", "Dialogue, score, SFX and motion-graphics work for the proof scene was prepared. Nothing billable was submitted.")
+        return _save(d, w)
+    if action == "build_first_scene_preview":
+        build_first_scene_preview(d)
+        w = _load(d); _activity(w, "first_scene_preview", "A local preview of the first scene was built.")
+        return _save(d, w)
     if action == "pause": return pause(d, True)
     if action == "resume": return pause(d, False)
     raise SystemExit("Unknown Agent Studio action.")
@@ -486,7 +569,7 @@ def run(action, d, data):
 def main(argv):
     try:
         ap = argparse.ArgumentParser()
-        ap.add_argument("action", choices=["state", "update_brief", "analyze", "accept_analysis", "create_plan", "approve", "request_changes", "impact", "inbox", "orchestrate", "plan_first_scene", "start_first_scene", "pause", "resume"])
+        ap.add_argument("action", choices=["state", "update_brief", "analyze", "accept_analysis", "create_plan", "approve", "request_changes", "impact", "inbox", "orchestrate", "plan_first_scene", "start_first_scene", "prepare_first_scene_departments", "build_first_scene_preview", "pause", "resume"])
         ap.add_argument("project")
         ap.add_argument("--data", default="{}")
         a = ap.parse_args(argv)
