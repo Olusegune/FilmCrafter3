@@ -5,6 +5,9 @@ import studio from "../Studio.tsx?raw";
 const unix = (s: string) => s.split("\r\n").join("\n");
 const sharedCss = unix(readFileSync("src/studio-shared.css", "utf8"));
 const stylesCss = unix(readFileSync("src/styles.css", "utf8"));
+const actingCss = unix(readFileSync("src/acting.css", "utf8"));
+const filmCss = unix(readFileSync("src/film.css", "utf8"));
+const homeCss = unix(readFileSync("src/home.css", "utf8"));
 
 /** Layout bugs found by looking at the real screens, kept from coming back. These read the style rules, since no test renders real pixels (scripts/ui-audit.js does that, by hand). */
 describe("layout regressions", () => {
@@ -38,5 +41,24 @@ describe("layout regressions", () => {
 
   it("the full-screen view hides the test-shot note along with the rest of the chrome", () => {
     expect(sharedCss).toContain(".studio.focus .g-test { display: none; }");
+  });
+
+  it("long acting notes can be resized and the scene editor uses readable columns", () => {
+    expect(actingCss).toContain("resize: vertical");
+    expect(actingCss).toContain("max-height: 360px");
+    expect(actingCss).not.toContain("height: 62px !important");
+    expect(actingCss).toContain("grid-template-columns: repeat(2, minmax(0, 1fr))");
+  });
+
+  it("preset browsing is a wide gallery and Supervisor filters wrap instead of becoming a horizontal scroller", () => {
+    expect(homeCss).toContain(".sheet.hm-gallery { width: min(1320px");
+    expect(homeCss).toContain("minmax(190px, 1fr)");
+    expect(filmCss).toContain(".sx-strip { display: flex; flex-wrap: wrap;");
+    expect(filmCss).toContain(".sheet.sup-sheet { width: min(1240px");
+  });
+
+  it("the AI agent is always visible in the main rail", () => {
+    expect(studio).toContain('label="AI Agent"');
+    expect(studio).toContain('chooseWorkspace("agent")');
   });
 });

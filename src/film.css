@@ -389,7 +389,7 @@
 .dl-known { margin: 2px 0 var(--sp-3, 12px); font-size: 12.5px; font-style: italic; color: var(--gold); }
 
 /* ===== Production Supervisor: shot by shot, with pictures ===== */
-.sup-sheet { width: min(1120px, 96vw); border-radius: 4px; }
+.sheet.sup-sheet { width: min(1240px, calc(100vw - 32px)); max-width: none; border-radius: 6px; }
 .sx-top { display: flex; align-items: stretch; gap: var(--sp-4, 16px); margin: var(--sp-3, 12px) 0; }
 .sx-state { flex: 1; display: flex; align-items: center; gap: 10px; padding: 0 var(--sp-4, 16px); border: 1px solid rgba(232, 180, 92, 0.4); border-radius: 4px; background: rgba(232, 180, 92, 0.07); font-size: 14px; }
 .sx-state.ready { border-color: rgba(95, 212, 154, 0.4); background: rgba(95, 212, 154, 0.07); color: #5fd49a; }
@@ -400,27 +400,31 @@
 .sx-tile span { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-quiet, #8b97a7); }
 .sx-tile.major b { color: #ff7a6b; } .sx-tile.minor b { color: var(--gold); } .sx-tile.info b { color: #7fb8ff; } .sx-tile.done b { color: #5fd49a; }
 .sx-tile:hover { border-color: rgba(244, 247, 250, 0.25); } .sx-tile.on { border-color: var(--gold); box-shadow: inset 0 -2px 0 var(--gold); }
-.sx-strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 0 10px; margin-bottom: var(--sp-3, 12px); }
-.sx-chip { position: relative; flex: none; display: flex; flex-direction: column; gap: 4px; width: 92px; padding: 0; border: 1px solid var(--hair); border-radius: 2px !important; background: none; color: var(--frost); cursor: pointer; font-size: 11px; text-align: left; overflow: hidden; }
-.sx-chip.all { justify-content: center; align-items: center; flex-direction: row; gap: 6px; padding: 0 12px; width: auto; }
-.sx-chip .sx-thumb { display: block; height: 52px; background: rgba(244, 247, 250, 0.06) center / cover; }
-.sx-chip .num { padding: 0 6px 5px; white-space: nowrap; }
+.sx-strip { display: flex; flex-wrap: wrap; gap: 7px; overflow: visible; padding: 4px 0 14px; margin-bottom: var(--sp-3, 12px); border-bottom: 1px solid var(--hair); }
+.sx-chip { position: relative; flex: none; display: flex; align-items: center; gap: 8px; min-width: 104px; height: 42px; padding: 4px 26px 4px 4px; border: 1px solid var(--hair); border-radius: 5px !important; background: var(--panel); color: var(--frost); cursor: pointer; font-size: 11.5px; text-align: left; overflow: hidden; }
+.sx-chip.all { justify-content: center; gap: 6px; padding: 0 12px; min-width: 98px; }
+.sx-chip .sx-thumb { display: block; flex: none; width: 48px; height: 32px; border-radius: 3px; background: rgba(244, 247, 250, 0.06) center / cover; }
+.sx-chip .num { padding: 0; white-space: nowrap; }
 .sx-chip.all .num { padding: 0; }
-.sx-chip i { position: absolute; right: 4px; top: 4px; min-width: 18px; padding: 0 5px; border-radius: 2px; background: rgba(10, 12, 16, 0.85); font-style: normal; text-align: center; font-size: 11px; }
-.sx-chip.sev-major { border-bottom: 3px solid #ff7a6b; } .sx-chip.sev-minor { border-bottom: 3px solid var(--gold); } .sx-chip.sev-info { border-bottom: 3px solid #7fb8ff; }
+.sx-chip i { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); min-width: 17px; padding: 0 4px; border-radius: 999px; background: rgba(10, 12, 16, 0.85); font-style: normal; text-align: center; font-size: 10.5px; }
+.sx-chip.sev-major { border-left: 3px solid #ff7a6b; } .sx-chip.sev-minor { border-left: 3px solid var(--gold); } .sx-chip.sev-info { border-left: 3px solid #7fb8ff; }
 .sx-chip.on, .sx-chip:hover { border-color: var(--gold); }
-.sx-stack { display: inline-flex; flex: none; } .sx-stack i { width: 44px; height: 28px; margin-right: -10px; border: 2px solid #12151b; background: rgba(244, 247, 250, 0.08) center / cover; }
-.sup-batch { border-radius: 4px; } .sup-batch > span:not(.sx-stack) { flex: 1; }
+.sx-stack { display: inline-flex; flex: none; } .sx-stack i { width: 40px; height: 26px; margin-right: -8px; border: 2px solid #12151b; border-radius: 3px; background: rgba(244, 247, 250, 0.08) center / cover; }
+.sup-batches { display: grid; gap: 8px; margin: 0 0 18px; }
+.sup-batch { min-height: 52px; padding: 9px 12px; border-radius: 6px; } .sup-batch > span:not(.sx-stack) { flex: 1; line-height: 1.45; }
 .sx-list { display: flex; flex-direction: column; gap: var(--sp-4, 16px); }
-.sx-shot { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: var(--sp-4, 16px); padding: var(--sp-3, 12px); border: 1px solid var(--hair); border-left-width: 3px; border-radius: 4px; background: var(--panel); }
+.sx-shot { display: grid; grid-template-columns: minmax(210px, 30%) minmax(0, 1fr); gap: 18px; padding: 14px; border: 1px solid var(--hair); border-left-width: 3px; border-radius: 6px; background: var(--panel); }
 .sx-shot.sev-major { border-left-color: #ff7a6b; } .sx-shot.sev-minor { border-left-color: var(--gold); } .sx-shot.sev-info { border-left-color: #7fb8ff; }
 .sx-pic { position: relative; aspect-ratio: 16 / 9; align-self: start; display: grid; place-items: center; padding: 0; border: 0; border-radius: 2px !important; background: rgba(0, 0, 0, 0.4) center / cover; cursor: pointer; overflow: hidden; font-size: 12px; }
 .sx-id { position: absolute; left: 6px; top: 6px; padding: 1px 8px; border-radius: 2px; background: rgba(10, 12, 16, 0.8); font-size: 11.5px; color: var(--frost); }
 .sx-go { position: absolute; inset: auto 0 0 0; padding: 6px; background: linear-gradient(transparent, rgba(0, 0, 0, 0.8)); color: var(--frost); font-size: 12px; opacity: 0; transition: opacity .15s; }
 .sx-pic:hover .sx-go { opacity: 1; }
-.sx-finds { display: flex; flex-direction: column; gap: var(--sp-3, 12px); }
+.sx-finds { display: flex; flex-direction: column; gap: var(--sp-3, 12px); min-width: 0; }
+.sup-head { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-bottom: 5px; }
+.sup-detail, .sup-fix { max-width: 82ch; line-height: 1.45; }
+.sup-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
 .sx-find + .sx-find { padding-top: var(--sp-3, 12px); border-top: 1px solid var(--hair); }
-@media (max-width: 800px) { .sx-top { flex-direction: column; } .sx-shot { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .sx-top { flex-direction: column; } .sx-tiles { flex-wrap: wrap; } .sx-shot { grid-template-columns: 1fr; } .sx-pic { max-width: 420px; } }
 .fs { flex: none; min-height: 132px; }
 
 /* the inspector's Advanced fold: Compose and Media stay out of the way until asked for */

@@ -513,6 +513,7 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
         <RailBtn icon={<I.Folder />} label="Project" onClick={() => { setSel(null); setInspector(true); }} />
         <RailBtn icon={<I.Assets />} label="Library" onClick={() => setLibraryOpen(true)} />
         <RailBtn icon={<I.Studio />} label="Studio" active />
+        <RailBtn icon={<I.Wand />} label="AI Agent" onClick={() => chooseWorkspace("agent")} why="Give FilmCrafter an instruction, review its plan and approve production milestones." />
         <RailBtn icon={<I.Mountain />} label={isFilm ? "Looks" : "Directions"} onClick={() => setDlOpen(true)} />
         <RailBtn icon={<I.Review />} label="Review" onClick={() => setReviewing(true)} disabled={!plan}
                  badge={shots.filter((s) => needsAttention(takes.get(s.id))).length} />

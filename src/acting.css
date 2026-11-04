@@ -129,7 +129,7 @@
 .pd-body { min-width: 0; }
 .pd-intro { margin: 0 0 14px; max-width: 70ch; }
 .pd-h { margin: 22px 0 8px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-quiet, #8f99a8); }
-.pd-scene { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.pd-scene { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .pd-person { margin-top: 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--carbon); }
 .pd-person h5 { margin: 0 0 8px; font-size: 14px; }
 .pd-person-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
@@ -137,7 +137,7 @@
 .pd-field-head label { font-size: 12.5px; font-weight: 600; margin: 0; }
 .pd-badge { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; padding: 1px 7px; border-radius: 999px; background: var(--graphite); color: var(--text-quiet, #8f99a8); border: 1px solid var(--line); }
 .pd-badge.mine { color: var(--success); border-color: transparent; background: var(--success-wash, rgba(60, 200, 120, 0.12)); }
-.pd-field textarea { width: 100%; resize: vertical; min-height: 54px; }
+.pd-field textarea { width: 100%; resize: vertical; min-height: 92px; max-height: 360px; line-height: 1.5; }
 .pd-field.draft textarea { font-style: italic; }
 .pd-field-actions { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
 .pd-said { margin-top: 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--carbon); }
@@ -156,7 +156,7 @@
 .pd-known dd { display: inline; margin: 0; color: var(--mist); }
 .pd-profile { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
 .pd-pf { display: flex; flex-direction: column; gap: 4px; font-size: 12.5px; font-weight: 600; }
-.pd-pf textarea { resize: vertical; min-height: 54px; font-weight: 400; }
+.pd-pf textarea { resize: vertical; min-height: 92px; max-height: 360px; line-height: 1.5; font-weight: 400; }
 .pd-nudges { margin-top: 12px; }
 .pd-nudge-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .pd-nudge { padding: 6px 11px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--carbon); color: var(--frost); font-size: 12.5px; cursor: pointer; }
@@ -164,9 +164,9 @@
 .pd-nudge.on { background: var(--ignite-wash, rgba(245, 165, 36, 0.14)); border-color: var(--ignite-line, #f5a524); }
 .beat-carry { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12.5px; }
 .beat-auto, .beat-note { font-size: 12px; margin: 6px 0 0; }
-@media (max-width: 820px) { .pd-grid { grid-template-columns: 1fr; } .pd-nav { flex-direction: row; flex-wrap: wrap; position: static; } }
-/* text boxes in the Performance Director are two lines tall, not the sheet's default */
-.pd-field textarea, .pd-pf textarea { height: 62px !important; min-height: 62px !important; }
+@media (max-width: 820px) { .pd-grid { grid-template-columns: 1fr; } .pd-nav { flex-direction: row; flex-wrap: wrap; position: static; } .pd-scene { grid-template-columns: 1fr; } }
+/* Long notes are readable and every box can be dragged taller by its lower-right handle. */
+.pd-field textarea, .pd-pf textarea { height: auto; }
 .beat-sum { margin: 4px 0 0; font-size: 12px; }
 .pd-kind select { font-weight: 400; max-width: 360px; }
 .pd-arcflags { margin-top: 12px; }

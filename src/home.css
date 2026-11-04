@@ -45,7 +45,10 @@
 .hm-dlead { margin: 0 0 6px; font-size: 15px; color: var(--frost); }
 .hm-dlist { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--mist); }
 .hm-dnote { margin-top: 12px; font-size: 12.5px; }
-.hm-gallery { width: min(1100px, calc(100vw - 32px)); max-width: none; max-height: 90vh; overflow-y: auto; }
+.sheet.hm-gallery { width: min(1320px, calc(100vw - 40px)); max-width: none; max-height: 92vh; overflow-y: auto; }
+.sheet.hm-gallery .hm-presets { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 18px; }
+.sheet.hm-gallery .hm-thumb { aspect-ratio: 4 / 3; object-position: center 24%; }
+.sheet.hm-gallery .field { position: sticky; top: -24px; z-index: 3; margin: 0 -2px; padding: 8px 2px 4px; background: var(--carbon); }
 .hm-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; }
 .hm-chip { padding: 5px 12px; border: 1px solid var(--line-strong); border-radius: 6px; background: none; color: var(--mist); font: inherit; font-size: 13px; cursor: pointer; }
 .hm-chip:hover { color: var(--frost); }
