@@ -49,13 +49,14 @@ export type AgentStageState = "not_started" | "ready" | "working" | "needs_appro
 export type AgentStage = { id: string; label: string; state: AgentStageState };
 export type AgentStudioState = {
   version: number; paused: boolean; current: string; updated: number;
-  brief: { story: string; style: string; duration: string; aspect: string; budget_limit: number; checkin_mode: "guided" | "balanced" | "autopilot" | "custom"; checkpoints: string[] };
+  brief: { story: string; style: string; duration: string; aspect: string; budget_limit: number; checkin_mode: "guided" | "balanced" | "autopilot" | "custom"; checkpoints: string[];
+    image_provider?: string; image_model?: string; video_provider?: string; video_model?: string; voice_provider?: string; voice_model?: string; music_provider?: string; sfx_provider?: string };
   stages: AgentStage[]; approvals: { id: string; stage: string; at: number; asset_versions: string[] }[];
   revisions: { id: string; stage: string; note: string; affected: string[]; at: number; state: string }[];
   activity: { id: string; at: number; kind: string; text: string }[];
   existing: { scenes: number; shots: number }; spending: { actual: number; committed: number; limit: number; pricing_known: boolean };
   jobs: { ready: number; working: number; failed: number };
-  analysis?: { status: "proposed" | "accepted"; model: string; logline: string; genre: string; tone: string; characters: { name: string; role: string }[]; scenes: { heading: string; summary: string }[]; visual_style: string; visual_style_reason: string; director_style_id: string; director_style_reason: string; questions: string[] } | null;
+  analysis?: { status: "proposed" | "accepted"; model: string; logline: string; genre: string; tone: string; characters: { name: string; role: string; appearance: string; wardrobe: string; voice: string }[]; locations: { name: string; design: string; lighting: string }[]; props: { name: string; design: string; continuity: string }[]; scenes: { heading: string; summary: string }[]; sound_direction: string; score_prompt: string; sfx_plan: { scene: string; sound: string; purpose: string }[]; motion_graphics: { type: string; text: string; when: string }[]; visual_style: string; visual_style_reason: string; director_style_id: string; director_style_reason: string; questions: string[] } | null;
 };
 export type DirectorStyle = { id: string; name: string; region: string; origin: string; known_for: string; palette: string[]; traits: Record<string, string> };
 export type Concept = {

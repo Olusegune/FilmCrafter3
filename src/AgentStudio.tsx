@@ -11,6 +11,8 @@ const VISUAL_STYLES = [
   ["2d-animation", "2D animation", "Illustrated motion and graphic shapes"], ["storybook", "Storybook", "Painterly, tactile illustration"],
   ["documentary", "Documentary", "Observational and immediate"], ["commercial", "Commercial", "Polished, clear and product-led"],
 ] as const;
+type MediaModel = { label: string; provider: string; model: string; price_usd?: number | null };
+type AudioProvider = { id: string; label: string; kind: "sfx" | "music"; cost_words: string };
 
 export function AgentStudio({ project, onManual, onHome }: { project: LoadedProject; onManual: () => void; onHome: () => void }) {
   const [state, setState] = useState<AgentStudioState | null>(null);
@@ -23,10 +25,13 @@ export function AgentStudio({ project, onManual, onHome }: { project: LoadedProj
   const [styles, setStyles] = useState<DirectorStyle[]>([]);
   const [directorStyle, setDirectorStyle] = useState("");
   const [overnight, setOvernight] = useState<{ ready?: boolean; active?: boolean; needs_confirm?: boolean; usd?: number; label?: string } | null>(null);
+  const [mediaModels, setMediaModels] = useState<{ image: MediaModel[]; video: MediaModel[] }>({ image: [], video: [] });
+  const [audioProviders, setAudioProviders] = useState<AudioProvider[]>([]);
   const load = () => api.agentStudio(project.dir, "state").then((s) => { setState(s); setDraft(s.brief); }).catch((e) => setError(errorText(e)));
   useEffect(() => { void load(); }, [project.dir]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { api.directorStyle(project.dir, "list").then((r) => { setStyles(r.styles ?? []); setDirectorStyle(r.current ?? ""); }).catch(() => {}); }, [project.dir]);
   useEffect(() => { api.overnight<typeof overnight>(project.dir, "status").then(setOvernight).catch(() => {}); }, [project.dir]);
+  useEffect(() => { api.routing<typeof mediaModels>(project.dir, "models").then((r) => { if (Array.isArray(r?.image) && Array.isArray(r?.video)) setMediaModels(r); }).catch(() => {}); api.audioGen<AudioProvider[]>("providers", project.dir).then((r) => { if (Array.isArray(r)) setAudioProviders(r); }).catch(() => {}); }, [project.dir]);
   const run = async (action: Parameters<typeof api.agentStudio>[1], data: Record<string, unknown> = {}) => {
     setBusy(true); setError("");
     try { const s = await api.agentStudio(project.dir, action, data); setState(s); setDraft(s.brief); return s; }
@@ -66,7 +71,7 @@ export function AgentStudio({ project, onManual, onHome }: { project: LoadedProj
         <div className="agent-inline"><button className="btn ghost" onClick={upload}>Attach script</button><span>Nothing is generated or charged yet.</span></div>
       </section>
       <aside className="agent-setup" aria-label="Project preferences">
-        <h2>Project preferences</h2><BriefFields brief={draft} setBrief={setDraft} />
+        <h2>Project preferences</h2><BriefFields brief={draft} setBrief={setDraft} /><ProductionModels brief={draft} setBrief={setDraft} media={mediaModels} audio={audioProviders} />
         <button className="btn hero agent-primary" disabled={busy || draft.story.trim().length < 20} onClick={async () => { const saved = await run("update_brief", draft); if (saved) await run("analyze"); }}>{busy ? "Analysing…" : "Analyse script"}</button>
         <button className="btn ghost agent-secondary" disabled={busy || draft.story.trim().length < 20} onClick={async () => { const saved = await run("update_brief", draft); if (saved) await run("create_plan"); }}>Skip analysis and create plan</button>
         <p className="agent-fine">Analysis makes optional suggestions only. Your script remains the source of truth and nothing is generated or charged.</p>
@@ -74,7 +79,7 @@ export function AgentStudio({ project, onManual, onHome }: { project: LoadedProj
     </main> : !hasPlan && state.analysis?.status === "proposed" ? <main className="agent-analysis">
       <section className="analysis-main"><p className="eyebrow">Script analysis · suggestion</p><h1>{state.analysis.logline}</h1>
         <div className="analysis-tags"><span>{state.analysis.genre}</span><span>{state.analysis.tone}</span><span>{state.analysis.scenes.length} scenes</span><span>{state.analysis.characters.length} characters</span></div>
-        <div className="analysis-facts"><section><h2>Found in your script</h2><ul>{state.analysis.characters.slice(0, 8).map((c) => <li key={c.name}><b>{c.name}</b><span>{c.role}</span></li>)}</ul></section><section><h2>Scene outline</h2><ol>{state.analysis.scenes.slice(0, 10).map((s, i) => <li key={`${i}-${s.heading}`}><b>{s.heading}</b><span>{s.summary}</span></li>)}</ol></section></div>
+        <div className="analysis-facts"><section><h2>Character design</h2><ul>{state.analysis.characters.slice(0, 12).map((c) => <li key={c.name}><b>{c.name}</b><span>{c.role} · {c.appearance}</span><span>Wardrobe: {c.wardrobe}</span><span>Voice: {c.voice}</span></li>)}</ul></section><section><h2>Sets &amp; locations</h2><ul>{state.analysis.locations?.map((l) => <li key={l.name}><b>{l.name}</b><span>{l.design}</span><span>Light: {l.lighting}</span></li>)}</ul></section><section><h2>Scene outline</h2><ol>{state.analysis.scenes.slice(0, 10).map((s, i) => <li key={`${i}-${s.heading}`}><b>{s.heading}</b><span>{s.summary}</span></li>)}</ol></section><section><h2>Score, SFX &amp; graphics</h2><p><b>Score prompt</b><br />{state.analysis.score_prompt}</p><p><b>Sound direction</b><br />{state.analysis.sound_direction}</p><ul>{state.analysis.sfx_plan?.slice(0, 8).map((s, i) => <li key={`${i}-${s.sound}`}><b>{s.sound}</b><span>{s.scene} · {s.purpose}</span></li>)}</ul>{state.analysis.motion_graphics?.map((m, i) => <p key={`${i}-${m.text}`}><b>{m.type}:</b> “{m.text}” <span className="dim">{m.when}</span></p>)}</section></div>
         {!!state.analysis.questions.length && <div className="analysis-questions"><h2>Useful questions</h2>{state.analysis.questions.map((q) => <p key={q}>• {q}</p>)}</div>}
       </section>
       <aside className="analysis-decisions"><p className="eyebrow">You decide</p><h2>Choose a visual direction</h2><p className="dim">The agent recommends <b>{state.analysis.visual_style}</b>: {state.analysis.visual_style_reason}</p>
@@ -82,7 +87,7 @@ export function AgentStudio({ project, onManual, onHome }: { project: LoadedProj
         <h2>Filmmaker craft profile <small>optional</small></h2><p className="dim">A profile influences camera, lenses, lighting, blocking and pace—not your story.</p>
         <select aria-label="Filmmaker craft profile" value={directorStyle || state.analysis.director_style_id} onChange={(e) => setDirectorStyle(e.target.value)}><option value="">No director profile</option>{styles.map((s) => <option key={s.id} value={s.id}>{s.name} · {s.region}</option>)}</select>
         {state.analysis.director_style_reason && <p className="agent-fine">Agent suggestion: {state.analysis.director_style_reason}</p>}
-        <button className="btn hero agent-primary" disabled={busy} onClick={async () => { await api.directorStyle(project.dir, directorStyle ? "set" : "clear", directorStyle ? { id: directorStyle } : {}); const accepted = await run("accept_analysis", { style: draft.style === "auto" ? state.analysis?.visual_style : draft.style, director_style_id: directorStyle }); if (accepted) await run("create_plan"); }}>Use choices &amp; build plan</button>
+        <button className="btn hero agent-primary" disabled={busy} onClick={async () => { await run("update_brief", draft); if (draft.image_provider && draft.image_provider !== "auto" && draft.image_model && draft.image_model !== "auto") await api.routing(project.dir, "set", { pin: { kind: "image", provider: draft.image_provider, model: draft.image_model } }); if (draft.video_provider && draft.video_provider !== "auto" && draft.video_model && draft.video_model !== "auto") await api.routing(project.dir, "set", { pin: { kind: "video", provider: draft.video_provider, model: draft.video_model } }); await api.directorStyle(project.dir, directorStyle ? "set" : "clear", directorStyle ? { id: directorStyle } : {}); const accepted = await run("accept_analysis", { style: draft.style === "auto" ? state.analysis?.visual_style : draft.style, director_style_id: directorStyle }); if (accepted) await run("create_plan"); }}>Use choices &amp; build plan</button>
         <button className="btn ghost agent-secondary" disabled={busy} onClick={() => run("create_plan")}>Ignore suggestions &amp; build plan</button>
       </aside>
     </main> : <main className="agent-workspace">
@@ -126,4 +131,17 @@ function BriefFields({ brief, setBrief, story = false }: { brief: AgentStudioSta
 
 function StyleCards({ value, onChange, compact = false }: { value: string; onChange: (value: string) => void; compact?: boolean }) {
   return <div className={`style-cards ${compact ? "compact" : ""}`}>{VISUAL_STYLES.map(([id, title, hint]) => <button type="button" key={id} className={value === id ? "selected" : ""} aria-pressed={value === id} onClick={() => onChange(id)}><b>{title}</b><span>{hint}</span></button>)}</div>;
+}
+
+function ProductionModels({ brief, setBrief, media, audio }: { brief: AgentStudioState["brief"]; setBrief: (b: AgentStudioState["brief"]) => void; media: { image: MediaModel[]; video: MediaModel[] }; audio: AudioProvider[] }) {
+  const setMedia = (kind: "image" | "video", value: string) => { const row = media[kind].find((m) => `${m.provider}|${m.model}` === value); setBrief({ ...brief, [`${kind}_provider`]: row?.provider ?? "auto", [`${kind}_model`]: row?.model ?? "auto" }); };
+  const val = (kind: "image" | "video") => `${brief[`${kind}_provider` as "image_provider" | "video_provider"] ?? "auto"}|${brief[`${kind}_model` as "image_model" | "video_model"] ?? "auto"}`;
+  const music = audio.filter((p) => p.kind === "music"), sfx = audio.filter((p) => p.kind === "sfx");
+  return <details className="production-models" open><summary>Production models</summary><p className="agent-fine">Choose each department. “Automatic” follows Plan &amp; budget and can be changed later.</p>
+    <label>Character, set &amp; keyframe images<select value={val("image")} onChange={(e) => setMedia("image", e.target.value)}><option value="auto|auto">Automatic image model</option>{media.image.map((m) => <option key={`${m.provider}|${m.model}`} value={`${m.provider}|${m.model}`}>{m.label} · {m.provider}</option>)}</select></label>
+    <label>Shot video<select value={val("video")} onChange={(e) => setMedia("video", e.target.value)}><option value="auto|auto">Automatic video model</option>{media.video.map((m) => <option key={`${m.provider}|${m.model}`} value={`${m.provider}|${m.model}`}>{m.label} · {m.provider}</option>)}</select></label>
+    <label>Voices<select value={brief.voice_provider ?? "elevenlabs"} onChange={(e) => setBrief({ ...brief, voice_provider: e.target.value })}><option value="elevenlabs">ElevenLabs voice design</option><option value="own">Use recorded/imported voices</option><option value="none">No dialogue generation</option></select></label>
+    <label>Score / music<select value={brief.music_provider ?? "auto"} onChange={(e) => setBrief({ ...brief, music_provider: e.target.value })}><option value="auto">Automatic music model</option><option value="own">Use my music</option><option value="none">No score</option>{music.map((p) => <option key={p.id} value={p.id}>{p.label} · {p.cost_words}</option>)}</select></label>
+    <label>SFX &amp; ambience<select value={brief.sfx_provider ?? "auto"} onChange={(e) => setBrief({ ...brief, sfx_provider: e.target.value })}><option value="auto">Automatic SFX model</option><option value="library">Use my sound library first</option><option value="none">No generated SFX</option>{sfx.map((p) => <option key={p.id} value={p.id}>{p.label} · {p.cost_words}</option>)}</select></label>
+  </details>;
 }

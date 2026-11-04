@@ -52,3 +52,16 @@ def test_pause_is_recoverable_and_does_not_touch_running_jobs(tmp_path):
     out = A.pause(d, True)
     assert out["paused"] and out["spending"]["committed"] == 1.25
     assert json.load(open(os.path.join(d, "jobs.json"))) == jobs
+
+
+def test_accepted_analysis_writes_resumable_whole_film_manifest(tmp_path):
+    d = project(tmp_path)
+    A.update_brief(d, {"story": "A child follows a paper bird through a sleeping city.", "image_provider": "fal", "image_model": "image-x", "video_provider": "kie", "video_model": "video-y", "music_provider": "kie_suno", "sfx_provider": "elevenlabs_sfx"})
+    w = A._load(d)
+    w["analysis"] = {"status": "proposed", "logline": "Follow the bird.", "genre": "fantasy", "tone": "wonder", "characters": [{"name": "Mia", "role": "lead", "appearance": "small silhouette", "wardrobe": "yellow coat", "voice": "quiet and curious"}], "locations": [{"name": "City", "design": "sleeping streets", "lighting": "moonlight"}], "props": [{"name": "Bird", "design": "folded paper", "continuity": "keep one torn wing"}], "scenes": [], "sound_direction": "hushed city", "score_prompt": "delicate felt piano", "sfx_plan": [], "motion_graphics": [], "visual_style": "cinematic", "director_style_id": ""}
+    A._save(d, w)
+    A.accept_analysis(d, {"style": "cinematic", "director_style_id": ""})
+    manifest = json.load(open(os.path.join(d, "agent-production.json"), encoding="utf-8"))
+    assert manifest["story_unchanged"] is True
+    assert manifest["models"]["image_model"] == "image-x" and manifest["models"]["music_provider"] == "kie_suno"
+    assert manifest["creative"]["characters"][0]["wardrobe"] == "yellow coat"

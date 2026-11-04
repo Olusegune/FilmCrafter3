@@ -16,12 +16,15 @@ import uuid
 FILE = "agent-studio.json"
 STAGES = [
     ("story", "Story & shot plan"),
+    ("design", "Characters, sets & world"),
     ("direction", "Cast & visual direction"),
     ("storyboard", "Storyboard & keyframes"),
     ("first_scene", "First scene preview"),
     ("scenes", "Remaining scenes"),
-    ("audio", "Voices & sound"),
+    ("audio", "Voices, score & sound"),
+    ("motion", "Titles & motion graphics"),
     ("preview", "Preview cut"),
+    ("review", "Continuity & quality review"),
     ("export", "Final review & export"),
 ]
 MODES = {"guided", "balanced", "autopilot", "custom"}
@@ -33,10 +36,15 @@ CHECKPOINTS = {
     # ambiguous; it does not add routine creative check-ins of its own.
     "autopilot": [],
 }
-ANALYSIS_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["logline", "genre", "tone", "characters", "scenes", "visual_style", "visual_style_reason", "director_style_id", "director_style_reason", "questions"], "properties": {
+ANALYSIS_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["logline", "genre", "tone", "characters", "locations", "props", "scenes", "sound_direction", "score_prompt", "sfx_plan", "motion_graphics", "visual_style", "visual_style_reason", "director_style_id", "director_style_reason", "questions"], "properties": {
     "logline": {"type": "string"}, "genre": {"type": "string"}, "tone": {"type": "string"},
-    "characters": {"type": "array", "maxItems": 40, "items": {"type": "object", "additionalProperties": False, "required": ["name", "role"], "properties": {"name": {"type": "string"}, "role": {"type": "string"}}}},
+    "characters": {"type": "array", "maxItems": 40, "items": {"type": "object", "additionalProperties": False, "required": ["name", "role", "appearance", "wardrobe", "voice"], "properties": {"name": {"type": "string"}, "role": {"type": "string"}, "appearance": {"type": "string"}, "wardrobe": {"type": "string"}, "voice": {"type": "string"}}}},
+    "locations": {"type": "array", "maxItems": 40, "items": {"type": "object", "additionalProperties": False, "required": ["name", "design", "lighting"], "properties": {"name": {"type": "string"}, "design": {"type": "string"}, "lighting": {"type": "string"}}}},
+    "props": {"type": "array", "maxItems": 40, "items": {"type": "object", "additionalProperties": False, "required": ["name", "design", "continuity"], "properties": {"name": {"type": "string"}, "design": {"type": "string"}, "continuity": {"type": "string"}}}},
     "scenes": {"type": "array", "maxItems": 100, "items": {"type": "object", "additionalProperties": False, "required": ["heading", "summary"], "properties": {"heading": {"type": "string"}, "summary": {"type": "string"}}}},
+    "sound_direction": {"type": "string"}, "score_prompt": {"type": "string"},
+    "sfx_plan": {"type": "array", "maxItems": 40, "items": {"type": "object", "additionalProperties": False, "required": ["scene", "sound", "purpose"], "properties": {"scene": {"type": "string"}, "sound": {"type": "string"}, "purpose": {"type": "string"}}}},
+    "motion_graphics": {"type": "array", "maxItems": 20, "items": {"type": "object", "additionalProperties": False, "required": ["type", "text", "when"], "properties": {"type": {"type": "string"}, "text": {"type": "string"}, "when": {"type": "string"}}}},
     "visual_style": {"type": "string", "enum": ["cinematic", "photoreal", "stylized-3d", "2d-animation", "storybook", "documentary", "commercial", "experimental"]},
     "visual_style_reason": {"type": "string"}, "director_style_id": {"type": "string"}, "director_style_reason": {"type": "string"},
     "questions": {"type": "array", "maxItems": 6, "items": {"type": "string"}}
@@ -93,6 +101,8 @@ def _base(d):
             "budget_limit": 30.0,
             "checkin_mode": "balanced",
             "checkpoints": CHECKPOINTS["balanced"],
+            "image_provider": "auto", "image_model": "auto", "video_provider": "auto", "video_model": "auto",
+            "voice_provider": "elevenlabs", "voice_model": "auto", "music_provider": "auto", "sfx_provider": "auto",
         },
         "current": "story",
         "stages": [{"id": sid, "label": label, "state": "not_started"} for sid, label in STAGES],
@@ -161,6 +171,8 @@ def update_brief(d, data):
         known = {x[0] for x in STAGES}
         if not isinstance(data["checkpoints"], list) or any(x not in known for x in data["checkpoints"]): raise SystemExit("Unknown checkpoint.")
         b["checkpoints"] = list(dict.fromkeys(data["checkpoints"]))
+    for key in ("image_provider", "image_model", "video_provider", "video_model", "voice_provider", "voice_model", "music_provider", "sfx_provider"):
+        if key in data: b[key] = _clean(data[key], 160) or "auto"
     w["brief"] = b
     _activity(w, "brief", "Creative brief updated.")
     return _save(d, w)
@@ -184,7 +196,7 @@ def analyze(d):
     from .filmmakers import LIBRARY
     c = llm.client(); model = llm.local_model(c) or resolve_model(c, "gpt-5")
     choices = [{"id": x["id"], "name": x["name"], "known_for": x.get("known_for", "")} for x in LIBRARY]
-    prompt = "Analyse this script as a film producer. Suggestions are optional and must preserve the writer's story. Pick a visual_style enum and optionally one director_style_id from the supplied library; use an empty id if none genuinely fits. Do not rewrite the script.\n\nDIRECTOR LIBRARY:\n" + json.dumps(choices, ensure_ascii=False) + "\n\nSCRIPT:\n" + story[:60000]
+    prompt = "Analyse this script as a full film production team. Suggestions are optional and must preserve the writer's story. Design production-ready characters (appearance, wardrobe and voice direction), locations/sets, continuity props, a sound direction, one provider-neutral score prompt, an SFX/ambience plan, and useful title/motion-graphics moments. Pick a visual_style enum and optionally one director_style_id from the supplied library; use an empty id if none genuinely fits. Do not rewrite the script or invent plot events.\n\nDIRECTOR LIBRARY:\n" + json.dumps(choices, ensure_ascii=False) + "\n\nSCRIPT:\n" + story[:60000]
     r = c.responses.create(model=model, input=[{"role": "system", "content": "You are FilmCrafter's careful development producer. Separate facts from suggestions."}, {"role": "user", "content": prompt}], text={"format": {"type": "json_schema", "name": "script_analysis", "schema": ANALYSIS_SCHEMA, "strict": True}})
     out = json.loads(r.output_text)
     valid = {x["id"] for x in LIBRARY}
@@ -200,6 +212,10 @@ def accept_analysis(d, data):
     style = _clean(data.get("style") or a.get("visual_style"), 120)
     if style: w["brief"]["style"] = style
     a["status"] = "accepted"; a["accepted"] = int(time.time()); a["director_style_id"] = _clean(data.get("director_style_id", a.get("director_style_id", "")), 100)
+    manifest = {"schema": 1, "created": int(time.time()), "source": "approved-script-analysis", "story_unchanged": True,
+                "models": {k: w["brief"].get(k, "auto") for k in ("image_provider", "image_model", "video_provider", "video_model", "voice_provider", "voice_model", "music_provider", "sfx_provider")},
+                "creative": {k: a.get(k) for k in ("logline", "genre", "tone", "characters", "locations", "props", "scenes", "sound_direction", "score_prompt", "sfx_plan", "motion_graphics", "visual_style", "director_style_id")}}
+    _write(os.path.join(d, "agent-production.json"), manifest)
     _activity(w, "analysis_accepted", "Script analysis accepted. The original story remains the source of truth.")
     return _save(d, w)
 

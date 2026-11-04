@@ -18,6 +18,12 @@ In Manual Studio, choose **Director style** to browse the worldwide filmmaker li
 2. Paste a story or idea, choose the film length, frame and budget, then select Guide me, Collaborate or Autopilot.
 3. Choose **Analyse script**. The selected AI brain lists story facts and optional visual/director-profile suggestions. Accept, change or ignore them; the script remains the source of truth. You can also skip analysis.
 4. Build the production plan. Planning is free; generated media is not started here.
+
+## Whole-film departments and model choice
+
+The analysis package covers characters (appearance, wardrobe and voice direction), locations/sets and lighting, continuity props, scenes, a provider-neutral score prompt, sound direction, SFX/ambience cues, and useful titles or motion graphics. Before analysis, **Production models** lets the creator choose independent models/providers for reference and keyframe images, shot video, voices, music/score and SFX. Automatic follows the project's Plan & budget router. Accepted image/video choices are pinned into that router; every department choice and approved design is saved in `agent-production.json` so the run can resume after restart.
+
+FilmCrafter's existing department engines remain responsible for execution: the Bible and reference tools make cast/world assets, Voice Design handles casting and dialogue, Sound handles score/SFX/ambience and mix, Motion Graphics creates titles and cards, Studio makes keyframes/video and the editor/review/export tools finish the film. Agent Studio coordinates the same project rather than creating incompatible parallel assets.
 4. Review the current milestone. **Approve & continue** records an explicit approval tied to the asset versions shown. Silence never approves anything.
 5. Use **Request changes** for a focused revision. The request is recorded without replacing approved work. Paid revision execution still shows affected scope and price in FilmCrafter's existing confirmation UI.
 6. Choose **Manual Studio** whenever an individual shot, take, reference, sound or edit needs precise control.
