@@ -120,7 +120,19 @@ def _path(d):
 
 def _load(d):
     value = _read(_path(d))
-    return value if isinstance(value, dict) else _base(d)
+    if not isinstance(value, dict):
+        return _base(d)
+    # Keep older projects usable as the production pipeline grows.
+    old = {s.get("id"): s for s in value.get("stages", []) if isinstance(s, dict)}
+    value["stages"] = [{"id": sid, "label": label,
+                        "state": old.get(sid, {}).get("state", "not_started")}
+                       for sid, label in STAGES]
+    value.setdefault("revisions", [])
+    value.setdefault("approvals", [])
+    value.setdefault("activity", [])
+    if not _stage(value, value.get("current")):
+        value["current"] = next((s["id"] for s in value["stages"] if s["state"] != "complete"), "export")
+    return value
 
 
 def _activity(w, kind, text):
@@ -138,6 +150,105 @@ def _stage(w, sid):
     return next((s for s in w["stages"] if s["id"] == sid), None)
 
 
+def _stage_index(sid):
+    return next((i for i, (stage, _) in enumerate(STAGES) if stage == sid), 0)
+
+
+def _inbox(d, w, jobs=None):
+    jobs = jobs if jobs is not None else _jobs(d)
+    items = []
+    for s in w.get("stages", []):
+        if s.get("state") == "needs_approval":
+            items.append({"id": f"approval:{s['id']}", "kind": "approval", "stage": s["id"],
+                          "title": s["label"], "detail": "Creative approval required before production continues.",
+                          "priority": 1, "action": "review"})
+    for job in jobs:
+        if job.get("state") == "failed":
+            jid = _clean(job.get("id") or job.get("job_id") or "job", 80)
+            items.append({"id": f"job:{jid}", "kind": "failure", "stage": "", "title": "Generation needs attention",
+                          "detail": _clean(job.get("error") or job.get("message") or jid, 240),
+                          "priority": 0, "action": "manual"})
+        elif job.get("state") == "uncertain":
+            jid = _clean(job.get("id") or job.get("job_id") or "job", 80)
+            items.append({"id": f"job:{jid}", "kind": "uncertain", "stage": "", "title": "Provider result is uncertain",
+                          "detail": "Check the provider before retrying so the same work is not purchased twice.",
+                          "priority": 0, "action": "manual"})
+    for rev in w.get("revisions", []):
+        if rev.get("state") == "proposed":
+            items.append({"id": f"revision:{rev.get('id')}", "kind": "revision", "stage": rev.get("stage", ""),
+                          "title": "Revision ready to review", "detail": _clean(rev.get("note"), 240),
+                          "priority": 2, "action": "review"})
+    return sorted(items, key=lambda x: (x["priority"], _stage_index(x.get("stage"))))[:100]
+
+
+def _impact(d, w, data):
+    sid = _clean(data.get("stage") or w.get("current"), 40)
+    note = _clean(data.get("note"), 2000)
+    if not _stage(w, sid) or not note:
+        raise SystemExit("Say what should change.")
+    manifest = _read(os.path.join(d, "agent-production.json"), {}) or {}
+    creative = manifest.get("creative", {}) if isinstance(manifest, dict) else {}
+    names = [str(x.get("name", "")) for x in creative.get("characters", []) if isinstance(x, dict)]
+    places = [str(x.get("name", "")) for x in creative.get("locations", []) if isinstance(x, dict)]
+    low = note.casefold()
+    matched_names = [x for x in names if x and x.casefold() in low]
+    matched_places = [x for x in places if x and x.casefold() in low]
+    matched = matched_names + matched_places
+    global_words = ("all shots", "every shot", "whole film", "entire film", "throughout")
+    global_change = any(x in low for x in global_words)
+    shots, scenes = [], []
+    plan = _plan(d)
+    explicit_ids = set()
+    for scene in plan.get("scenes", []):
+        heading_blob = json.dumps({"heading": scene.get("heading"), "notes": scene.get("notes")}, ensure_ascii=False).casefold()
+        scene_hit = global_change or any(x.casefold() in heading_blob for x in matched_places)
+        for shot in scene.get("shots", []):
+            shot_id = _clean(shot.get("id"), 80)
+            if shot_id and shot_id.casefold() in low:
+                explicit_ids.add(shot_id)
+            blob = json.dumps(shot, ensure_ascii=False).casefold()
+            if shot_id and (scene_hit or shot_id in explicit_ids or any(x.casefold() in blob for x in matched_names)):
+                shots.append(shot_id)
+                number = scene.get("number")
+                if number not in scenes: scenes.append(number)
+    shots = list(dict.fromkeys(shots))[:200]
+    downstream = [x[0] for x in STAGES[_stage_index(sid) + 1:]]
+    approved = {asset for a in w.get("approvals", []) for asset in a.get("asset_versions", [])}
+    ambiguous = not global_change and not matched and not explicit_ids
+    return {"stage": sid, "note": note, "affected_shots": shots, "affected_scenes": scenes[:100],
+            "matched_entities": matched[:40], "downstream_stages": downstream,
+            "preserved_approved_assets": len(approved - set(shots)),
+            "regeneration_count": len(shots), "scope": "project" if global_change else ("targeted" if shots else "stage"),
+            "needs_clarification": ambiguous,
+            "warning": ("No exact shot, character or location was identified. The request will be recorded, but no generation should run until its scope is chosen."
+                        if ambiguous else "Only matched work is marked for revision; unrelated approved assets stay locked.")}
+
+
+def _orchestration(d, w, jobs=None):
+    jobs = jobs if jobs is not None else _jobs(d)
+    evidence = {
+        "story": bool(_plan(d) or len(w.get("brief", {}).get("story", "")) >= 20),
+        "design": os.path.exists(os.path.join(d, "agent-production.json")),
+        "storyboard": bool(_read(os.path.join(d, "keyframes.json"), {})),
+        "motion": bool((_read(os.path.join(d, "overlays.json"), {}) or {}).get("overlays")),
+        "export": bool([x for x in os.listdir(d) if x.lower().endswith(".mp4")]) if os.path.isdir(d) else False,
+    }
+    active = sum(1 for j in jobs if j.get("state") in {"queued", "submitting", "submitted", "uncertain"})
+    failed = sum(1 for j in jobs if j.get("state") == "failed")
+    current = _stage(w, w.get("current")) or w["stages"][0]
+    blockers = []
+    if w.get("paused"): blockers.append("Production is paused")
+    if failed: blockers.append(f"{failed} failed generation job{'s' if failed != 1 else ''}")
+    if current.get("state") == "needs_approval": blockers.append(f"Approve {current['label']}")
+    status = "paused" if w.get("paused") else "waiting" if blockers else "running" if active else "ready"
+    if blockers: next_action = blockers[0]
+    elif active: next_action = "Wait for running generation jobs"
+    else: next_action = f"Continue {current['label']}"
+    return {"status": status, "next_action": next_action, "blockers": blockers, "active_jobs": active,
+            "evidence": evidence, "safe_to_continue": not blockers and not active,
+            "message": "Project state reconciled from durable files. No provider work was submitted."}
+
+
 def state(d, w=None):
     w = w or _load(d)
     jobs = _jobs(d)
@@ -147,7 +258,8 @@ def state(d, w=None):
     ready = sum(1 for j in jobs if j.get("state") == "ready")
     return {**w, "spending": {"actual": round(actual, 4), "committed": round(committed, 4),
                                "limit": float(w["brief"].get("budget_limit", 0)), "pricing_known": True},
-            "jobs": {"ready": ready, "working": sum(1 for j in jobs if j.get("state") in {"queued", "submitting", "submitted"}), "failed": failed}}
+            "jobs": {"ready": ready, "working": sum(1 for j in jobs if j.get("state") in {"queued", "submitting", "submitted"}), "failed": failed},
+            "inbox": _inbox(d, w, jobs), "orchestration": _orchestration(d, w, jobs)}
 
 
 def update_brief(d, data):
@@ -236,8 +348,12 @@ def approve(d, data):
 def request_changes(d, data):
     w = _load(d); sid = _clean(data.get("stage"), 40); note = _clean(data.get("note"), 2000); s = _stage(w, sid)
     if not s or not note: raise SystemExit("Say what should change.")
-    affected = list(dict.fromkeys(_clean(x, 80) for x in (data.get("affected") or [])))[:200]
-    w["revisions"].append({"id": uuid.uuid4().hex, "stage": sid, "note": note, "affected": affected, "at": int(time.time()), "state": "proposed"})
+    preview = _impact(d, w, data)
+    supplied = data.get("affected")
+    affected = (list(dict.fromkeys(_clean(x, 80) for x in supplied))[:200]
+                if isinstance(supplied, list) and supplied else preview["affected_shots"])
+    w["revisions"].append({"id": uuid.uuid4().hex, "stage": sid, "note": note, "affected": affected,
+                           "impact": {**preview, "affected_shots": affected}, "at": int(time.time()), "state": "proposed"})
     s["state"] = "ready"
     _activity(w, "revision", f"Changes requested for {s['label']}. Approved assets were kept.")
     return _save(d, w)
@@ -257,6 +373,13 @@ def run(action, d, data):
     if action == "accept_analysis": return accept_analysis(d, data)
     if action == "approve": return approve(d, data)
     if action == "request_changes": return request_changes(d, data)
+    if action == "impact": return _impact(d, _load(d), data)
+    if action == "inbox": return _inbox(d, _load(d))
+    if action == "orchestrate":
+        w = _load(d); result = _orchestration(d, w)
+        _activity(w, "orchestrated", result["message"])
+        saved = _save(d, w); saved["orchestration"] = result
+        return saved
     if action == "pause": return pause(d, True)
     if action == "resume": return pause(d, False)
     raise SystemExit("Unknown Agent Studio action.")
@@ -265,7 +388,7 @@ def run(action, d, data):
 def main(argv):
     try:
         ap = argparse.ArgumentParser()
-        ap.add_argument("action", choices=["state", "update_brief", "analyze", "accept_analysis", "create_plan", "approve", "request_changes", "pause", "resume"])
+        ap.add_argument("action", choices=["state", "update_brief", "analyze", "accept_analysis", "create_plan", "approve", "request_changes", "impact", "inbox", "orchestrate", "pause", "resume"])
         ap.add_argument("project")
         ap.add_argument("--data", default="{}")
         a = ap.parse_args(argv)

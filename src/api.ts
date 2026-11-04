@@ -47,15 +47,19 @@ export type LoadedProject = {
 };
 export type AgentStageState = "not_started" | "ready" | "working" | "needs_approval" | "complete" | "failed" | "paused";
 export type AgentStage = { id: string; label: string; state: AgentStageState };
+export type AgentInboxItem = { id: string; kind: "approval" | "failure" | "uncertain" | "revision"; stage: string; title: string; detail: string; priority: number; action: "review" | "manual" };
+export type AgentImpact = { stage: string; note: string; affected_shots: string[]; affected_scenes: (number | string)[]; matched_entities: string[]; downstream_stages: string[]; preserved_approved_assets: number; regeneration_count: number; scope: "project" | "targeted" | "stage"; needs_clarification: boolean; warning: string };
 export type AgentStudioState = {
   version: number; paused: boolean; current: string; updated: number;
   brief: { story: string; style: string; duration: string; aspect: string; budget_limit: number; checkin_mode: "guided" | "balanced" | "autopilot" | "custom"; checkpoints: string[];
     image_provider?: string; image_model?: string; video_provider?: string; video_model?: string; voice_provider?: string; voice_model?: string; music_provider?: string; sfx_provider?: string };
   stages: AgentStage[]; approvals: { id: string; stage: string; at: number; asset_versions: string[] }[];
-  revisions: { id: string; stage: string; note: string; affected: string[]; at: number; state: string }[];
+  revisions: { id: string; stage: string; note: string; affected: string[]; impact?: AgentImpact; at: number; state: string }[];
   activity: { id: string; at: number; kind: string; text: string }[];
   existing: { scenes: number; shots: number }; spending: { actual: number; committed: number; limit: number; pricing_known: boolean };
   jobs: { ready: number; working: number; failed: number };
+  inbox: AgentInboxItem[];
+  orchestration: { status: "paused" | "waiting" | "running" | "ready"; next_action: string; blockers: string[]; active_jobs: number; evidence: Record<string, boolean>; safe_to_continue: boolean; message: string };
   analysis?: { status: "proposed" | "accepted"; model: string; logline: string; genre: string; tone: string; characters: { name: string; role: string; appearance: string; wardrobe: string; voice: string }[]; locations: { name: string; design: string; lighting: string }[]; props: { name: string; design: string; continuity: string }[]; scenes: { heading: string; summary: string }[]; sound_direction: string; score_prompt: string; sfx_plan: { scene: string; sound: string; purpose: string }[]; motion_graphics: { type: string; text: string; when: string }[]; visual_style: string; visual_style_reason: string; director_style_id: string; director_style_reason: string; questions: string[] } | null;
 };
 export type DirectorStyle = { id: string; name: string; region: string; origin: string; known_for: string; palette: string[]; traits: Record<string, string> };
@@ -210,8 +214,8 @@ function noteChange<T>(command: string, action: string, p: Promise<T>): Promise<
 
 export const api = {
   directorStyle: <T = { styles: DirectorStyle[]; current: string | null }>(dir: string, action: "list" | "set" | "clear", data: Record<string, unknown> = {}) => invoke<T>("director_style", { dir, action, data }),
-  agentStudio: (dir: string, action: "state" | "update_brief" | "analyze" | "accept_analysis" | "create_plan" | "approve" | "request_changes" | "pause" | "resume", data: Record<string, unknown> = {}) =>
-    invoke<AgentStudioState>("agent_studio", { dir, action, data }),
+  agentStudio: <T = AgentStudioState>(dir: string, action: "state" | "update_brief" | "analyze" | "accept_analysis" | "create_plan" | "approve" | "request_changes" | "impact" | "inbox" | "orchestrate" | "pause" | "resume", data: Record<string, unknown> = {}) =>
+    invoke<T>("agent_studio", { dir, action, data }),
   directorChat: <T = DirectorTurn>(dir: string, action: "turn" | "proposals" | "apply" | "reject", data: Record<string, unknown> = {}) =>
     invoke<T>("director_chat", { dir, action, data }),
   media: <T = unknown>(dir: string, action: "import" | "fill" | "stills" | "motion" | "transition" | "plan", data: Record<string, unknown> = {}) =>

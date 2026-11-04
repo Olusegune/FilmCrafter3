@@ -25,7 +25,7 @@ The analysis package covers characters (appearance, wardrobe and voice direction
 
 FilmCrafter's existing department engines remain responsible for execution: the Bible and reference tools make cast/world assets, Voice Design handles casting and dialogue, Sound handles score/SFX/ambience and mix, Motion Graphics creates titles and cards, Studio makes keyframes/video and the editor/review/export tools finish the film. Agent Studio coordinates the same project rather than creating incompatible parallel assets.
 4. Review the current milestone. **Approve & continue** records an explicit approval tied to the asset versions shown. Silence never approves anything.
-5. Use **Request changes** for a focused revision. The request is recorded without replacing approved work. Paid revision execution still shows affected scope and price in FilmCrafter's existing confirmation UI.
+5. Use **Request changes** for a focused revision. FilmCrafter first previews the matched scenes and shots, downstream stages and how many approved assets remain locked. An ambiguous request asks for a clearer character, location or shot instead of guessing. Confirming records the request; it still does not generate or charge anything. Paid revision execution shows its price in FilmCrafter's existing confirmation UI.
 6. Choose **Manual Studio** whenever an individual shot, take, reference, sound or edit needs precise control.
 
 ## Ask the director
@@ -37,10 +37,13 @@ Changes are suggestions by default. Review each one and choose **Apply** or **Re
 ## Safety and recovery
 
 - Workflow state is written atomically to `agent-studio.json` inside the project and reloads after a restart.
+- **Recheck project** reconciles the persisted workflow with real project files and jobs. It reports the safe next action but never fabricates completion or submits a provider job.
+- **Production inbox** gathers milestone approvals, failed or uncertain jobs, and pending revision requests in one place. Uncertain provider jobs must be checked before retrying to avoid a duplicate purchase.
 - Pause prevents Agent Studio from advancing upcoming work. Provider jobs already submitted can still finish or incur their confirmed charge, and the interface says so.
 - Actual completed costs, committed active-job estimates and the user's limit are separate values.
 - Agent Studio has no provider-submission command. Paid jobs continue to require the existing short-lived, single-use spend token bound to the displayed batch.
 - Approvals and revision requests are append-only records. A revision does not erase earlier approvals, takes or assets.
+- Revision impact is derived from the approved character/location manifest and shot plan. Only exact matches are proposed for regeneration; an unscoped request remains blocked from confirmation.
 - The chat has a fixed tool allow-list with strict argument schemas. It has no path, shell, delete or export tool. Its activity is recorded in `agent/log.jsonl`; suggestions and their resolution are recorded in `agent/proposals.json`.
 
 ## Autopilot and limits

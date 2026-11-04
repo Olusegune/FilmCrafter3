@@ -13,7 +13,9 @@ const stages = ["story", "direction", "storyboard", "first_scene", "scenes", "au
 const state = (planned = false): AgentStudioState => ({ version: 1, paused: false, current: "story", updated: 1,
   brief: { story: planned ? "A child follows a paper bird through a sleeping city." : "", style: "Storybook", duration: "3–4 minutes", aspect: "16:9", budget_limit: 30, checkin_mode: "balanced", checkpoints: ["story"] },
   stages: stages.map((s, i) => ({ ...s, state: planned && i === 0 ? "needs_approval" : "not_started" })), approvals: [], revisions: [],
-  activity: [], existing: { scenes: 1, shots: 3 }, spending: { actual: 1, committed: 2, limit: 30, pricing_known: true }, jobs: { ready: 0, working: 1, failed: 0 } });
+  activity: [], existing: { scenes: 1, shots: 3 }, spending: { actual: 1, committed: 2, limit: 30, pricing_known: true }, jobs: { ready: 0, working: 1, failed: 0 },
+  inbox: planned ? [{ id: "approval:story", kind: "approval", stage: "story", title: "Story & shot plan", detail: "Creative approval required before production continues.", priority: 1, action: "review" }] : [],
+  orchestration: { status: planned ? "waiting" : "ready", next_action: planned ? "Approve Story & shot plan" : "Continue Story & shot plan", blockers: [], active_jobs: 0, evidence: {}, safe_to_continue: !planned, message: "Reconciled" } });
 const project = { dir: "p", project: { title: "Bird", state: "ready", song: "" }, song_path: null, song_map: null, production: null, directed: null, jobs: [] } as LoadedProject;
 afterEach(() => { cleanup(); invoke.mockReset(); });
 
@@ -46,6 +48,19 @@ describe("Agent Studio", () => {
     expect(manual).toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: /Pause/ }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("agent_studio", { dir: "p", action: "pause", data: {} }));
+  });
+
+  it("previews a focused revision impact before recording it", async () => {
+    const planned = state(true);
+    invoke.mockImplementation((cmd: string, args: { action?: string }) => cmd === "agent_studio" && args.action === "impact"
+      ? Promise.resolve({ stage: "story", note: "Warm Chloe's shot", affected_shots: ["S01-01"], affected_scenes: [1], matched_entities: ["Chloe"], downstream_stages: ["direction"], preserved_approved_assets: 2, regeneration_count: 1, scope: "targeted", needs_clarification: false, warning: "Only matched work is marked for revision; unrelated approved assets stay locked." })
+      : cmd === "agent_studio" ? Promise.resolve(planned) : Promise.resolve({ current: null, styles: [] }));
+    render(<AgentStudio project={project} onHome={() => {}} onManual={() => {}} />);
+    fireEvent.change(await screen.findByLabelText("Ask for a focused change"), { target: { value: "Warm Chloe's shot" } });
+    fireEvent.click(screen.getByRole("button", { name: "Preview revision impact" }));
+    expect(await screen.findByText("1 shot affected")).toBeInTheDocument();
+    expect(screen.getByText("2 assets")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Record focused revision" })).toBeEnabled();
   });
 
   it("shows a complete production package as suggestions and lets every department choose its model", async () => {

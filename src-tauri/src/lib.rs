@@ -1951,7 +1951,7 @@ async fn refgen(app: AppHandle, dir: String, action: String, data: Value) -> Res
 /// but it never queues provider work; paid execution remains behind confirm_spend.
 #[tauri::command]
 async fn agent_studio(app: AppHandle, dir: String, action: String, data: Value) -> Result<Value, String> {
-    const ACTIONS: [&str; 9] = ["state", "update_brief", "analyze", "accept_analysis", "create_plan", "approve", "request_changes", "pause", "resume"];
+    const ACTIONS: [&str; 12] = ["state", "update_brief", "analyze", "accept_analysis", "create_plan", "approve", "request_changes", "impact", "inbox", "orchestrate", "pause", "resume"];
     if !ACTIONS.contains(&action.as_str()) {
         return Err("Unknown Agent Studio action.".into());
     }

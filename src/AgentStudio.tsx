@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { api, errorText, type AgentStudioState, type DirectorStyle, type LoadedProject } from "./api";
+import { api, errorText, type AgentImpact, type AgentStudioState, type DirectorStyle, type LoadedProject } from "./api";
 import { DirectorChat } from "./DirectorChat";
 import "./agent-studio.css";
 
@@ -19,6 +19,7 @@ export function AgentStudio({ project, onManual, onHome }: { project: LoadedProj
   const [draft, setDraft] = useState<AgentStudioState["brief"] | null>(null);
   const [editing, setEditing] = useState(false);
   const [revision, setRevision] = useState("");
+  const [impact, setImpact] = useState<AgentImpact | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [chat, setChat] = useState(false);
@@ -47,6 +48,16 @@ export function AgentStudio({ project, onManual, onHome }: { project: LoadedProj
   if (!state || !draft) return <div className="agent-loading" role="status">Opening Agent Studio…</div>;
 
   const saveBrief = async () => { if (await run("update_brief", draft)) setEditing(false); };
+  const previewRevision = async () => {
+    setBusy(true); setError("");
+    try { setImpact(await api.agentStudio<AgentImpact>(project.dir, "impact", { stage: current?.id, note: revision })); }
+    catch (e) { setError(errorText(e)); }
+    finally { setBusy(false); }
+  };
+  const recordRevision = async () => {
+    if (!impact) return;
+    if (await run("request_changes", { stage: impact.stage, note: revision, affected: impact.affected_shots })) { setRevision(""); setImpact(null); }
+  };
   const upload = async () => {
     const f = await openDialog({ multiple: false, filters: [{ name: "Story or script", extensions: ["txt", "md", "pdf", "docx", "fountain"] }] });
     if (typeof f === "string") setError("The script is attached to the project in Manual Studio. Paste its story text here so Agent Studio can plan from it.");
@@ -99,16 +110,19 @@ export function AgentStudio({ project, onManual, onHome }: { project: LoadedProj
         <div className="agent-budget"><h3>Budget</h3><div><b>${state.spending.limit.toFixed(2)} limit</b><span>${state.spending.actual.toFixed(2)} spent</span></div><div><span>${state.spending.committed.toFixed(2)} committed</span><span>{state.jobs.working} running</span></div></div>
       </aside>
       <section className="agent-current">
+        <div className={`agent-orchestration ${state.orchestration.status}`}><div><span className="agent-live-dot" /><b>{state.orchestration.status === "ready" ? "Ready to continue" : state.orchestration.status === "running" ? "Production is running" : state.orchestration.status === "paused" ? "Production paused" : "Waiting for you"}</b><small>{state.orchestration.next_action}</small></div><button className="btn ghost" disabled={busy} onClick={() => run("orchestrate")}>Recheck project</button></div>
         <p className="eyebrow">Current check-in</p><h1>{current?.state === "needs_approval" ? "Review before FilmCrafter continues" : current?.label}</h1>
         <div className="agent-progress" aria-label="Production progress">{state.stages.slice(0, 5).map((s) => <span key={s.id} className={s.state} title={`${s.label}: ${STATUS[s.state]}`} />)}</div>
         <div className="agent-review">
           <div><h2>{current?.label}</h2><p>{current?.id === "story" ? "Your brief and production sequence are ready. Approving this records the checkpoint; it does not spend money." : current?.state === "ready" ? "This stage is ready to prepare. Open Manual Studio for precise shot and asset controls, then return here to review progress." : "Review the real project assets below. Approved work is preserved when you request a change."}</p></div>
           {thumbs.length ? <div className="agent-previews">{thumbs.map((t) => <figure key={t.id}><img src={t.src} alt={`Preview for ${t.shot}`} /><figcaption>{t.shot}</figcaption></figure>)}</div> : <div className="agent-empty-preview"><b>{state.existing.shots || 0} shots in this project</b><span>{current?.id === "story" ? "The plan uses your existing project and approved work." : "Generated previews will appear here as they finish."}</span></div>}
           <div className="agent-actions">{current?.state === "needs_approval" ? <button className="btn hero" disabled={busy || state.paused} onClick={() => run("approve", { stage: current.id, asset_versions: thumbs.map((x) => x.id) })}>Approve &amp; continue</button> : <button className="btn hero" onClick={onManual}>Open in Manual Studio</button>}<button className="btn ghost" onClick={() => document.getElementById("agent-revision")?.focus()}>Request changes</button></div>
-          <div className="agent-revision"><label htmlFor="agent-revision">Ask for a focused change</label><div><input id="agent-revision" value={revision} onChange={(e) => setRevision(e.target.value)} placeholder="Make the lighting warmer…" /><button aria-label="Send revision" disabled={!revision.trim() || busy} onClick={async () => { if (await run("request_changes", { stage: current?.id, note: revision, affected: [] })) setRevision(""); }}>→</button></div><small>Before paid revision work runs, FilmCrafter will show affected assets, downstream changes and price.</small></div>
+          <div className="agent-revision"><label htmlFor="agent-revision">Ask for a focused change</label><div><input id="agent-revision" value={revision} onChange={(e) => { setRevision(e.target.value); setImpact(null); }} placeholder="Make Chloe's playground shots warmer…" /><button aria-label="Preview revision impact" disabled={!revision.trim() || busy} onClick={previewRevision}>→</button></div><small>First review what changes and what stays locked. Recording a request does not spend money.</small>
+            {impact && <div className={`agent-impact ${impact.needs_clarification ? "ambiguous" : ""}`} role="status"><div><b>{impact.needs_clarification ? "Choose a more specific scope" : `${impact.regeneration_count} shot${impact.regeneration_count === 1 ? "" : "s"} affected`}</b><span>{impact.warning}</span></div><dl><dt>Scenes</dt><dd>{impact.affected_scenes.length ? impact.affected_scenes.join(", ") : "None matched"}</dd><dt>Approved work kept</dt><dd>{impact.preserved_approved_assets} asset{impact.preserved_approved_assets === 1 ? "" : "s"}</dd><dt>Downstream review</dt><dd>{impact.downstream_stages.length} stage{impact.downstream_stages.length === 1 ? "" : "s"}</dd></dl><div className="agent-inline"><button className="btn hero" disabled={busy || impact.needs_clarification} onClick={recordRevision}>Record focused revision</button><button className="btn ghost" onClick={() => setImpact(null)}>Edit request</button></div></div>}
+          </div>
         </div>
       </section>
-      <aside className="agent-plan"><h2>Production plan</h2><ol>{state.stages.map((s) => <li key={s.id} className={s.id === state.current ? "current" : ""}><span className={`agent-status ${s.state}`} aria-hidden="true" /><div><b>{s.label}</b><small>{STATUS[s.state]}</small></div></li>)}</ol>
+      <aside className="agent-plan"><section className="agent-inbox"><h2>Production inbox <span>{state.inbox.length}</span></h2>{state.inbox.length ? <ul>{state.inbox.slice(0, 5).map((item) => <li key={item.id} className={item.kind}><span aria-hidden="true">{item.kind === "failure" || item.kind === "uncertain" ? "!" : item.kind === "approval" ? "✓" : "↻"}</span><button onClick={item.action === "manual" ? onManual : () => document.getElementById("agent-revision")?.focus()}><b>{item.title}</b><small>{item.detail}</small></button></li>)}</ul> : <p>Nothing needs your attention.</p>}</section><h2>Production plan</h2><ol>{state.stages.map((s) => <li key={s.id} className={s.id === state.current ? "current" : ""}><span className={`agent-status ${s.state}`} aria-hidden="true" /><div><b>{s.label}</b><small>{STATUS[s.state]}</small></div></li>)}</ol>
         {state.brief.checkin_mode === "autopilot" && <div className="agent-autopilot"><h3>Autopilot</h3><p>Runs unattended on ComfyUI. Cloud keyframes still show their price first.</p><button className="btn hero" disabled={busy || !overnight?.ready || overnight?.active} onClick={async () => { try { const r = await api.overnight<typeof overnight>(project.dir, "start"); setOvernight(r); if (r?.needs_confirm) setError(`Cloud keyframes need approval${r.usd != null ? ` (about $${r.usd.toFixed(2)})` : ""}. Open Manual Studio to review and confirm.`); } catch (e) { setError(errorText(e)); } }}>{overnight?.active ? "Autopilot running" : overnight?.ready ? "Start Autopilot" : "Set up ComfyUI to start"}</button></div>}
         <h3>Latest activity</h3><ul className="agent-activity">{[...state.activity].reverse().slice(0, 5).map((a) => <li key={a.id}>{a.text}</li>)}</ul>
         {state.jobs.failed > 0 && <button className="btn ghost" onClick={onManual}>Review {state.jobs.failed} failed job{state.jobs.failed === 1 ? "" : "s"}</button>}

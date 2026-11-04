@@ -93,3 +93,40 @@ def test_manifest_replaces_atomically_and_does_not_leave_temporary_files(tmp_pat
     w = A._load(d); w["analysis"]["score_prompt"] = "new score"; A._save(d, w); A.accept_analysis(d, {})
     assert json.load(open(os.path.join(d, "agent-production.json"), encoding="utf-8"))["creative"]["score_prompt"] == "new score"
     assert not [x for x in os.listdir(d) if x.endswith(".tmp")]
+
+
+def test_revision_impact_targets_matching_character_and_preserves_other_approvals(tmp_path):
+    d = project(tmp_path)
+    plan = {"scenes": [{"number": 1, "heading": "PLAYGROUND", "shots": [
+        {"id": "S01-01", "performers": ["Chloe"], "description": "Chloe waits"},
+        {"id": "S01-02", "performers": ["Mia"], "description": "Mia enters"}]}]}
+    open(os.path.join(d, "directed.json"), "w", encoding="utf-8").write(json.dumps(plan))
+    manifest = {"creative": {"characters": [{"name": "Chloe"}, {"name": "Mia"}], "locations": []}}
+    open(os.path.join(d, "agent-production.json"), "w", encoding="utf-8").write(json.dumps(manifest))
+    w = A._load(d); w["approvals"] = [{"asset_versions": ["S01-01", "S01-02"]}]; A._save(d, w)
+    impact = A.run("impact", d, {"stage": "scenes", "note": "Make Chloe's close-up warmer"})
+    assert impact["affected_shots"] == ["S01-01"]
+    assert impact["preserved_approved_assets"] == 1
+    assert impact["needs_clarification"] is False
+
+
+def test_ambiguous_revision_is_recordable_but_cannot_claim_a_regeneration_scope(tmp_path):
+    d = project(tmp_path)
+    impact = A.run("impact", d, {"stage": "direction", "note": "Make it better"})
+    assert impact["affected_shots"] == [] and impact["needs_clarification"] is True
+    out = A.request_changes(d, {"stage": "direction", "note": "Make it better"})
+    assert out["revisions"][0]["impact"]["needs_clarification"] is True
+    assert json.load(open(os.path.join(d, "jobs.json")))["jobs"] == []
+
+
+def test_inbox_and_orchestration_recover_actions_after_restart(tmp_path):
+    d = project(tmp_path)
+    A.update_brief(d, {"story": "A child follows a paper bird through a sleeping city."}); A.create_plan(d)
+    jobs = {"jobs": [{"id": "bad-1", "state": "failed", "error": "provider timeout"},
+                     {"id": "maybe-1", "state": "uncertain"}]}
+    open(os.path.join(d, "jobs.json"), "w", encoding="utf-8").write(json.dumps(jobs))
+    restored = A.state(d)
+    assert {x["kind"] for x in restored["inbox"]} == {"approval", "failure", "uncertain"}
+    assert restored["orchestration"]["status"] == "waiting"
+    before = jobs.copy(); A.run("orchestrate", d, {})
+    assert json.load(open(os.path.join(d, "jobs.json"))) == before
