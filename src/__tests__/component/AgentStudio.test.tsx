@@ -15,7 +15,8 @@ const state = (planned = false): AgentStudioState => ({ version: 1, paused: fals
   stages: stages.map((s, i) => ({ ...s, state: planned && i === 0 ? "needs_approval" : "not_started" })), approvals: [], revisions: [],
   activity: [], existing: { scenes: 1, shots: 3 }, spending: { actual: 1, committed: 2, limit: 30, pricing_known: true }, jobs: { ready: 0, working: 1, failed: 0 },
   inbox: planned ? [{ id: "approval:story", kind: "approval", stage: "story", title: "Story & shot plan", detail: "Creative approval required before production continues.", priority: 1, action: "review" }] : [],
-  orchestration: { status: planned ? "waiting" : "ready", next_action: planned ? "Approve Story & shot plan" : "Continue Story & shot plan", blockers: [], active_jobs: 0, evidence: {}, safe_to_continue: !planned, message: "Reconciled" } });
+  orchestration: { status: planned ? "waiting" : "ready", next_action: planned ? "Approve Story & shot plan" : "Continue Story & shot plan", blockers: [], active_jobs: 0, evidence: {}, safe_to_continue: !planned, message: "Reconciled" },
+  first_scene_proof: { state: "ready", scene: 1, heading: "Street", shots: ["S01-01", "S01-02", "S01-03"], missing_keyframes: ["S01-01"], missing_video: ["S01-01", "S01-02", "S01-03"], estimated_usd: 0, requires_cost_review: false, can_start_local: true, blockers: [], message: "This proof scene can run locally without provider charges." } });
 const project = { dir: "p", project: { title: "Bird", state: "ready", song: "" }, song_path: null, song_map: null, production: null, directed: null, jobs: [] } as LoadedProject;
 afterEach(() => { cleanup(); invoke.mockReset(); });
 
@@ -61,6 +62,14 @@ describe("Agent Studio", () => {
     expect(await screen.findByText("1 shot affected")).toBeInTheDocument();
     expect(screen.getByText("2 assets")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Record focused revision" })).toBeEnabled();
+  });
+
+  it("starts only the local first-scene proof and explains that later scenes stay untouched", async () => {
+    invoke.mockResolvedValue(state(true));
+    render(<AgentStudio project={project} onHome={() => {}} onManual={() => {}} />);
+    expect(await screen.findByText("Remaining scenes stay untouched until this scene is approved.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Make first scene locally" }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("agent_studio", { dir: "p", action: "start_first_scene", data: {} }));
   });
 
   it("shows a complete production package as suggestions and lets every department choose its model", async () => {

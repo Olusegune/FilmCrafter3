@@ -14,6 +14,7 @@ import time
 import uuid
 
 FILE = "agent-studio.json"
+RUN_FILE = "agent-production-run.json"
 STAGES = [
     ("story", "Story & shot plan"),
     ("design", "Characters, sets & world"),
@@ -249,6 +250,97 @@ def _orchestration(d, w, jobs=None):
             "message": "Project state reconciled from durable files. No provider work was submitted."}
 
 
+def _first_scene_proof(d):
+    """Describe the smallest useful production batch. Free: estimates and reads only."""
+    plan = _plan(d)
+    scene = next((x for x in plan.get("scenes", []) if x.get("shots")), None)
+    if not scene:
+        return {"state": "blocked", "scene": None, "shots": [], "blockers": ["Create a shot plan first"],
+                "can_start_local": False, "requires_cost_review": False}
+    ids = [_clean(x.get("id"), 80) for x in scene.get("shots", []) if x.get("id")][:40]
+    from .golden import status as golden_status
+    from .routing import batch_usd, pick
+    project = _project(d)
+    image, video = pick(project, "image"), pick(project, "video")
+    try:
+        golden = golden_status(d).get("shots", [])
+    except (KeyError, TypeError, ValueError):
+        golden = [{"id": x, "keyframe": False, "take": "none", "described": True} for x in ids]
+    by_id = {x["id"]: x for x in golden}
+    missing_keyframes = [x for x in ids if not by_id.get(x, {}).get("keyframe") and by_id.get(x, {}).get("described")]
+    missing_video = [x for x in ids if by_id.get(x, {}).get("take") == "none"]
+    active = [j for j in _jobs(d) if j.get("shot_id") in ids and j.get("state") in {"queued", "submitting", "submitted", "uncertain"}]
+    failed = [j for j in _jobs(d) if j.get("shot_id") in ids and j.get("state") == "failed"]
+    complete = bool(ids) and not missing_video
+    blockers = []
+    if not image.get("provider") and missing_keyframes: blockers.append(image.get("reason") or "Choose an image model")
+    if not video.get("provider") and missing_video: blockers.append(video.get("reason") or "Choose a video model")
+    image_cost = batch_usd(d, missing_keyframes, image.get("provider"), image.get("model"), "image") if image.get("provider") and missing_keyframes else 0.0
+    video_cost = batch_usd(d, missing_video, video.get("provider"), video.get("model"), "video") if video.get("provider") and missing_video else 0.0
+    cloud = (bool(missing_keyframes) and image.get("provider") != "comfyui") or (bool(missing_video) and video.get("provider") != "comfyui")
+    run = _read(os.path.join(d, RUN_FILE), {}) or {}
+    state_name = "complete" if complete else "failed" if failed and not active else "working" if active else "blocked" if blockers else "ready"
+    return {"state": state_name, "scene": scene.get("number"), "heading": scene.get("heading", "First scene"), "shots": ids,
+            "missing_keyframes": missing_keyframes, "missing_video": missing_video, "active_jobs": len(active), "failed_jobs": len(failed),
+            "image_route": image, "video_route": video, "estimated_usd": round(image_cost + video_cost, 2),
+            "requires_cost_review": cloud, "can_start_local": not cloud and not blockers and not complete and not active,
+            "blockers": blockers, "run": run, "message": ("The first scene is ready for approval." if complete else
+            "Review the live cost in Manual Studio before cloud work starts." if cloud else
+            "This proof scene can run locally without provider charges." if not blockers else blockers[0])}
+
+
+def start_first_scene(d):
+    """Queue only a free/local proof scene. Cloud batches always use the shell's spend-token path."""
+    proof = _first_scene_proof(d)
+    if proof.get("requires_cost_review"):
+        raise SystemExit("This proof scene uses cloud models. Open Manual Studio to review the live price and confirm the batch.")
+    if not proof.get("can_start_local"):
+        raise SystemExit(proof.get("message") or "The first scene is not ready to start.")
+    from .render import enqueue
+    if proof["missing_keyframes"]:
+        route = proof["image_route"]
+        made = enqueue(d, proof["missing_keyframes"], route["provider"], route["model"], {}, [], kind="image")
+        step = "keyframes"
+    else:
+        route = proof["video_route"]
+        made = enqueue(d, proof["missing_video"], route["provider"], route["model"], {}, [], kind="video")
+        step = "video"
+    run = {"schema": 1, "scene": proof["scene"], "shots": proof["shots"], "step": step,
+           "state": "working", "queued": len(made), "started": int(time.time()), "updated": int(time.time())}
+    _write(os.path.join(d, RUN_FILE), run)
+    return proof
+
+
+def _advance_first_scene(d, w):
+    """Continue a local proof after its current queue drains; safe to call repeatedly."""
+    run = _read(os.path.join(d, RUN_FILE), {}) or {}
+    if run.get("state") != "working" or not run.get("shots"):
+        return False
+    proof = _first_scene_proof(d)
+    if proof.get("active_jobs"):
+        return False
+    if proof.get("failed_jobs"):
+        run.update(state="failed", updated=int(time.time())); _write(os.path.join(d, RUN_FILE), run); return True
+    if proof.get("missing_keyframes"):
+        from .library import approve_keyframes, pending_keyframes
+        if pending_keyframes(d, proof["shots"]):
+            approve_keyframes(d, proof["shots"])
+            proof = _first_scene_proof(d)
+        if proof.get("missing_keyframes"):
+            return False
+    if proof.get("missing_video"):
+        from .render import enqueue
+        route = proof["video_route"]
+        if route.get("provider") != "comfyui": return False
+        made = enqueue(d, proof["missing_video"], "comfyui", route["model"], {}, [], kind="video")
+        run.update(step="video", queued=len(made), updated=int(time.time())); _write(os.path.join(d, RUN_FILE), run); return True
+    run.update(state="complete", updated=int(time.time())); _write(os.path.join(d, RUN_FILE), run)
+    stage = _stage(w, "first_scene")
+    if stage and stage["state"] != "complete": stage["state"] = "needs_approval"; w["current"] = "first_scene"
+    _activity(w, "first_scene_ready", "The first scene proof is ready for review. No remaining scenes were generated.")
+    return True
+
+
 def state(d, w=None):
     w = w or _load(d)
     jobs = _jobs(d)
@@ -259,7 +351,8 @@ def state(d, w=None):
     return {**w, "spending": {"actual": round(actual, 4), "committed": round(committed, 4),
                                "limit": float(w["brief"].get("budget_limit", 0)), "pricing_known": True},
             "jobs": {"ready": ready, "working": sum(1 for j in jobs if j.get("state") in {"queued", "submitting", "submitted"}), "failed": failed},
-            "inbox": _inbox(d, w, jobs), "orchestration": _orchestration(d, w, jobs)}
+            "inbox": _inbox(d, w, jobs), "orchestration": _orchestration(d, w, jobs),
+            "first_scene_proof": _first_scene_proof(d)}
 
 
 def update_brief(d, data):
@@ -376,10 +469,15 @@ def run(action, d, data):
     if action == "impact": return _impact(d, _load(d), data)
     if action == "inbox": return _inbox(d, _load(d))
     if action == "orchestrate":
-        w = _load(d); result = _orchestration(d, w)
+        w = _load(d); _advance_first_scene(d, w); result = _orchestration(d, w)
         _activity(w, "orchestrated", result["message"])
         saved = _save(d, w); saved["orchestration"] = result
         return saved
+    if action == "plan_first_scene": return _first_scene_proof(d)
+    if action == "start_first_scene":
+        start_first_scene(d)
+        w = _load(d); _activity(w, "first_scene_started", "Local first-scene proof started. Remaining scenes were left untouched.")
+        return _save(d, w)
     if action == "pause": return pause(d, True)
     if action == "resume": return pause(d, False)
     raise SystemExit("Unknown Agent Studio action.")
@@ -388,7 +486,7 @@ def run(action, d, data):
 def main(argv):
     try:
         ap = argparse.ArgumentParser()
-        ap.add_argument("action", choices=["state", "update_brief", "analyze", "accept_analysis", "create_plan", "approve", "request_changes", "impact", "inbox", "orchestrate", "pause", "resume"])
+        ap.add_argument("action", choices=["state", "update_brief", "analyze", "accept_analysis", "create_plan", "approve", "request_changes", "impact", "inbox", "orchestrate", "plan_first_scene", "start_first_scene", "pause", "resume"])
         ap.add_argument("project")
         ap.add_argument("--data", default="{}")
         a = ap.parse_args(argv)

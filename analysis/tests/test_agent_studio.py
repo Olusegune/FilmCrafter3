@@ -130,3 +130,27 @@ def test_inbox_and_orchestration_recover_actions_after_restart(tmp_path):
     assert restored["orchestration"]["status"] == "waiting"
     before = jobs.copy(); A.run("orchestrate", d, {})
     assert json.load(open(os.path.join(d, "jobs.json"))) == before
+
+
+def test_cloud_first_scene_requires_existing_cost_review_path_and_queues_nothing(tmp_path, monkeypatch):
+    d = project(tmp_path)
+    monkeypatch.setattr(A, "_first_scene_proof", lambda _d: {"requires_cost_review": True, "can_start_local": False,
+        "message": "Review the live cost", "shots": ["S01-01"]})
+    with pytest.raises(SystemExit, match="live price"):
+        A.start_first_scene(d)
+    assert json.load(open(os.path.join(d, "jobs.json")))["jobs"] == []
+    assert not os.path.exists(os.path.join(d, A.RUN_FILE))
+
+
+def test_local_first_scene_queues_only_its_keyframes_and_persists_resume_record(tmp_path, monkeypatch):
+    d = project(tmp_path); queued = []
+    proof = {"requires_cost_review": False, "can_start_local": True, "message": "Local", "scene": 1,
+        "shots": ["S01-01", "S01-02"], "missing_keyframes": ["S01-01", "S01-02"], "missing_video": ["S01-01", "S01-02"],
+        "image_route": {"provider": "comfyui", "model": "local-image"}, "video_route": {"provider": "comfyui", "model": "local-video"}}
+    monkeypatch.setattr(A, "_first_scene_proof", lambda _d: proof)
+    from filmcrafter_engine import render
+    monkeypatch.setattr(render, "enqueue", lambda _d, ids, provider, model, *_a, **kw: queued.extend(ids) or list(ids))
+    A.start_first_scene(d)
+    assert queued == ["S01-01", "S01-02"]
+    run = json.load(open(os.path.join(d, A.RUN_FILE), encoding="utf-8"))
+    assert run["step"] == "keyframes" and run["shots"] == queued

@@ -1947,18 +1947,23 @@ async fn refgen(app: AppHandle, dir: String, action: String, data: Value) -> Res
     Ok(res)
 }
 
-/// Agent Studio's local workflow ledger. It may plan, pause and record approvals,
-/// but it never queues provider work; paid execution remains behind confirm_spend.
+/// Agent Studio's workflow ledger. It may queue a bounded first-scene proof only
+/// on free local ComfyUI. Paid execution remains behind queue_render's spend token.
 #[tauri::command]
 async fn agent_studio(app: AppHandle, dir: String, action: String, data: Value) -> Result<Value, String> {
-    const ACTIONS: [&str; 12] = ["state", "update_brief", "analyze", "accept_analysis", "create_plan", "approve", "request_changes", "impact", "inbox", "orchestrate", "pause", "resume"];
+    const ACTIONS: [&str; 14] = ["state", "update_brief", "analyze", "accept_analysis", "create_plan", "approve", "request_changes", "impact", "inbox", "orchestrate", "plan_first_scene", "start_first_scene", "pause", "resume"];
     if !ACTIONS.contains(&action.as_str()) {
         return Err("Unknown Agent Studio action.".into());
     }
     let d = project_dir(&dir)?.to_string_lossy().to_string();
+    let renderer_dir = d.clone();
+    let app2 = app.clone();
+    let start_renderer = matches!(action.as_str(), "start_first_scene" | "orchestrate");
     let env = if action == "analyze" { openai_env()? } else { vec![] };
     let args = vec!["-m".into(), "filmcrafter_engine.agent_studio".into(), action, d, "--data".into(), data.to_string()];
-    tauri::async_runtime::spawn_blocking(move || run_engine_result(&app, "agent_studio", &args, &env)).await.map_err(err)?
+    let res = tauri::async_runtime::spawn_blocking(move || run_engine_result(&app2, "agent_studio", &args, &env)).await.map_err(err)??;
+    if start_renderer { ensure_renderer(app, renderer_dir); }
+    Ok(res)
 }
 
 

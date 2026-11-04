@@ -19,6 +19,12 @@ In Manual Studio, choose **Director style** to browse the worldwide filmmaker li
 3. Choose **Analyse script**. The selected AI brain lists story facts and optional visual/director-profile suggestions. Accept, change or ignore them; the script remains the source of truth. You can also skip analysis.
 4. Build the production plan. Planning is free; generated media is not started here.
 
+## First-scene proof
+
+After a shot plan exists, Agent Studio isolates its first scene as a bounded proof. The card names the scene, shot count, missing keyframes and videos, chosen image/video routes, and estimated cloud price. **Make first scene locally** is available only when every required generation step uses the user's running ComfyUI workflows. It queues only those shots, starts the existing renderer, resumes from `agent-production-run.json`, advances from keyframes to video, and returns the result for approval. Remaining scenes are untouched.
+
+If either route is a cloud provider, Agent Studio does not queue it. **Review price & make first scene** opens Manual Studio, where the live price, project budget and one-use spend token remain mandatory. This separation prevents a broad automation instruction from becoming permission to spend.
+
 ## Whole-film departments and model choice
 
 The analysis package covers characters (appearance, wardrobe and voice direction), locations/sets and lighting, continuity props, scenes, a provider-neutral score prompt, sound direction, SFX/ambience cues, and useful titles or motion graphics. Before analysis, **Production models** lets the creator choose independent models/providers for reference and keyframe images, shot video, voices, music/score and SFX. Automatic follows the project's Plan & budget router. Accepted image/video choices are pinned into that router; every department choice and approved design is saved in `agent-production.json` so the run can resume after restart.
