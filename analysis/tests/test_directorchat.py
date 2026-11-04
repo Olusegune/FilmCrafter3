@@ -64,3 +64,50 @@ def test_gemini_provider_keeps_the_official_compatible_endpoint(tmp_path, monkey
     out = llm.save({"provider": "gemini", "model": "gemini-2.5-flash", "base_url": llm.DEFAULT_URLS["gemini"]})
     assert out["provider"] == "gemini"
     assert out["base_url"] == "https://generativelanguage.googleapis.com/v1beta/openai"
+
+
+def test_history_is_provider_safe(tmp_path):
+    seen = []
+    def fake(messages):
+        seen.append(messages); return ({"reply": "ok", "tool_calls": []}, "fake")
+    D.turn(_project(tmp_path) if "_project" in globals() else str(tmp_path), {"message": "hi", "history": [
+        {"role": "assistant", "content": "welcome"}, {"role": "user", "content": ""}, {"role": "user", "content": "a"}, {"role": "user", "content": "b"}]}, ask=fake)
+    roles = [m["role"] for m in seen[0]]
+    assert roles == ["system", "user", "user"] or roles == ["system", "user"]
+    assert seen[0][1]["content"] == "a\n\nb"
+
+
+def test_tool_only_turn_has_no_empty_messages_and_a_summary(tmp_path):
+    seen = []
+    def fake(messages):
+        seen.append(messages)
+        return ({"reply": "", "tool_calls": [{"name": "request_render", "args": '{"kind":"video","shots":["s1"]}'}]}, "fake")
+    out = D.turn(str(tmp_path), {"message": "go"}, ask=fake)
+    assert all(m["content"] for m in seen[-1])
+    assert "nothing paid was started" in out["reply"]
+    assert len([p for p in out["proposals"] if p["state"] == "pending"]) == 1   # repeated identical requests collapse
+
+
+def test_spend_proposal_is_handed_off_not_left_pending(tmp_path):
+    d = str(tmp_path)
+    row = D.execute(d, "request_render", '{"kind":"video","shots":["s1"]}')["proposal"]
+    out = D.apply(d, row["id"])
+    assert out["requires_spend_confirmation"]
+    assert [p["state"] for p in D.proposals(d)] == ["handed_off"]
+    assert D.apply(d, row["id"])["requires_spend_confirmation"]   # the hand-off message can be shown again
+
+
+def test_long_shot_lists_say_they_are_truncated(tmp_path):
+    d = str(tmp_path)
+    import json
+    (tmp_path / "directed.json").write_text(json.dumps({"scenes": [{"shots": [{"id": f"s{i}"} for i in range(250)]}]}))
+    out = D.execute(d, "list_shots", "{}")["result"]
+    assert out["total"] == 250 and out["truncated"] and len(out["shots"]) == 200
+
+
+def test_concurrent_proposals_are_not_lost(tmp_path):
+    import threading
+    d = str(tmp_path)
+    ts = [threading.Thread(target=D.execute, args=(d, "request_revision", '{"stage":"story","note":"n%d"}' % i)) for i in range(8)]
+    [t.start() for t in ts]; [t.join() for t in ts]
+    assert len(D.proposals(d)) == 8

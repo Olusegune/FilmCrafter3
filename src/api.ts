@@ -195,7 +195,7 @@ export type Choreography = { mode: "none" | "upload" | "written" | "style" | "ai
   files: string[]; sections: { section: string; performers: string[]; notes: string }[]; precise: boolean; plan?: ChoreoPlan };
 
 export type Brain = { provider: "openai" | "anthropic" | "openrouter" | "gemini" | "ollama" | "lmstudio"; base_url: string; model: string; vision_model: string };
-export type AgentProposal = { id: string; tool: string; args: Record<string, unknown>; risk: "write" | "spend"; state: "pending" | "applied" | "rejected" | "stale"; created: number };
+export type AgentProposal = { id: string; tool: string; args: Record<string, unknown>; risk: "write" | "spend"; state: "pending" | "applied" | "rejected" | "stale" | "handed_off"; created: number };
 export type DirectorTurn = { reply: string; model: string; steps: { tool: string; result: unknown }[]; proposals: AgentProposal[] };
 
 export type Balance = { provider: string; amount: number | null; unit: "usd" | "credits" | null; known: boolean; usd?: number };

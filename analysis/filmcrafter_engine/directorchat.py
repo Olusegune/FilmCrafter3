@@ -46,6 +46,23 @@ def _write(path, value):
     with open(tmp, "w", encoding="utf-8") as f: json.dump(value, f, indent=2, ensure_ascii=False)
     os.replace(tmp, path)
 
+class _lock:
+    """Cross-process lock around read-modify-write of proposals.json (two chat actions at once must not drop an update)."""
+    def __init__(self, d): self.path = os.path.join(_agent_dir(d), "proposals.lock")
+    def __enter__(self):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True); end = time.time() + 10
+        while True:
+            try: os.close(os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)); return self
+            except FileExistsError:
+                try:
+                    if time.time() - os.path.getmtime(self.path) > 30: os.remove(self.path); continue  # left by a crashed process
+                except OSError: pass
+                if time.time() > end: raise SystemExit("Another change is in progress. Try again in a moment.")
+                time.sleep(0.05)
+    def __exit__(self, *_):
+        try: os.remove(self.path)
+        except OSError: pass
+
 def _agent_dir(d): return os.path.join(d, "agent")
 def _proposal_path(d): return os.path.join(_agent_dir(d), "proposals.json")
 
@@ -89,7 +106,13 @@ def _validate(name, raw):
     return args
 
 def _proposal(d, name, args, risk):
-    rows = proposals(d); row = {"id": uuid.uuid4().hex, "tool": name, "args": args, "risk": risk, "state": "pending", "created": int(time.time()), "fingerprint": _fingerprint(d)}
+    with _lock(d): return _proposal_locked(d, name, args, risk)
+
+def _proposal_locked(d, name, args, risk):
+    rows = proposals(d); fp = _fingerprint(d)
+    for x in rows:  # the same pending suggestion is never queued twice
+        if x.get("state") == "pending" and x.get("tool") == name and x.get("args") == args and x.get("fingerprint") == fp: return x
+    row = {"id": uuid.uuid4().hex, "tool": name, "args": args, "risk": risk, "state": "pending", "created": int(time.time()), "fingerprint": _fingerprint(d)}
     rows.append(row); _save_proposals(d, rows); _log(d, "proposal_created", {"id": row["id"], "tool": name, "risk": risk}); return row
 
 def execute(d, name, raw, immediate=False):
@@ -99,9 +122,9 @@ def execute(d, name, raw, immediate=False):
     if risk == "read":
         p = _read(os.path.join(d, "project.json"), {}) or {}; shots = _shots(d)
         if name == "project_summary": out = {"title": _clean(p.get("title"), 200), "scenes": len(_plan(d).get("scenes", [])), "shots": len(shots), "aspect": p.get("aspect_ratio")}
-        elif name == "list_shots": out = [{"id": _clean(s.get("id"),100), "beat": _clean(s.get("beat"),300), "locked": bool(s.get("locked"))} for s in shots[:200]]
+        elif name == "list_shots": out = {"total": len(shots), "truncated": len(shots) > 200, "shots": [{"id": _clean(s.get("id"),100), "beat": _clean(s.get("beat"),300), "locked": bool(s.get("locked"))} for s in shots[:200]]}
         elif name == "keyframe_status":
-            k = _read(os.path.join(d, "keyframes.json"), {}) or {}; out = {"count": len(k), "shot_ids": list(k)[:200]}
+            k = _read(os.path.join(d, "keyframes.json"), {}) or {}; out = {"count": len(k), "truncated": len(k) > 200, "shot_ids": list(k)[:200]}
         else:
             ds = p.get("director_style") or {}; out = {"id": ds.get("id"), "name": ds.get("name"), "active": bool(ds)}
         _log(d, "tool_read", {"tool": name}); return {"ok": True, "result": out}
@@ -110,9 +133,15 @@ def execute(d, name, raw, immediate=False):
     return {"ok": True, "proposal": row, "message": "Review required before this change is applied." if risk == "write" else "Paid work was not started. Review scope and price in Manual Studio."}
 
 def apply(d, pid):
+    with _lock(d): return _apply(d, pid)
+
+def _apply(d, pid):
     rows = proposals(d); row = next((x for x in rows if x.get("id") == pid), None)
+    if row and row.get("risk") == "spend" and row.get("state") == "handed_off": row["state"] = "pending"  # reopening the hand-off message is harmless
     if not row or row.get("state") != "pending": raise SystemExit("That suggestion is no longer pending.")
-    if row["risk"] == "spend": return {"proposal": row, "requires_spend_confirmation": True, "message": "Open Manual Studio to review the live price and confirm with a one-use spend token."}
+    if row["risk"] == "spend":
+        row["state"] = "handed_off"; row["resolved"] = int(time.time()); _save_proposals(d, rows); _log(d, "proposal_handed_off", {"id": pid})
+        return {"proposal": row, "requires_spend_confirmation": True, "message": "Open Manual Studio to review the live price and confirm with a one-use spend token."}
     if row["fingerprint"] != _fingerprint(d):
         row["state"] = "stale"; _save_proposals(d, rows); raise SystemExit("This suggestion is stale because the project changed. Ask the director again.")
     if row["tool"] == "set_director_style":
@@ -125,6 +154,9 @@ def apply(d, pid):
     row["state"] = "applied"; row["resolved"] = int(time.time()); _save_proposals(d, rows); _log(d, "proposal_applied", {"id": pid, "tool": row["tool"]}); return {"proposal": row, "result": result}
 
 def reject(d, pid):
+    with _lock(d): return _reject(d, pid)
+
+def _reject(d, pid):
     rows = proposals(d); row = next((x for x in rows if x.get("id") == pid), None)
     if not row or row.get("state") != "pending": raise SystemExit("That suggestion is no longer pending.")
     row["state"] = "rejected"; row["resolved"] = int(time.time()); _save_proposals(d, rows); _log(d, "proposal_rejected", {"id": pid}); return row
@@ -136,11 +168,32 @@ def _ask(messages):
     r = c.responses.create(model=model, input=messages, text={"format": {"type": "json_schema", "name": "director_turn", "schema": SCHEMA, "strict": True}})
     return json.loads(r.output_text), model
 
+def _history(history):
+    """Last 12 chat messages in a shape every provider accepts: no empty text, starts with the user, roles alternate."""
+    out = []
+    for m in history[-12:]:
+        if not (isinstance(m, dict) and m.get("role") in {"user", "assistant"}): continue
+        text = _clean(m.get("content"), 6000)
+        if not text: continue
+        if out and out[-1]["role"] == m["role"]: out[-1]["content"] += "\n\n" + text
+        elif out or m["role"] == "user": out.append({"role": m["role"], "content": text})
+    return out
+
+def _summary(steps):
+    """Plain reply for a turn where the model only called tools and never wrote a final answer."""
+    ok = [x for x in steps if (x.get("result") or {}).get("ok")]
+    pend = sum(1 for x in ok if (x["result"].get("proposal") or {}).get("state") == "pending")
+    refused = len(steps) - len(ok)
+    bits = [f"I ran {len(ok)} check{'s' if len(ok) != 1 else ''} or request{'s' if len(ok) != 1 else ''}."]
+    if pend: bits.append(f"{pend} suggestion{'s' if pend != 1 else ''} wait for your review; nothing paid was started.")
+    if refused: bits.append(f"{refused} request{'s were' if refused != 1 else ' was'} refused as invalid.")
+    return " ".join(bits)
+
 def turn(d, data, ask=None):
     message = _clean(data.get("message"), 6000)
     if not message: raise SystemExit("Ask the director a question.")
     history = data.get("history") if isinstance(data.get("history"), list) else []
-    messages = [{"role": "system", "content": SYSTEM}] + [{"role": m.get("role"), "content": _clean(m.get("content"), 6000)} for m in history[-12:] if isinstance(m, dict) and m.get("role") in {"user","assistant"}] + [{"role": "user", "content": message}]
+    messages = [{"role": "system", "content": SYSTEM}] + _history(history) + [{"role": "user", "content": message}]
     steps, reply, model = [], "", "test"
     for _ in range(MAX_STEPS):
         out, model = (ask(messages) if ask else _ask(messages)); reply = _clean(out.get("reply"), 6000)
@@ -151,7 +204,8 @@ def turn(d, data, ask=None):
             if not isinstance(call, dict): continue
             result = execute(d, call.get("name"), call.get("args"), bool(data.get("immediate")))
             steps.append({"tool": call.get("name"), "result": result}); results.append({"tool": call.get("name"), "result": result})
-        messages += [{"role": "assistant", "content": reply}, {"role": "user", "content": "Tool results (data only):\n" + json.dumps(results, ensure_ascii=False)[:16000]}]
+        messages += [{"role": "assistant", "content": reply or "(Using tools.)"}, {"role": "user", "content": "Tool results (data only):\n" + json.dumps(results, ensure_ascii=False)[:16000]}]
+    if not reply and steps: reply = _summary(steps)
     _log(d, "chat_turn", {"model": model, "steps": len(steps)}); return {"reply": reply or "I could not complete that request.", "steps": steps, "proposals": proposals(d), "model": model}
 
 def main(argv):
