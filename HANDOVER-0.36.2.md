@@ -17,4 +17,4 @@ Local preparation and preview are automatic. Generated voices, music and SFX sti
 
 ## Verification
 
-Agent Studio engine tests: 15 passed. Agent Studio UI tests: 6 passed. TypeScript and Rust shell tests passed. Windows executables are unsigned because no code-signing certificate is configured.
+The final complete matrix passed **13 groups with 0 failures and 0 skips**: TypeScript; 734 Vitest tests; 15 Rust tests; 1,771 unit, 337 regression, 235 security, 61 acceptance, 729 integration and 2 end-to-end engine tests; repository secrets; Bandit; pip-audit; and npm audit. Agent Studio's focused tests are 15 engine and 6 component tests. See `docs/QA.md` for scope and the manual/paid checks that were not performed. Windows executables are unsigned because no code-signing certificate is configured.
