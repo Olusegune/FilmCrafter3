@@ -86,7 +86,7 @@ export function BlockingPlan({ dir, shot, locked, plan, onSaved }: { dir: string
           return (
             <g key={p.name} className="bp-person">
               <line x1={p.x} y1={p.y} x2={tip.x} y2={tip.y} stroke={c} strokeWidth="0.6" />
-              <circle cx={tip.x} cy={tip.y} r="1.6" fill={c} className="bp-handle" onPointerDown={start("face", i)} onDoubleClick={() => turn(i, 180)}><title>Drag to turn {p.name}; double-click to turn around</title></circle>
+              <circle cx={tip.x} cy={tip.y} r="1.6" fill={c} className="bp-handle" onPointerDown={start("face", i)} onDoubleClick={() => turn(i, 180)}><title>{`Drag to turn ${p.name}; double-click to turn around`}</title></circle>
               <circle cx={p.x} cy={p.y} r="3.6" fill="#10131a" stroke={c} strokeWidth="0.8" className="bp-dot" onPointerDown={start("person", i)} />
               <text x={p.x} y={p.y + 1.3} textAnchor="middle" className="bp-init" pointerEvents="none">{initials(p.name)}</text>
               <text x={p.x} y={p.y - 5.2} textAnchor="middle" className="bp-name" pointerEvents="none">{p.name}</text>

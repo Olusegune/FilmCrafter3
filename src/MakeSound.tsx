@@ -34,7 +34,7 @@ export function MakeSound({ dir, kind, onClose, onMade }: { dir: string; kind: "
   const [pending, setPending] = useState<{ task: string; prompt: string }[]>([]);
 
   useEffect(() => {
-    api.audioGen<{ providers: GenProvider[] }>("providers", dir).then((r) => { const mine = r.providers.filter((p) => p.kind === kind); setProviders(mine); setPid((x) => x || mine.find((p) => p.has_key)?.id || mine[0]?.id || ""); }).catch((e) => setErr(errorText(e)));
+    api.audioGen<{ providers: GenProvider[] }>("providers", dir).then((r) => { const mine = (r?.providers ?? []).filter((p) => p.kind === kind); setProviders(mine); setPid((x) => x || mine.find((p) => p.has_key)?.id || mine[0]?.id || ""); }).catch((e) => setErr(errorText(e)));
   }, [dir, kind]);
   const loadPending = useCallback(() => api.audioGen<{ tasks: { task: string; prompt: string }[] }>("pending", dir).then((r) => setPending(r.tasks)).catch(() => {}), [dir]);
   useEffect(() => { void loadPending(); }, [loadPending]);

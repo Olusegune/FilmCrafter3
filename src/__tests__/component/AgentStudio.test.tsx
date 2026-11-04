@@ -47,4 +47,16 @@ describe("Agent Studio", () => {
     fireEvent.click(screen.getByRole("button", { name: /Pause/ }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith("agent_studio", { dir: "p", action: "pause", data: {} }));
   });
+
+  it("shows a complete production package as suggestions and lets every department choose its model", async () => {
+    const proposed = { ...state(false), analysis: { status: "proposed" as const, model: "claude", logline: "A child follows a paper bird.", genre: "Fantasy", tone: "Wonder", visual_style: "cinematic", visual_style_reason: "Grounded wonder", director_style_id: "", director_style_reason: "No named profile needed", questions: [],
+      characters: [{ name: "Mia", role: "Lead", appearance: "Small silhouette", wardrobe: "Yellow coat", voice: "Quiet and curious" }], locations: [{ name: "Sleeping city", design: "Empty streets", lighting: "Moonlit" }], props: [{ name: "Bird", design: "Folded paper", continuity: "Torn left wing" }], scenes: [{ heading: "EXT. STREET", summary: "Mia follows." }], sound_direction: "A hushed city", score_prompt: "Felt piano and glass harmonics", sfx_plan: [{ scene: "Street", sound: "Paper wings", purpose: "Lead the child" }], motion_graphics: [{ type: "Title", text: "Paper Bird", when: "Opening" }] } };
+    invoke.mockImplementation((cmd: string, args: { action?: string }) => cmd === "agent_studio" ? Promise.resolve(proposed) : cmd === "routing" && args.action === "models" ? Promise.resolve({ image: [{ label: "Image One", provider: "fal", model: "img-1" }], video: [{ label: "Video One", provider: "kie", model: "vid-1" }] }) : cmd === "film_audiogen" ? Promise.resolve({ providers: [{ id: "elevenlabs_music", label: "ElevenLabs Music", kind: "music", cost_words: "price shown first" }, { id: "elevenlabs_sfx", label: "ElevenLabs SFX", kind: "sfx", cost_words: "credits shown first" }] }) : Promise.resolve({ current: null, styles: [] }));
+    render(<AgentStudio project={project} onHome={() => {}} onManual={() => {}} />);
+    expect(await screen.findByRole("heading", { name: "Character design" })).toBeInTheDocument();
+    expect(screen.getByText("Felt piano and glass harmonics")).toBeInTheDocument();
+    expect(screen.getByText("Paper wings")).toBeInTheDocument();
+    expect(screen.getByText(/Paper Bird/)).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Filmmaker craft profile" })).toHaveValue("");
+  });
 });

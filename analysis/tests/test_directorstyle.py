@@ -10,7 +10,7 @@ def proj(tmp_path, extra=None):
 def test_worldwide_library_contains_requested_filmmakers(tmp_path):
     out = D.list_styles(proj(tmp_path)); names = {x["name"] for x in out["styles"]}; regions = {x["region"] for x in out["styles"]}
     assert {"Ryan Coogler", "Christopher Nolan", "Denis Villeneuve", "Kemi Adetiba", "Park Chan-wook", "Hype Williams"} <= names
-    assert {"Africa", "Asia", "Europe", "Latin America", "North America", "Music video"} <= regions
+    assert {"Africa", "Asia", "Europe", "Global", "Latin America", "North America"} <= regions
     assert len(LIBRARY) >= 60
 
 

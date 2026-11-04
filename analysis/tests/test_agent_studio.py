@@ -65,3 +65,31 @@ def test_accepted_analysis_writes_resumable_whole_film_manifest(tmp_path):
     assert manifest["story_unchanged"] is True
     assert manifest["models"]["image_model"] == "image-x" and manifest["models"]["music_provider"] == "kie_suno"
     assert manifest["creative"]["characters"][0]["wardrobe"] == "yellow coat"
+
+
+def test_provider_choices_are_bounded_plain_text_and_never_become_paths(tmp_path):
+    d = project(tmp_path)
+    hostile = "../secrets\x00\n" + "x" * 1000
+    out = A.update_brief(d, {"story": "A sufficiently long story for a safe production plan.", "image_model": hostile, "music_provider": hostile})
+    assert len(out["brief"]["image_model"]) <= 160 and len(out["brief"]["music_provider"]) <= 160
+    assert "\x00" not in out["brief"]["image_model"]
+    assert not os.path.exists(os.path.join(tmp_path, "secrets"))
+
+
+def test_corrupt_agent_state_recovers_without_touching_the_project(tmp_path):
+    d = project(tmp_path)
+    before = open(os.path.join(d, "project.json"), "rb").read()
+    open(os.path.join(d, A.FILE), "wb").write(b"{not json")
+    out = A.state(d)
+    assert out["current"] == "story" and out["analysis"] is None
+    assert open(os.path.join(d, "project.json"), "rb").read() == before
+
+
+def test_manifest_replaces_atomically_and_does_not_leave_temporary_files(tmp_path):
+    d = project(tmp_path)
+    A.update_brief(d, {"story": "A sufficiently long story for an atomic production package."})
+    w = A._load(d); w["analysis"] = {"status": "proposed", "visual_style": "storybook", "director_style_id": "", "characters": [], "locations": [], "props": [], "scenes": [], "sound_direction": "", "score_prompt": "", "sfx_plan": [], "motion_graphics": []}; A._save(d, w)
+    A.accept_analysis(d, {})
+    w = A._load(d); w["analysis"]["score_prompt"] = "new score"; A._save(d, w); A.accept_analysis(d, {})
+    assert json.load(open(os.path.join(d, "agent-production.json"), encoding="utf-8"))["creative"]["score_prompt"] == "new score"
+    assert not [x for x in os.listdir(d) if x.endswith(".tmp")]

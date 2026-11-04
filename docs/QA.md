@@ -1,4 +1,14 @@
-# QA report: FilmCrafter 0.25.4 (2026-10-15)
+# QA report: FilmCrafter 0.35.1 (2026-11-04)
+
+## Agent Studio whole-pipeline extreme pass
+
+The 0.35.1 cycle ran the complete local matrix after adding whole-film production manifests and department model routing. Final results after correcting the two findings were: TypeScript build passed; **732 screen/Vitest tests** passed; 15 Rust shell tests passed; engine phases passed with **1,765 unit**, **337 regression**, **235 security**, **61 acceptance**, **729 integration** and **2 end-to-end** tests (3,129 engine passes total; optional tests skipped where their dependency is absent). The secret scan, Bandit medium/high scan, `pip-audit`, and production `npm audit` all passed with no findings. Agent Studio's focused set is **9 engine tests**, **4 component tests**, and **2 real-browser Playwright checks** including WCAG A/AA scanning and compact-desktop reflow.
+
+Hostile cases added in this cycle: a damaged `agent-studio.json` recovers without changing `project.json`; overlong provider/model names and control characters are bounded and cannot become filesystem paths; an accepted whole-film manifest is atomically replaced and leaves no temporary files; image, video, voice, music and SFX choices survive in the manifest; the review screen renders characters, wardrobe, sets, score, SFX and motion-graphics suggestions together. Paid work remains outside the Agent Studio command allow-list.
+
+The run found and fixed: (1) the audio-provider API returns `{providers: [...]}` but Agent Studio expected a bare list, leaving score/SFX choices empty; (2) Hype Williams was incorrectly represented as a geographic “Music video” region and is now categorized Global; (3) the sound-generation sheet could log a harmless null-response error under test and is now tolerant; (4) the intake was too dense, so department model selection is a compact disclosure with an Automatic/choice-count summary, while approved projects show their routing choices in the brief; (5) long generated production descriptions now wrap instead of widening the review layout.
+
+Not performed: real paid image/video/voice/music/SFX calls, subjective judgement of generated creative quality, a screen-reader session, or a physical Windows display at 125%/150%. These require credentials, spend authorization, human taste, or hardware inspection. The installer remains unsigned until an Authenticode certificate is configured.
 
 What has been tested, how, what it found, and what has **not** been tested. It is written to be re-run: every number below comes from a command in the last section.
 
