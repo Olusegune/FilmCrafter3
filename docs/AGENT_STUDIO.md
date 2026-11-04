@@ -6,7 +6,7 @@ Agent Studio is the guided face of the same FilmCrafter project used by Manual S
 
 A permanently open assistant would compete with the film and timeline. A completely separate automatic product would split project state and make recovery dangerous. Agent Studio is therefore a focused workspace for the creative brief, production sequence, approvals, budget and recovery; **Manual Studio** remains the precision editor. The switch in either workspace preserves the project and current jobs.
 
-The tradeoff is that the first slice deliberately orchestrates rather than autonomously renders. A stage that needs detailed preparation opens Manual Studio. This is safer than introducing a second queue, approval system or spending path.
+The visual Film Guide is a small animated aperture in Manual Studio. It reports the current milestone and opens Agent Studio, but can be minimized or hidden. It shares Agent Studio's persisted state and never blocks editing.
 
 ## Optional director style
 
@@ -15,15 +15,16 @@ In Manual Studio, choose **Director style** to browse the worldwide filmmaker li
 ## Using it
 
 1. Open a render project in Studio and choose **Agent Studio**.
-2. Paste a story or idea, then choose a visual style, target length, aspect ratio, budget limit and check-in frequency.
-3. Choose **Create production plan**. This is local and free.
+2. Paste a story or idea, choose the film length, frame and budget, then select Guide me, Collaborate or Autopilot.
+3. Choose **Analyse script**. The selected AI brain lists story facts and optional visual/director-profile suggestions. Accept, change or ignore them; the script remains the source of truth. You can also skip analysis.
+4. Build the production plan. Planning is free; generated media is not started here.
 4. Review the current milestone. **Approve & continue** records an explicit approval tied to the asset versions shown. Silence never approves anything.
 5. Use **Request changes** for a focused revision. The request is recorded without replacing approved work. Paid revision execution still shows affected scope and price in FilmCrafter's existing confirmation UI.
 6. Choose **Manual Studio** whenever an individual shot, take, reference, sound or edit needs precise control.
 
 ## Ask the director
 
-**Ask the director** connects Agent Studio to the AI brain selected in Settings: OpenAI, Google Gemini, OpenRouter, Ollama or LM Studio. The chat can summarize the project, inspect shots and keyframes, read the optional filmmaker craft profile, and prepare focused revisions or generation requests. Project details and chat messages go to the selected cloud provider; Ollama and LM Studio keep them on the local server.
+**Ask the director** connects Agent Studio to the AI brain selected in Settings: OpenAI, Anthropic Claude, Google Gemini, OpenRouter, Ollama or LM Studio. The chat can summarize the project, inspect shots and keyframes, read the optional filmmaker craft profile, and prepare focused revisions or generation requests. Project details and chat messages go to the selected cloud provider; Ollama and LM Studio keep them on the local server.
 
 Changes are suggestions by default. Review each one and choose **Apply** or **Reject**. The optional **Make non-paid changes straight away** switch applies only local project changes; it never applies to a generation request. Every paid request remains a proposal and must be opened in Manual Studio, priced against the current provider settings, and confirmed through the existing one-use spend token.
 
@@ -36,6 +37,6 @@ Changes are suggestions by default. Review each one and choose **Apply** or **Re
 - Approvals and revision requests are append-only records. A revision does not erase earlier approvals, takes or assets.
 - The chat has a fixed tool allow-list with strict argument schemas. It has no path, shell, delete or export tool. Its activity is recorded in `agent/log.jsonl`; suggestions and their resolution are recorded in `agent/proposals.json`.
 
-## Current limitation
+## Autopilot and limits
 
-The director currently exposes a deliberately small first tool set. It does not yet expand revision dependencies, preview affected assets, reserve a budget across a proposed batch, or automatically execute the next confirmed stage. Generation requests route to Manual Studio and never claim unsupported work is running.
+Autopilot starts the existing resumable overnight pipeline when ComfyUI has a video workflow: keyframes, video and export can run unattended on the user's computer. If cloud keyframes are required, Agent Studio stops and sends the user to the live price confirmation in Manual Studio. It does not silently accept charges, invent missing creative decisions, or regenerate approved assets. Director-chat generation requests remain reviewable proposals rather than direct provider submissions.

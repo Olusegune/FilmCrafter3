@@ -7,7 +7,7 @@ export type KeyProvider = { id: keyof KeyStatus; name: string; purpose: string }
 /** The keys by what they are for, in the order a newcomer needs them: one provider of pictures and video first, the rest optional. */
 export const KEY_GROUPS: { title: string; hint: string; ids: (keyof KeyStatus)[] }[] = [
   { title: "Pictures and video", hint: "You need one of these to make anything. Kie.ai is the easiest start: the most models at the lowest prices.", ids: ["kie", "fal", "google", "byteplus"] },
-  { title: "Writing helper and picture checks", hint: "Optional. Plans story steps, suggests shots and checks finished pictures for hands and faces.", ids: ["openai", "openrouter"] },
+  { title: "Writing helper and picture checks", hint: "Optional. Plans story steps, suggests shots and checks finished pictures for hands and faces.", ids: ["openai", "anthropic", "openrouter"] },
   { title: "Voices", hint: "Optional. A custom voice for each character.", ids: ["elevenlabs"] },
 ];
 

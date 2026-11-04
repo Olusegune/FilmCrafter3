@@ -49,12 +49,13 @@ export type AgentStageState = "not_started" | "ready" | "working" | "needs_appro
 export type AgentStage = { id: string; label: string; state: AgentStageState };
 export type AgentStudioState = {
   version: number; paused: boolean; current: string; updated: number;
-  brief: { story: string; style: string; duration: string; aspect: string; budget_limit: number; checkin_mode: "guided" | "balanced" | "custom"; checkpoints: string[] };
+  brief: { story: string; style: string; duration: string; aspect: string; budget_limit: number; checkin_mode: "guided" | "balanced" | "autopilot" | "custom"; checkpoints: string[] };
   stages: AgentStage[]; approvals: { id: string; stage: string; at: number; asset_versions: string[] }[];
   revisions: { id: string; stage: string; note: string; affected: string[]; at: number; state: string }[];
   activity: { id: string; at: number; kind: string; text: string }[];
   existing: { scenes: number; shots: number }; spending: { actual: number; committed: number; limit: number; pricing_known: boolean };
   jobs: { ready: number; working: number; failed: number };
+  analysis?: { status: "proposed" | "accepted"; model: string; logline: string; genre: string; tone: string; characters: { name: string; role: string }[]; scenes: { heading: string; summary: string }[]; visual_style: string; visual_style_reason: string; director_style_id: string; director_style_reason: string; questions: string[] } | null;
 };
 export type DirectorStyle = { id: string; name: string; region: string; origin: string; known_for: string; palette: string[]; traits: Record<string, string> };
 export type Concept = {
@@ -140,7 +141,7 @@ export type ShotLevels = { shot: string; layers: Record<string, number | null>; 
 export type ShotSound = { shot: string; native: boolean; take: { id: string; model?: string; output: string } | null; has_audio: boolean; silent: boolean; split: boolean; changed: boolean;
   layers: SoundLayer[]; note?: string };
 
-export type KeyStatus = { openai: boolean; fal: boolean; kie: boolean; google: boolean; elevenlabs: boolean; openrouter?: boolean; byteplus?: boolean };
+export type KeyStatus = { openai: boolean; anthropic?: boolean; fal: boolean; kie: boolean; google: boolean; elevenlabs: boolean; openrouter?: boolean; byteplus?: boolean };
 export type EngineEvent = { task: string; event: string; job?: unknown; stage?: string; progress?: number; message?: string; [k: string]: unknown };
 
 export type RefKind = "character" | "set" | "prop" | "wardrobe" | "lighting" | "style" | "video" | "audio";
@@ -185,7 +186,7 @@ export type ChoreoPlan = { concept: string; dancers: string[]; bpm: number; sour
 export type Choreography = { mode: "none" | "upload" | "written" | "style" | "ai" | null; style: string | null; notes: string;
   files: string[]; sections: { section: string; performers: string[]; notes: string }[]; precise: boolean; plan?: ChoreoPlan };
 
-export type Brain = { provider: "openai" | "openrouter" | "gemini" | "ollama" | "lmstudio"; base_url: string; model: string; vision_model: string };
+export type Brain = { provider: "openai" | "anthropic" | "openrouter" | "gemini" | "ollama" | "lmstudio"; base_url: string; model: string; vision_model: string };
 export type AgentProposal = { id: string; tool: string; args: Record<string, unknown>; risk: "write" | "spend"; state: "pending" | "applied" | "rejected" | "stale"; created: number };
 export type DirectorTurn = { reply: string; model: string; steps: { tool: string; result: unknown }[]; proposals: AgentProposal[] };
 
@@ -208,7 +209,7 @@ function noteChange<T>(command: string, action: string, p: Promise<T>): Promise<
 
 export const api = {
   directorStyle: <T = { styles: DirectorStyle[]; current: string | null }>(dir: string, action: "list" | "set" | "clear", data: Record<string, unknown> = {}) => invoke<T>("director_style", { dir, action, data }),
-  agentStudio: (dir: string, action: "state" | "update_brief" | "create_plan" | "approve" | "request_changes" | "pause" | "resume", data: Record<string, unknown> = {}) =>
+  agentStudio: (dir: string, action: "state" | "update_brief" | "analyze" | "accept_analysis" | "create_plan" | "approve" | "request_changes" | "pause" | "resume", data: Record<string, unknown> = {}) =>
     invoke<AgentStudioState>("agent_studio", { dir, action, data }),
   directorChat: <T = DirectorTurn>(dir: string, action: "turn" | "proposals" | "apply" | "reject", data: Record<string, unknown> = {}) =>
     invoke<T>("director_chat", { dir, action, data }),
@@ -257,6 +258,7 @@ export const api = {
     const [k, b] = await Promise.all([invoke<KeyStatus>("key_status"), invoke<Brain>("ai_brain", { action: "get", data: {} }).catch(() => null)]);
     if (!b || b.provider === "openai") return !!k.openai;                                  // OpenAI: its key
     if (b.provider === "openrouter") return !!k.openrouter && !!b.model;                     // OpenRouter: its key and a model chosen
+    if (b.provider === "anthropic") return !!k.anthropic && !!b.model;                        // Claude: Anthropic key and a model chosen
     if (b.provider === "gemini") return !!k.google && !!b.model;                             // Gemini: Google key and a model chosen
     return !!b.model;                                                                         // Ollama / LM Studio: a model chosen
   },

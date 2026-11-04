@@ -23,7 +23,7 @@ describe("Agent Studio", () => {
     render(<AgentStudio project={project} onHome={() => {}} onManual={() => {}} />);
     expect(await screen.findByRole("heading", { name: "What should FilmCrafter make?" })).toBeInTheDocument();
     expect(screen.getByText(/Nothing is generated or charged yet/)).toBeInTheDocument();
-    const create = screen.getByRole("button", { name: "Create production plan" });
+    const create = screen.getByRole("button", { name: "Analyse script" });
     expect(create).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Story or idea"), { target: { value: "A child follows a paper bird through a sleeping city." } });
     expect(create).toBeEnabled();

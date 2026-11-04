@@ -96,7 +96,7 @@ fn confirm_spend(dir: String, shots: Vec<String>, provider: String, kind: Option
     Ok(l.mint(token, key, std::time::Instant::now()))
 }
 
-const PROVIDERS: [&str; 7] = ["openai", "fal", "kie", "google", "elevenlabs", "openrouter", "byteplus"];
+const PROVIDERS: [&str; 8] = ["openai", "anthropic", "fal", "kie", "google", "elevenlabs", "openrouter", "byteplus"];
 
 fn err<E: std::fmt::Display>(e: E) -> String {
     e.to_string()
@@ -692,7 +692,7 @@ fn load_project(app: AppHandle, dir: String) -> Result<Value, String> {
 fn provider_env() -> Vec<(&'static str, String)> {
     let mut env = vec![];
     // OpenAI powers the visual review of finished takes.
-    for (provider, var) in [("fal", "FAL_KEY"), ("kie", "KIE_KEY"), ("openai", "FILMCRAFTER_OPENAI_KEY"), ("google", "GEMINI_API_KEY"), ("elevenlabs", "ELEVENLABS_KEY"), ("byteplus", "BYTEPLUS_KEY")] {
+    for (provider, var) in [("fal", "FAL_KEY"), ("kie", "KIE_KEY"), ("openai", "FILMCRAFTER_OPENAI_KEY"), ("anthropic", "ANTHROPIC_API_KEY"), ("google", "GEMINI_API_KEY"), ("elevenlabs", "ELEVENLABS_KEY"), ("byteplus", "BYTEPLUS_KEY")] {
         if let Ok(k) = keyring::Entry::new(KEY_SERVICE, provider).and_then(|e| e.get_password()) {
             env.push((var, k));
         }
@@ -1951,13 +1951,14 @@ async fn refgen(app: AppHandle, dir: String, action: String, data: Value) -> Res
 /// but it never queues provider work; paid execution remains behind confirm_spend.
 #[tauri::command]
 async fn agent_studio(app: AppHandle, dir: String, action: String, data: Value) -> Result<Value, String> {
-    const ACTIONS: [&str; 7] = ["state", "update_brief", "create_plan", "approve", "request_changes", "pause", "resume"];
+    const ACTIONS: [&str; 9] = ["state", "update_brief", "analyze", "accept_analysis", "create_plan", "approve", "request_changes", "pause", "resume"];
     if !ACTIONS.contains(&action.as_str()) {
         return Err("Unknown Agent Studio action.".into());
     }
     let d = project_dir(&dir)?.to_string_lossy().to_string();
+    let env = if action == "analyze" { openai_env()? } else { vec![] };
     let args = vec!["-m".into(), "filmcrafter_engine.agent_studio".into(), action, d, "--data".into(), data.to_string()];
-    tauri::async_runtime::spawn_blocking(move || run_engine_result(&app, "agent_studio", &args, &[])).await.map_err(err)?
+    tauri::async_runtime::spawn_blocking(move || run_engine_result(&app, "agent_studio", &args, &env)).await.map_err(err)?
 }
 
 
@@ -2279,6 +2280,11 @@ async fn stylebible(app: AppHandle, dir: String, action: String, data: Value) ->
 
 /// The AI brain's environment: the OpenAI key, or nothing when a local model (Ollama / LM Studio) is chosen.
 fn openai_env() -> Result<Vec<(&'static str, String)>, String> {
+    if brain_provider() == "anthropic" {
+        let key = keyring::Entry::new(KEY_SERVICE, "anthropic").and_then(|e| e.get_password()).ok().filter(|k| !k.is_empty())
+            .ok_or_else(|| "Add your Anthropic Claude API key in Settings, or choose another AI brain.".to_string())?;
+        return Ok(vec![("ANTHROPIC_API_KEY", key)]);
+    }
     if brain_provider() == "gemini" {
         let key = keyring::Entry::new(KEY_SERVICE, "google").and_then(|e| e.get_password()).ok().filter(|k| !k.is_empty())
             .ok_or_else(|| "Add your Google Gemini key in Settings, or choose another AI brain.".to_string())?;
@@ -2307,7 +2313,7 @@ fn brain_provider() -> String {
     dirs_home().map(|h| h.join(".filmcrafter").join("llm.json"))
         .and_then(|p| read_json(&p))
         .and_then(|v| v["provider"].as_str().map(String::from))
-        .filter(|p| ["openai", "openrouter", "gemini", "ollama", "lmstudio"].contains(&p.as_str()))
+        .filter(|p| ["openai", "anthropic", "openrouter", "gemini", "ollama", "lmstudio"].contains(&p.as_str()))
         .unwrap_or_else(|| "openai".into())
 }
 

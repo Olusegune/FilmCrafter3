@@ -11,9 +11,10 @@ import type { KeyStatus } from "../../api";
 const providers: KeyProvider[] = [
   { id: "kie", name: "Kie.ai", purpose: "Video, images and upscaling" }, { id: "fal", name: "fal.ai", purpose: "Video, images" }, { id: "google", name: "Google Gemini", purpose: "Veo, Nano Banana" },
   { id: "byteplus", name: "BytePlus (Seedream)", purpose: "Seedream direct" }, { id: "openai", name: "OpenAI", purpose: "OpenAI's own models" }, { id: "openrouter", name: "OpenRouter", purpose: "Hundreds of models" },
+  { id: "anthropic", name: "Anthropic Claude", purpose: "Claude models" },
   { id: "elevenlabs", name: "ElevenLabs", purpose: "Voices" },
 ];
-const status: KeyStatus = { openai: false, fal: true, kie: false, google: false, elevenlabs: false, openrouter: false, byteplus: false };
+const status: KeyStatus = { openai: false, anthropic: false, fal: true, kie: false, google: false, elevenlabs: false, openrouter: false, byteplus: false };
 afterEach(cleanup);
 
 const view = (over: Partial<Parameters<typeof KeyGroups>[0]> = {}) => {
@@ -35,13 +36,13 @@ describe("the keys, grouped by what they are for", () => {
   });
   it("shows every key once, and a key that has no group is not lost from the groups table", () => {
     view();
-    expect(document.querySelectorAll("input[type=password]")).toHaveLength(7);
+    expect(document.querySelectorAll("input[type=password]")).toHaveLength(8);
     expect(KEY_GROUPS.flatMap((g) => g.ids).sort()).toEqual(providers.map((p) => p.id).sort());
   });
   it("says Connected with a Remove link for a saved key only, and Not connected for the rest", () => {
     view();
     expect(screen.getAllByText("Connected")).toHaveLength(1);
-    expect(screen.getAllByText("Not connected")).toHaveLength(6);
+    expect(screen.getAllByText("Not connected")).toHaveLength(7);
     expect(screen.getAllByRole("button", { name: /^Remove the / })).toHaveLength(1);
     expect(screen.getByRole("button", { name: "Remove the fal.ai key" })).toBeInTheDocument();
   });

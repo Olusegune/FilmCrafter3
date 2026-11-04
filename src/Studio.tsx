@@ -38,6 +38,7 @@ import { TransitionHandles } from "./TransitionHandles";
 import { snapPoints } from "./laneMath";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { PreviewSheet } from "./PreviewSheet";
+import { FilmGuide } from "./FilmGuide";
 import { ColourMatchSheet } from "./ColourMatch";
 import { ColorStudioSheet } from "./ColorStudio";
 import { SmartEditorSheet } from "./SmartEditor";
@@ -846,6 +847,7 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
             <button className="btn" onClick={() => setError("")}>OK</button></div>
         </div>
       )}
+      {!focus && <FilmGuide project={{ ...project, jobs }} onOpen={() => chooseWorkspace("agent")} />}
     </div>
   );
 }

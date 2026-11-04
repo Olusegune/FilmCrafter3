@@ -21,8 +21,8 @@ import sys
 import types
 
 CONFIG = os.path.join(os.path.expanduser("~"), ".filmcrafter", "llm.json")
-DEFAULT_URLS = {"ollama": "http://127.0.0.1:11434/v1", "lmstudio": "http://127.0.0.1:1234/v1", "openrouter": "https://openrouter.ai/api/v1", "gemini": "https://generativelanguage.googleapis.com/v1beta/openai"}
-NAMES = {"openai": "OpenAI", "openrouter": "OpenRouter", "gemini": "Google Gemini", "ollama": "Ollama", "lmstudio": "LM Studio"}
+DEFAULT_URLS = {"ollama": "http://127.0.0.1:11434/v1", "lmstudio": "http://127.0.0.1:1234/v1", "openrouter": "https://openrouter.ai/api/v1", "gemini": "https://generativelanguage.googleapis.com/v1beta/openai", "anthropic": "https://api.anthropic.com/v1"}
+NAMES = {"openai": "OpenAI", "anthropic": "Anthropic Claude", "openrouter": "OpenRouter", "gemini": "Google Gemini", "ollama": "Ollama", "lmstudio": "LM Studio"}
 LOCAL = ("ollama", "lmstudio")        # run on this computer: free
 MODELS_CACHE = os.path.join(os.path.expanduser("~"), ".filmcrafter", "openrouter_models.json")
 
@@ -46,9 +46,9 @@ def save(c: dict) -> dict:
     if prov != "openai":
         if not re.match(r"^https?://[^\s/]+(:\d+)?(/.*)?$", url):
             raise SystemExit("Enter the server address, e.g. http://127.0.0.1:11434/v1")
-        if prov != "gemini" and not url.endswith("/v1"):
+        if prov not in {"gemini", "anthropic"} and not url.endswith("/v1"):
             url += "/v1"   # both servers expose the OpenAI API under /v1
-        if prov in {"openrouter", "gemini"} and not url.startswith("https://"):
+        if prov in {"openrouter", "gemini", "anthropic"} and not url.startswith("https://"):
             raise SystemExit(f"{NAMES[prov]} is reached over https.")
         if not (c.get("model") or "").strip():
             raise SystemExit("Choose which model to use." if prov == "openrouter" else "Choose which local model to use.")
@@ -171,6 +171,41 @@ def _gemini_key() -> str:
     return key
 
 
+def _anthropic_key() -> str:
+    key = os.environ.get("ANTHROPIC_API_KEY")
+    if not key:
+        try:
+            import keyring
+            key = keyring.get_password("filmcrafter", "anthropic")
+        except Exception:
+            key = None
+    if not key:
+        raise SystemExit("Add your Anthropic Claude API key in Settings, or choose another AI brain.")
+    return key
+
+
+class _AnthropicResponses:
+    def __init__(self, cfg): self.cfg = cfg
+    def create(self, model: str, input, text: dict | None = None, **_):
+        import requests
+        system = "\n\n".join(str(m.get("content") or "") for m in input if m.get("role") == "system")
+        messages = [{"role": m["role"], "content": m["content"]} for m in input if m.get("role") in {"user", "assistant"}]
+        schema = ((text or {}).get("format") or {}).get("schema")
+        if schema:
+            system += "\nReply with ONLY JSON matching this schema exactly:\n" + json.dumps(schema)
+        r = requests.post(self.cfg["base_url"].rstrip("/") + "/messages", timeout=180, headers={
+            "x-api-key": _anthropic_key(), "anthropic-version": "2023-06-01", "content-type": "application/json"},
+            json={"model": model, "max_tokens": 4096, "system": system, "messages": messages})
+        r.raise_for_status(); body = r.json(); raw = "".join(x.get("text", "") for x in body.get("content", []) if x.get("type") == "text")
+        raw = _json_text(raw) if schema else raw
+        if schema: json.loads(raw)
+        return types.SimpleNamespace(output_text=raw)
+
+
+class _Anthropic:
+    def __init__(self, cfg): self.cfg = cfg; self.responses = _AnthropicResponses(cfg); self.local = False; self.routed = False
+
+
 class _Local:
     """Any chat-completions server behind the same interface: Ollama / LM Studio on this computer, or OpenRouter in the cloud."""
 
@@ -190,6 +225,9 @@ class _Local:
 def client():
     """The configured brain: an OpenAI client, or a local server behind the same interface."""
     cfg = config()
+    if cfg["provider"] == "anthropic":
+        _anthropic_key()
+        return _Anthropic(cfg)
     if cfg["provider"] != "openai":
         return _Local(cfg)             # OpenRouter, Ollama or LM Studio
     import keyring
@@ -286,6 +324,15 @@ def list_models(c: dict) -> dict:
         except SystemExit: raise
         except Exception as e:
             raise SystemExit(f"Couldn't reach Google Gemini ({type(e).__name__}). Check the key and internet connection.")
+    if prov == "anthropic":
+        import requests
+        try:
+            url = (c.get("base_url") or DEFAULT_URLS["anthropic"]).rstrip("/")
+            r = requests.get(url + "/models", timeout=20, headers={"x-api-key": _anthropic_key(), "anthropic-version": "2023-06-01"}); r.raise_for_status()
+            ids = sorted(x["id"] for x in r.json().get("data", []) if isinstance(x.get("id"), str))
+            return {"base_url": url, "models": ids, "vision_capable": ids}
+        except SystemExit: raise
+        except Exception as e: raise SystemExit(f"Couldn't reach Anthropic Claude ({type(e).__name__}). Check the key and internet connection.")
     url = (c.get("base_url") or DEFAULT_URLS.get(prov, "")).rstrip("/")
     if prov in LOCAL and not url.endswith("/v1"):
         url += "/v1"

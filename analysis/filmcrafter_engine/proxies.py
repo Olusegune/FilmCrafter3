@@ -52,7 +52,7 @@ def proxy_name(d: str, rel: str) -> str | None:
         st = os.stat(p)
     except OSError:
         return None
-    return hashlib.sha1(f"{rel}|{st.st_size}|{int(st.st_mtime)}|{PROXY_LINES}".encode("utf-8")).hexdigest()[:20] + ".mp4"
+    return hashlib.sha256(f"{rel}|{st.st_size}|{int(st.st_mtime)}|{PROXY_LINES}".encode("utf-8")).hexdigest()[:20] + ".mp4"
 
 
 def lines_of(path: str) -> int | None:

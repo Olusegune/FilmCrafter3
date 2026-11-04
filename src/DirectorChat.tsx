@@ -47,4 +47,4 @@ export function DirectorChat({ dir, onClose, onChanged }: { dir: string; onClose
 
 function label(tool: string) { return ({ set_director_style: "Use filmmaker craft profile", clear_director_style: "Remove filmmaker craft profile", request_revision: "Request focused revision", request_render: "Prepare generation request" } as Record<string,string>)[tool] ?? tool.replace(/_/g, " "); }
 function summary(p: AgentProposal) { const a = p.args; return String(a.note ?? a.id ?? (Array.isArray(a.shots) ? `${a.kind}: ${a.shots.length} shot(s)` : "")); }
-function providerName(p: Brain["provider"]) { return ({ openai: "OpenAI", openrouter: "OpenRouter", gemini: "Google Gemini", ollama: "your local Ollama server", lmstudio: "your local LM Studio server" })[p]; }
+function providerName(p: Brain["provider"]) { return ({ openai: "OpenAI", anthropic: "Anthropic Claude", openrouter: "OpenRouter", gemini: "Google Gemini", ollama: "your local Ollama server", lmstudio: "your local LM Studio server" })[p]; }

@@ -108,7 +108,7 @@ def preview(d: str, tid: str, texts: dict | None = None, W: int = 640, H: int = 
     from PIL import Image
     from . import overlays as O
     t = build(tid, texts)
-    key = hashlib.sha1(json.dumps([t["layers"], W, H], sort_keys=True, default=str).encode()).hexdigest()[:16]
+    key = hashlib.sha256(json.dumps([t["layers"], W, H], sort_keys=True, default=str).encode()).hexdigest()[:16]
     out = os.path.join(d, "cache", "motion_preview", f"{tid}-{key}.png")
     if not os.path.isfile(out):
         frame = Image.new("RGBA", (W, H), (0, 0, 0, 255))

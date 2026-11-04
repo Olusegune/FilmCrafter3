@@ -13,6 +13,7 @@ import { KeyGroups } from "./KeyRows";
 const PROVIDERS: { id: keyof KeyStatus; name: string; purpose: string }[] = [
   { id: "kie", name: "Kie.ai", purpose: "Video, images and upscaling" },
   { id: "openai", name: "OpenAI", purpose: "OpenAI's own models" },
+  { id: "anthropic", name: "Anthropic Claude", purpose: "Claude models for planning and direction" },
   { id: "openrouter", name: "OpenRouter", purpose: "One key for hundreds of cheaper models (choose it under AI brain)" },
   { id: "fal", name: "fal.ai", purpose: "Video, images and upscaling" },
   { id: "google", name: "Google Gemini", purpose: "Veo video and Nano Banana images, direct from Google" },
@@ -22,7 +23,7 @@ const PROVIDERS: { id: keyof KeyStatus; name: string; purpose: string }[] = [
 
 /** Keys go straight to the Windows Credential Manager / macOS Keychain; they never touch project files. */
 export function Settings({ onClose, onHelp }: { onClose: () => void; onHelp?: () => void }) {
-  const [status, setStatus] = useState<KeyStatus>({ openai: false, fal: false, kie: false, google: false, elevenlabs: false, openrouter: false });
+  const [status, setStatus] = useState<KeyStatus>({ openai: false, anthropic: false, fal: false, kie: false, google: false, elevenlabs: false, openrouter: false });
 
   const refresh = () => api.keyStatus().then((k) => { setStatus(k); window.dispatchEvent(new Event("pf-keys-changed")); });
   useEffect(() => { refresh(); }, []);
@@ -43,7 +44,7 @@ export function Settings({ onClose, onHelp }: { onClose: () => void; onHelp?: ()
                    onSave={async (id, key) => { await api.setKey(id, key); await refresh(); }}
                    onRemove={async (id) => { await api.deleteKey(id); await refresh(); }} />
         <InterfaceSize />
-        <BrainPanel openaiKey={status.openai} openrouterKey={!!status.openrouter} googleKey={!!status.google} />
+        <BrainPanel openaiKey={status.openai} anthropicKey={!!status.anthropic} openrouterKey={!!status.openrouter} googleKey={!!status.google} />
         <ComfyPanel />
         <ProviderOverview keys={status} />
         <Diagnostics keys={status} />
@@ -261,6 +262,7 @@ function Diagnostics({ keys }: { keys: KeyStatus }) {
 
 const BRAINS: { id: Brain["provider"]; name: string; url: string; blurb: string }[] = [
   { id: "openai", name: "OpenAI", url: "", blurb: "Cloud. Best plans and reviews; uses your OpenAI key and credits." },
+  { id: "anthropic", name: "Claude", url: "https://api.anthropic.com/v1", blurb: "Cloud. Uses your Anthropic API key for story analysis, planning and direction." },
   { id: "openrouter", name: "OpenRouter", url: "https://openrouter.ai/api/v1", blurb: "Cloud, one key (set it in Connections above). Hundreds of models, many far cheaper than OpenAI: pick one by price. Plans and reviews are only as good as the model you choose." },
   { id: "gemini", name: "Google Gemini", url: "https://generativelanguage.googleapis.com/v1beta/openai", blurb: "Cloud. Uses your Google Gemini key through Google's official OpenAI-compatible endpoint." },
   { id: "lmstudio", name: "LM Studio", url: "http://127.0.0.1:1234/v1", blurb: "Free, on this PC. An app: download a model in its Discover tab, then turn on the local server (Developer tab)." },
@@ -268,7 +270,7 @@ const BRAINS: { id: Brain["provider"]; name: string; url: string; blurb: string 
 ];
 
 /** Which AI plans, directs, choreographs and reviews: OpenAI, or a local model via Ollama / LM Studio. */
-function BrainPanel({ openaiKey, openrouterKey, googleKey }: { openaiKey: boolean; openrouterKey: boolean; googleKey: boolean }) {
+function BrainPanel({ openaiKey, anthropicKey, openrouterKey, googleKey }: { openaiKey: boolean; anthropicKey: boolean; openrouterKey: boolean; googleKey: boolean }) {
   const [b, setB] = useState<Brain | null>(null);
   const [models, setModels] = useState<string[]>([]);
   const [vision, setVision] = useState<string[]>([]);
@@ -315,7 +317,7 @@ function BrainPanel({ openaiKey, openrouterKey, googleKey }: { openaiKey: boolea
       </label>
       <div className="seg" role="radiogroup" aria-label="AI brain" style={{ marginBottom: 8 }}>
         {BRAINS.map((x) => <button key={x.id} role="radio" aria-checked={b.provider === x.id} className={b.provider === x.id ? "on" : ""} onClick={() => pick(x.id)}>
-          {x.name}{x.id === "openai" && !openaiKey && <span className="dim"> · no key</span>}{x.id === "openrouter" && !openrouterKey && <span className="dim"> · no key</span>}{x.id === "gemini" && !googleKey && <span className="dim"> · no key</span>}</button>)}
+          {x.name}{x.id === "openai" && !openaiKey && <span className="dim"> · no key</span>}{x.id === "anthropic" && !anthropicKey && <span className="dim"> · no key</span>}{x.id === "openrouter" && !openrouterKey && <span className="dim"> · no key</span>}{x.id === "gemini" && !googleKey && <span className="dim"> · no key</span>}</button>)}
       </div>
       <p className="dim" style={{ margin: "0 0 8px", fontSize: 12.5 }}>{BRAINS.find((x) => x.id === b.provider)!.blurb}</p>
       {local && <>
@@ -325,6 +327,7 @@ function BrainPanel({ openaiKey, openrouterKey, googleKey }: { openaiKey: boolea
           <button className="btn" onClick={find} disabled={!!busy}>{busy === "Looking…" ? busy : routed ? "Find models and prices" : "Find models"}</button>
         </div>
         {routed && !openrouterKey && <p className="mp-warn" role="note">Add your OpenRouter key under Connections above, then press Test.</p>}
+        {b.provider === "anthropic" && !anthropicKey && <p className="mp-warn" role="note">Add your Anthropic Claude API key under Connections above, then press Test.</p>}
         {b.provider === "gemini" && !googleKey && <p className="mp-warn" role="note">Add your Google Gemini key under Connections above, then press Test.</p>}
         {routed && models.length > 0 && <input className="text-input" aria-label="Search models" placeholder="Search models, for example gemini, deepseek, qwen" value={filter} onChange={(e) => setFilter(e.target.value)} style={{ marginTop: 8 }} />}
         {(models.length > 0 || b.model) && <div className="brain-models">

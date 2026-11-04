@@ -637,7 +637,7 @@ def preview(d: str, shot_id: str, grade: dict | None = None) -> dict:
     extra = ",".join(c for c in (grade_chain(x, *_lutargs(d, st, x)) for x in grades) if c)
     out_dir = os.path.join(d, "cache", "grade_preview")
     os.makedirs(out_dir, exist_ok=True)
-    key = hashlib.sha1(json.dumps([src, os.path.getmtime(src), base, extra], default=str).encode()).hexdigest()[:12]
+    key = hashlib.sha256(json.dumps([src, os.path.getmtime(src), base, extra], default=str).encode()).hexdigest()[:12]
     w = 640
     fill = f"scale={w}:-2,setsar=1,format=yuv420p"
     res = {}

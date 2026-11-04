@@ -24,12 +24,23 @@ STAGES = [
     ("preview", "Preview cut"),
     ("export", "Final review & export"),
 ]
-MODES = {"guided", "balanced", "custom"}
+MODES = {"guided", "balanced", "autopilot", "custom"}
 ASPECTS = {"2.39:1", "21:9", "16:9", "4:3", "1:1", "4:5", "3:4", "9:16", "9:21"}
 CHECKPOINTS = {
     "guided": [x[0] for x in STAGES],
     "balanced": ["story", "direction", "first_scene", "preview"],
+    # Autopilot still asks before money is spent and when an instruction is
+    # ambiguous; it does not add routine creative check-ins of its own.
+    "autopilot": [],
 }
+ANALYSIS_SCHEMA = {"type": "object", "additionalProperties": False, "required": ["logline", "genre", "tone", "characters", "scenes", "visual_style", "visual_style_reason", "director_style_id", "director_style_reason", "questions"], "properties": {
+    "logline": {"type": "string"}, "genre": {"type": "string"}, "tone": {"type": "string"},
+    "characters": {"type": "array", "maxItems": 40, "items": {"type": "object", "additionalProperties": False, "required": ["name", "role"], "properties": {"name": {"type": "string"}, "role": {"type": "string"}}}},
+    "scenes": {"type": "array", "maxItems": 100, "items": {"type": "object", "additionalProperties": False, "required": ["heading", "summary"], "properties": {"heading": {"type": "string"}, "summary": {"type": "string"}}}},
+    "visual_style": {"type": "string", "enum": ["cinematic", "photoreal", "stylized-3d", "2d-animation", "storybook", "documentary", "commercial", "experimental"]},
+    "visual_style_reason": {"type": "string"}, "director_style_id": {"type": "string"}, "director_style_reason": {"type": "string"},
+    "questions": {"type": "array", "maxItems": 6, "items": {"type": "string"}}
+}}
 
 
 def _read(path, default=None):
@@ -87,6 +98,7 @@ def _base(d):
         "stages": [{"id": sid, "label": label, "state": "not_started"} for sid, label in STAGES],
         "approvals": [],
         "revisions": [],
+        "analysis": None,
         "activity": [{"id": uuid.uuid4().hex, "at": int(time.time()), "kind": "created", "text": "Agent Studio opened for this project."}],
         "existing": {"scenes": len(plan.get("scenes", [])), "shots": len(shots)},
     }
@@ -164,6 +176,34 @@ def create_plan(d):
     return _save(d, w)
 
 
+def analyze(d):
+    w = _load(d); story = w.get("brief", {}).get("story", "")
+    if len(story.strip()) < 20: raise SystemExit("Add a story or script before asking the agent to analyse it.")
+    from . import llm
+    from .director import resolve_model
+    from .filmmakers import LIBRARY
+    c = llm.client(); model = llm.local_model(c) or resolve_model(c, "gpt-5")
+    choices = [{"id": x["id"], "name": x["name"], "known_for": x.get("known_for", "")} for x in LIBRARY]
+    prompt = "Analyse this script as a film producer. Suggestions are optional and must preserve the writer's story. Pick a visual_style enum and optionally one director_style_id from the supplied library; use an empty id if none genuinely fits. Do not rewrite the script.\n\nDIRECTOR LIBRARY:\n" + json.dumps(choices, ensure_ascii=False) + "\n\nSCRIPT:\n" + story[:60000]
+    r = c.responses.create(model=model, input=[{"role": "system", "content": "You are FilmCrafter's careful development producer. Separate facts from suggestions."}, {"role": "user", "content": prompt}], text={"format": {"type": "json_schema", "name": "script_analysis", "schema": ANALYSIS_SCHEMA, "strict": True}})
+    out = json.loads(r.output_text)
+    valid = {x["id"] for x in LIBRARY}
+    if out.get("director_style_id") not in valid: out["director_style_id"] = ""
+    w["analysis"] = {**out, "status": "proposed", "model": model, "at": int(time.time())}
+    _activity(w, "analysis", "The AI analysed the script and prepared optional suggestions. Nothing was changed.")
+    return _save(d, w)
+
+
+def accept_analysis(d, data):
+    w = _load(d); a = w.get("analysis")
+    if not isinstance(a, dict): raise SystemExit("Analyse the script first.")
+    style = _clean(data.get("style") or a.get("visual_style"), 120)
+    if style: w["brief"]["style"] = style
+    a["status"] = "accepted"; a["accepted"] = int(time.time()); a["director_style_id"] = _clean(data.get("director_style_id", a.get("director_style_id", "")), 100)
+    _activity(w, "analysis_accepted", "Script analysis accepted. The original story remains the source of truth.")
+    return _save(d, w)
+
+
 def approve(d, data):
     w = _load(d); sid = _clean(data.get("stage"), 40); s = _stage(w, sid)
     if not s: raise SystemExit("Unknown production stage.")
@@ -197,6 +237,8 @@ def run(action, d, data):
     if action == "state": return state(d)
     if action == "update_brief": return update_brief(d, data)
     if action == "create_plan": return create_plan(d)
+    if action == "analyze": return analyze(d)
+    if action == "accept_analysis": return accept_analysis(d, data)
     if action == "approve": return approve(d, data)
     if action == "request_changes": return request_changes(d, data)
     if action == "pause": return pause(d, True)
@@ -207,7 +249,7 @@ def run(action, d, data):
 def main(argv):
     try:
         ap = argparse.ArgumentParser()
-        ap.add_argument("action", choices=["state", "update_brief", "create_plan", "approve", "request_changes", "pause", "resume"])
+        ap.add_argument("action", choices=["state", "update_brief", "analyze", "accept_analysis", "create_plan", "approve", "request_changes", "pause", "resume"])
         ap.add_argument("project")
         ap.add_argument("--data", default="{}")
         a = ap.parse_args(argv)

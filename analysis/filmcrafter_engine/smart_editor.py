@@ -113,7 +113,7 @@ def _save_state(d: str, st: dict) -> None:
 
 
 def _pid(kind: str, *parts) -> str:
-    return hashlib.sha1("|".join([kind, *map(str, parts)]).encode()).hexdigest()[:10]
+    return hashlib.sha256("|".join([kind, *map(str, parts)]).encode()).hexdigest()[:10]
 
 
 # ---------------------------------------------------------------- the rules
