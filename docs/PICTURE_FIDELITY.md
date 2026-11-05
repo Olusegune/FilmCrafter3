@@ -1,5 +1,7 @@
 # Picture fidelity (Phase 1)
 
+![Picture quality: what was measured, and the free local choices](img/fidelity.png)
+
 A free, local quality check for a shot's keyframe, and a careful clean-up that never touches the original. Engine: `analysis/filmcrafter_engine/fidelity.py`. Screen: `src/FidelitySheet.tsx`. Native command: `fidelity` in `src-tauri/src/lib.rs`.
 
 It uses only numpy and Pillow. Nothing is sent anywhere, nothing is billed, and it has no provider or spend path. The follow-on stages (a local super-resolution model, video restoration, finishing and export profiles) are not built; see "Not in Phase 1".

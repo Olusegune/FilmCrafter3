@@ -33,6 +33,9 @@ const tab = (t) => `${click("[role=tab]", t)}`;
 const scrollTo = (sel) => `document.querySelector(${JSON.stringify(sel)}).scrollIntoView({ block: "center" }); ${wait(500)}`;
 
 export const SHOTS = {
+  // `page` shots use the screenshot harness (docshots.html?scene=...), which carries its own sample data, so they need no private mock-data folder
+  fidelity: { page: "docshots.html?scene=fidelity", steps: wait(2800), clip: ".sheet", alt: "Picture quality: what was measured, and the free local choices" },
+  finish: { height: 1800, page: "docshots.html?scene=exportsheet", steps: `${wait(2800)} document.querySelector(".fin-panel summary").click(); ${wait(400)} [...document.querySelectorAll("button")].find((b) => b.textContent === "Check for flicker").click(); ${wait(900)} document.querySelector(".fin-panel").scrollIntoView({ block: "start" }); ${wait(300)}`, clip: ".fin-panel", alt: "Finish and deliver: flicker check, a calmer copy, delivery profiles" },
   home: { steps: `${wait(2500)}`, alt: "The Home screen" },
   studio: { steps: `${openStudio} ${pickShot("01-04")}`, alt: "The Studio: player, shots on the song's timeline, and the inspector" },
   shortcuts: { steps: `${openStudio} window.dispatchEvent(new KeyboardEvent("keydown", { key: "?", shiftKey: true })); ${wait(700)}`, alt: "The keyboard shortcuts list (press ?)" },
@@ -115,8 +118,8 @@ async function main() {
     for (const name of names) {
       const s = SHOTS[name];
       // a fresh page each time: the sample project, its welcome tour and the in-memory sound layers all start from scratch
-      await cdp.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 900, deviceScaleFactor: 2, mobile: false });
-      await cdp.send("Page.navigate", { url: s.query ? `${URL}&${s.query}` : URL });
+      await cdp.send("Emulation.setDeviceMetricsOverride", { width: 1440, height: s.height || 900, deviceScaleFactor: 2, mobile: false });
+      await cdp.send("Page.navigate", { url: s.page ? new globalThis.URL(s.page, URL).href : s.query ? `${URL}&${s.query}` : URL });
       await new Promise((r) => setTimeout(r, 1500));
       const hook = "window.__errs = []; { const oe = console.error; console.error = (...a) => { window.__errs.push(a.map(String).join(' ').slice(0, 300)); oe(...a); }; window.addEventListener('error', (e) => window.__errs.push(String(e.message))); }";
       const r = await cdp.send("Runtime.evaluate", { expression: `(async () => { ${hook} ${s.steps} return true; })()`, awaitPromise: true, returnByValue: true });
@@ -125,7 +128,7 @@ async function main() {
       if (s.clip) {
         const box = await cdp.send("Runtime.evaluate", { returnByValue: true, expression: `(() => { const sels = ${JSON.stringify(s.clip.split(", "))}; const el = sels.map((q) => document.querySelector(q)).find(Boolean); if (!el) return null; const b = el.getBoundingClientRect(); return { x: b.x, y: b.y, width: b.width, height: b.height }; })()` });
         const b = box.result.value;
-        if (b) { const pad = 12; clip = { x: Math.max(0, b.x - pad), y: Math.max(0, b.y - pad), width: Math.min(1440, b.width + pad * 2), height: Math.min(900, b.height + pad * 2), scale: 1 }; }
+        if (b) { const pad = 12; clip = { x: Math.max(0, b.x - pad), y: Math.max(0, b.y - pad), width: Math.min(1440, b.width + pad * 2), height: Math.min(s.height || 900, b.height + pad * 2), scale: 1 }; }
       }
       const shot = await cdp.send("Page.captureScreenshot", { format: "png", ...(clip ? { clip } : {}) });
       writeFileSync(join(OUT, `${name}.png`), Buffer.from(shot.data, "base64"));

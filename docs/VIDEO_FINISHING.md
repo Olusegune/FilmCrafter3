@@ -1,5 +1,7 @@
 # Video finishing
 
+![Finish and deliver: flicker check, a calmer copy, delivery profiles](img/finish.png)
+
 Free and local (ffmpeg only). Engine: `analysis/filmcrafter_engine/videofinish.py`. Screen: `src/FinishPanel.tsx` inside the Export sheet. Native command: `video_finish`. Nothing is sent anywhere or billed, and the original file is never changed. New files go in `<film>/restore` and `<film>/finish`, with ledgers `restore.json` and `finish.json`. Inputs must be inside the film folder.
 
 ## Flicker measurement
