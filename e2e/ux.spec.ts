@@ -37,14 +37,14 @@ test.describe("the rail", () => {
   const names = (page: Page) => page.locator(".rail button").evaluateAll((bs) => bs.map((b) => (b.textContent ?? "").trim()));
   test("shows the path first (Studio, Review, Export) and keeps the other tools behind More", async ({ page }) => {
     await open(page, "studio");
-    expect(await names(page)).toEqual(["Home", "Project", "Library", "Studio", "Looks", "Review", "Export", "More", "Settings"]);
+    expect(await names(page)).toEqual(["Home", "Project", "Library", "Studio", "AI Agent", "Looks", "Review", "Export", "More", "Settings"]);
     const more = page.locator(".rail button.rail-more");
     await expect(more).toHaveAttribute("aria-expanded", "false");
     await more.click();
     await expect(more).toHaveAttribute("aria-expanded", "true");
-    expect(await names(page)).toEqual(["Home", "Project", "Library", "Studio", "Looks", "Review", "Export", "Fewer", "Supervisor", "Acting", "Continuity", "Layers", "Lighting", "Presets", "Color", "Colour match", "Clean up", "Settings"]);
+    expect(await names(page)).toEqual(["Home", "Project", "Library", "Studio", "AI Agent", "Looks", "Review", "Export", "Fewer", "Supervisor", "Acting", "Continuity", "Layers", "Lighting", "Presets", "Color", "Colour match", "Clean up", "Settings"]);
     await page.locator(".rail button.rail-more").click();
-    expect(await names(page)).toHaveLength(9);
+    expect(await names(page)).toHaveLength(10);
   });
   test("remembers how it was left", async ({ page }) => {
     await open(page, "studio");
