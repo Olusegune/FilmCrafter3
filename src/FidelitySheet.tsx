@@ -62,6 +62,7 @@ export function FidelitySheet({ dir, shot, onClose, onChanged }: { dir: string; 
   const [applied, setApplied] = useState(false);
   const [up, setUp] = useState<FidelityUpscaleStatus | null>(null);
   const [anime, setAnime] = useState(false);
+  const [isMaster, setIsMaster] = useState(false);
   useEffect(() => {
     setBusy("Measuring…");
     api.fidelity<FidelityCheck>(dir, "check", { shot }).then(setCheck).catch((e) => setErr(errorText(e))).finally(() => setBusy(""));
@@ -79,6 +80,15 @@ export function FidelitySheet({ dir, shot, onClose, onChanged }: { dir: string; 
     if (!item) return;
     setBusy("Saving…"); setErr("");
     try { await api.fidelity(dir, "apply", { id: item.id }); setApplied(true); onChanged(); } catch (e) { setErr(errorText(e)); } finally { setBusy(""); }
+  };
+  const makeMaster = async () => {
+    if (!item) return;
+    setBusy("Saving…"); setErr("");
+    try { await api.fidelity(dir, "master_set", { id: item.id }); setIsMaster(true); onChanged(); } catch (e) { setErr(errorText(e)); } finally { setBusy(""); }
+  };
+  const clearMaster = async () => {
+    setBusy("Saving…"); setErr("");
+    try { await api.fidelity(dir, "master_clear", { shot }); setIsMaster(false); onChanged(); } catch (e) { setErr(errorText(e)); } finally { setBusy(""); }
   };
   const undo = async () => {
     setBusy("Undoing…"); setErr("");
@@ -120,8 +130,10 @@ export function FidelitySheet({ dir, shot, onClose, onChanged }: { dir: string; 
           <p className="dim" style={{ marginTop: 6 }}>{item.method ? `${item.scale}× larger (${item.size[0]} × ${item.size[1]}) with ${item.model}. ` : ""}Measured again: sharpness {diff("sharpness")} · noise {diff("noise")} · compression blocks {diff("blocking")}. Look at the picture too: numbers cannot see halos or changed faces.</p>
           <div className="wiz-row" style={{ marginTop: 8 }}>
             {!applied ? <button className="btn primary" onClick={use} disabled={!!busy}>Use the cleaned picture</button> : <button className="btn ghost" onClick={undo} disabled={!!busy}>Go back to the original</button>}
+            {!isMaster ? <button className="btn ghost" onClick={makeMaster} disabled={!!busy || applied} title="The video model is given this picture; your keyframe stays as it is.">Use as the animation master</button> : <button className="btn ghost" onClick={clearMaster} disabled={!!busy}>Stop using it as the master</button>}
             <button className="btn ghost" onClick={onClose} disabled={!!busy}>{applied ? "Done" : "Keep the original"}</button>
           </div>
+          {isMaster && <div className="note ok" role="status"><I.Check size={14} /> This is now the animation master: the video model is given this picture. The keyframe is unchanged.</div>}
           {applied && <div className="note ok" role="status"><I.Check size={14} /> The cleaned picture is now this shot's keyframe. The original is kept.</div>}
         </div>)}
       {err && <div className="error-text" role="alert" style={{ marginTop: 8 }}>{err}</div>}

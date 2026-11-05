@@ -2765,7 +2765,20 @@ def approved_keyframe(d: str, plan_name: str, shot_id: str) -> str | None:
     """The keyframe the user approved for this shot (a `project:` image), if any."""
     kf = _read(os.path.join(d, "keyframes.json"), {}) or {}
     ref = (kf.get(plan_name) or {}).get(shot_id)
-    return ref if ref and os.path.exists(os.path.join(d, ref[len(PROJECT_MEDIA):])) else None
+    if not (ref and os.path.exists(os.path.join(d, ref[len(PROJECT_MEDIA):]))):
+        return None
+    return animation_master(d, plan_name, shot_id, ref) or ref
+
+
+def animation_master(d: str, plan_name: str, shot_id: str, keyframe_ref: str) -> str | None:
+    """The animation master chosen for this shot: the picture the video model is given in place of the keyframe (a cleaned or enlarged copy; see fidelity.py).
+    Used only while the keyframe is still the one it was made from, and only if the file is inside the project. Otherwise None, and the keyframe is used."""
+    m = ((_read(os.path.join(d, "masters.json"), {}) or {}).get(plan_name) or {}).get(shot_id)
+    if not isinstance(m, dict) or m.get("source") != keyframe_ref or not str(m.get("ref", "")).startswith(PROJECT_MEDIA):
+        return None
+    full = os.path.realpath(os.path.join(d, m["ref"][len(PROJECT_MEDIA):]))
+    root = os.path.realpath(d)
+    return m["ref"] if os.path.isfile(full) and os.path.commonpath([root, full]) == root else None
 
 
 # Prompt limits some providers enforce but don't publish in their schema (bytes, with a little headroom).

@@ -1020,12 +1020,24 @@ async fn upscale(app: AppHandle, dir: String, action: String, data: Option<Value
 /// Picture fidelity (filmcrafter_engine.fidelity): measure a keyframe and make a cleaned copy of it. Free and local: nothing is sent anywhere or billed, and the original is never changed.
 #[tauri::command]
 async fn fidelity(app: AppHandle, dir: String, action: String, data: Option<Value>) -> Result<Value, String> {
-    if !["check", "enhance", "apply", "revert", "status", "upscale_status", "upscale"].contains(&action.as_str()) {
+    if !["check", "enhance", "apply", "revert", "status", "upscale_status", "upscale", "master_set", "master_clear", "masters"].contains(&action.as_str()) {
         return Err("Unknown fidelity action.".into());
     }
     let d = project_dir(&dir)?.to_string_lossy().to_string();
     tauri::async_runtime::spawn_blocking(move || {
         run_engine_result(&app, "fidelity", &["-m".into(), "filmcrafter_engine.fidelity".into(), action, d, "--data".into(), data.unwrap_or_else(|| json!({})).to_string()], &[])
+    }).await.map_err(err)?
+}
+
+/// Video finishing (filmcrafter_engine.videofinish): flicker check, a calmer copy, and delivery copies. Free and local (ffmpeg); originals are never changed.
+#[tauri::command]
+async fn video_finish(app: AppHandle, dir: String, action: String, data: Option<Value>) -> Result<Value, String> {
+    if !["flicker", "restore", "presets", "finish", "videos", "status"].contains(&action.as_str()) {
+        return Err("Unknown finishing action.".into());
+    }
+    let d = project_dir(&dir)?.to_string_lossy().to_string();
+    tauri::async_runtime::spawn_blocking(move || {
+        run_engine_result(&app, "video_finish", &["-m".into(), "filmcrafter_engine.videofinish".into(), action, d, "--data".into(), data.unwrap_or_else(|| json!({})).to_string()], &[])
     }).await.map_err(err)?
 }
 
@@ -2521,7 +2533,7 @@ pub fn run() {
             ensure_renderer, render_catalog, render_preview,
             queue_render, confirm_spend, resolve_job, export_project, list_styles, set_look, app_ready, render_estimate,
             save_project, save_project_as, pack_film, backups, film_backup, frames, film, film_bible, film_shots, film_make, film_voice, film_cast_voice, film_voice_direct, film_audio, film_cues, film_audiogen, film_mix, film_materials, film_choreography, film_placecare, film_audioplan, film_readiness, film_pacing, film_composition, film_spending, film_outdated, model_registry, prepare_update, save_voice_take, film_check, film_assist, film_interchange, is_film, launch_path, engine_status, setup_engine, engine_setup_size, set_project_settings, import_reference, set_keyframe, director_command, undo_command, library, parse_action, providers,
-            set_onboarding, adopt_script, lighting, ai_brain, director_chat, budget, diagnostics, media, continuity, performance, routing, local_models, supervisor, direction_library, director_style, recents, hidden_count, pack_project, open_pulse, golden, lipsync_check, review_backlog, comfy_setup, comfy_install, compose, overnight, refgen, agent_studio, fidelity, overlays, captions, director_audit, fonts, editor_export, camera, check_update, stylebible, performance_director, title_card, cleanup, custom_frame, layer_kit, colour_match, grading, editing, proxies, smart_editor, presets, series, shot_sound, acting, track, upscale, proof, shot_history, retry_cheaper, keyframe_set, hand_fix
+            set_onboarding, adopt_script, lighting, ai_brain, director_chat, budget, diagnostics, media, continuity, performance, routing, local_models, supervisor, direction_library, director_style, recents, hidden_count, pack_project, open_pulse, golden, lipsync_check, review_backlog, comfy_setup, comfy_install, compose, overnight, refgen, agent_studio, fidelity, video_finish, overlays, captions, director_audit, fonts, editor_export, camera, check_update, stylebible, performance_director, title_card, cleanup, custom_frame, layer_kit, colour_match, grading, editing, proxies, smart_editor, presets, series, shot_sound, acting, track, upscale, proof, shot_history, retry_cheaper, keyframe_set, hand_fix
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

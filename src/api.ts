@@ -161,6 +161,11 @@ export type FidelityRow = { id: string; label: string; level: string; value: num
 export type FidelityReport = { width: number; height: number; aspect: string; format: string; analysed_at: string; reduced: boolean; rows: FidelityRow[]; verdict: "ok" | "optional" | "recommended"; action: string; low_resolution: boolean; not_assessed: string[] };
 export type FidelityCheck = { shot: string; ref: string; report: FidelityReport };
 export type FidelityUpscaleStatus = { available: boolean; tool?: string; models: string[]; tile?: number; help: string };
+export type FinishVideo = { ref: string; name: string; bytes: number; at: number };
+export type FinishPresets = { looks: { id: string; label: string; note: string }[]; profiles: { id: string; label: string; note: string; ext: string }[]; strengths: string[] };
+export type FlickerReport = { frames: number; level: string; confidence: "high" | "medium" | "low"; global: number | null; local: number | null; score?: number; note: string; limited?: boolean };
+export type RestoreItem = { id: string; source: string; output: string; output_path: string; strength: string; before: FlickerReport; after: FlickerReport; gain: number | null; better: boolean; note: string };
+export type FinishItem = { id: string; source: string; output: string; output_path: string; look: string; profile: string; bytes: number; source_bytes: number };
 export type FidelityItem = { id: string; shot: string; source: string; output: string; strength: number; method?: "local_upscale"; model?: string; scale?: number; state: "ready" | "applied" | "reverted"; size: [number, number]; source_path?: string; output_path?: string; before_report?: FidelityReport; after_report?: FidelityReport; note?: string };
 export type UpscaleRun = { id: string; tool: string; provider: string; model: string; kind: "keyframe" | "take"; shot: string; source: string; factor: number; state: "queued" | "submitted" | "ready" | "failed" | "undone";
   output: string | null; error: string | null; cost: number | null; job?: string };
@@ -257,7 +262,8 @@ export const api = {
     invoke<T>("editor_export", { dir, action: "package", data: { target, film } }),
   fonts: <T = FontList>(dir: string, action: "list" | "add", data: Record<string, unknown> = {}) => invoke<T>("fonts", { dir, action, data }),
   golden: <T = unknown>(dir: string, action: "status" | "preview" | "split" | "changes", data: Record<string, unknown> = {}) => invoke<T>("golden", { dir, action, data }),
-  fidelity: <T = unknown>(dir: string, action: "check" | "enhance" | "apply" | "revert" | "status" | "upscale_status" | "upscale", data: Record<string, unknown> = {}) => invoke<T>("fidelity", { dir, action, data }),
+  videoFinish: <T = unknown>(dir: string, action: "flicker" | "restore" | "presets" | "finish" | "videos" | "status", data: Record<string, unknown> = {}) => invoke<T>("video_finish", { dir, action, data }),
+  fidelity: <T = unknown>(dir: string, action: "check" | "enhance" | "apply" | "revert" | "status" | "upscale_status" | "upscale" | "master_set" | "master_clear" | "masters", data: Record<string, unknown> = {}) => invoke<T>("fidelity", { dir, action, data }),
   upscale: <T = unknown>(dir: string, action: "tools" | "status" | "resume" | "revert" | "run", data: Record<string, unknown> = {}) => invoke<T>("upscale", { dir, action, data }),
   track: (dir: string) => invoke<TrackStats>("track", { dir, action: "stats" }),
   lipsyncCheck: <T = unknown>(dir: string, action: "count" | "run" | "timing", data: Record<string, unknown> = {}) => invoke<T>("lipsync_check", { dir, action, data }),

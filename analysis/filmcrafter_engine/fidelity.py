@@ -10,6 +10,8 @@ Free, local and deterministic: only numpy and Pillow, nothing is sent anywhere, 
   apply     Use the cleaned picture as the shot's keyframe (the original stays and "revert" brings it back).
   revert    Back to the original keyframe.
   upscale   Local super-resolution with a Real-ESRGAN tool the user has installed (realesrgan-ncnn-vulkan). Free, on this computer, tiled so it fits a 12 GB card. Never downloads anything.
+  master_set / master_clear   Choose a cleaned or enlarged copy as the shot's ANIMATION MASTER: the picture the video model is given. The keyframe is left as it is (it stays what you approved and what the storyboard
+            shows); render.approved_keyframe hands the master to the video model while the keyframe is unchanged, and the keyframe when there is no master.
   status    What has been cleaned in this project.
 """
 from __future__ import annotations
@@ -492,6 +494,39 @@ def upscale(d: str, shot: str, scale: int = 2, model: str | None = None, anime: 
             "note": f"Made {out_im.size[0]}x{out_im.size[1]} from {im.size[0]}x{im.size[1]} on this computer with {name}. A model invents plausible detail: look closely at faces, hands and text before using it."}
 
 
+MASTERS = "masters.json"
+
+
+def master_set(d: str, item_id: str) -> dict:
+    items = _ledger(d)
+    it = next((x for x in items if x.get("id") == item_id), None)
+    if not it:
+        raise SystemExit("That picture is not available.")
+    _local(d, it["output"])
+    plan, shot = it["plan"], it["shot"]
+    cur = (R._read(os.path.join(d, "keyframes.json"), {}) or {}).get(plan, {}).get(shot)
+    if cur != it["source"]:
+        raise SystemExit("This shot's keyframe was changed after the picture was made. Make it again from the current keyframe.")
+    m = R._read(os.path.join(d, MASTERS), {}) or {}
+    m.setdefault(plan, {})[shot] = {"ref": it["output"], "source": it["source"], "item": item_id, "method": it.get("method", "clean"), "size": it.get("size")}
+    R._write(os.path.join(d, MASTERS), m)
+    return {"shot": shot, "master": it["output"], "keyframe": it["source"]}
+
+
+def master_clear(d: str, shot: str) -> dict:
+    m = R._read(os.path.join(d, MASTERS), {}) or {}
+    gone = [p for p in list(m) if m[p].pop(shot, None) is not None]
+    for p in list(m):
+        if not m[p]:
+            del m[p]
+    R._write(os.path.join(d, MASTERS), m)
+    return {"shot": shot, "cleared": bool(gone)}
+
+
+def masters(d: str) -> dict:
+    return {"masters": R._read(os.path.join(d, MASTERS), {}) or {}}
+
+
 def apply(d: str, item_id: str) -> dict:
     items = _ledger(d)
     it = next((x for x in items if x.get("id") == item_id and x.get("state") in ("ready", "reverted")), None)
@@ -530,7 +565,7 @@ def status(d: str, shot: str | None = None) -> dict:
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="filmcrafter-fidelity")
-    ap.add_argument("action", choices=["check", "enhance", "apply", "revert", "status", "upscale_status", "upscale"])
+    ap.add_argument("action", choices=["check", "enhance", "apply", "revert", "status", "upscale_status", "upscale", "master_set", "master_clear", "masters"])
     ap.add_argument("project")
     ap.add_argument("--data", default="{}")
     a = ap.parse_args(argv)
@@ -540,6 +575,9 @@ def main(argv: list[str]) -> int:
         elif a.action == "enhance": res = enhance(a.project, str(x["shot"]), float(x.get("strength", 0.5)))
         elif a.action == "upscale_status": res = upscale_status()
         elif a.action == "upscale": res = upscale(a.project, str(x["shot"]), int(x.get("scale", 2)), x.get("model"), bool(x.get("anime", False)))
+        elif a.action == "master_set": res = master_set(a.project, str(x["id"]))
+        elif a.action == "master_clear": res = master_clear(a.project, str(x["shot"]))
+        elif a.action == "masters": res = masters(a.project)
         elif a.action == "apply": res = apply(a.project, str(x["id"]))
         elif a.action == "revert": res = revert(a.project, str(x["shot"]))
         else: res = status(a.project, x.get("shot"))

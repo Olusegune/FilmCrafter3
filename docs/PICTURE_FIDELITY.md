@@ -53,6 +53,12 @@ The sheet can make a 2x/3x/4x copy with a Real-ESRGAN program running on this co
 - A model **invents plausible detail**. The sheet says so; check faces, hands and text.
 - **Tested with a stand-in program only.** The tests check our arguments, tiling, safety, files and ledger. The real Real-ESRGAN program was not run here (no model or GPU), so a first run on your machine is the real test. Models for drawings (`realesr-animevideov3`) are chosen when you tick "Drawing or animation".
 
-## Not built yet
+## Animation master
 
-The animation master as a separate asset (today the larger picture simply becomes the keyframe, with the original kept), video restoration and temporal-flicker measurement, finishing presets, export profiles.
+A cleaned or enlarged picture can be made the shot's **animation master** (button on the sheet: "Use as the animation master"). The keyframe stays what you approved and what the storyboard shows; `render.approved_keyframe` gives the video model the master instead while the keyframe is unchanged. If the keyframe is replaced later the master is ignored (it was made from the old one), and a master file outside the project is never used. "Stop using it as the master" removes it. Stored in `masters.json`.
+
+Limit: the video model still decides what to do with the picture. A sharper master helps it start from more detail; it does not guarantee a sharper video.
+
+## Video finishing (see docs/VIDEO_FINISHING.md)
+
+Flicker measurement, a calmer copy, finishing looks and delivery profiles are in the Export sheet under "Finish and deliver".

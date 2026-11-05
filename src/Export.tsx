@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Sheet } from "./Sheet";
+import { FinishPanel } from "./FinishPanel";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import { api, errorText, fmtTime, type EditorPackage, type ExportResult } from "./api";
 import { CaptionsPanel } from "./Captions";
@@ -86,6 +87,7 @@ export function ExportSheet({ dir, projectAspect, shots, rendered, onClose }: {
         </div>
         {!progress && <CaptionsPanel dir={dir} />}
         {!progress && <OverlaysPanel dir={dir} />}
+        {!progress && <FinishPanel dir={dir} />}
         {preset !== natural && <p className="dim" style={{ marginTop: 10 }}>Shots are framed for {projectAspect ?? "16:9"}; this format crops them to fill the frame.</p>}
 
         {progress && (

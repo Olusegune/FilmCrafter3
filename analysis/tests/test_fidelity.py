@@ -248,3 +248,36 @@ def test_upscale_failure_changes_nothing(tmp_path, tool):
         F.upscale(d, "S01", 2)
     assert not os.path.isdir(os.path.join(d, "fidelity")) or not [f for f in os.listdir(os.path.join(d, "fidelity")) if f.endswith(".png")]
     assert F.status(d)["items"] == []
+
+
+# ---- animation master: a separate picture for the video model; the keyframe is untouched ----
+
+def test_master_is_given_to_the_video_model_while_the_keyframe_stays(tmp_path, tool):
+    from filmcrafter_engine import render as R
+    d = film(tmp_path)
+    assert R.approved_keyframe(d, "directed", "S01") == "project:keyframes/S01.png"
+    it = F.upscale(d, "S01", 2)
+    F.master_set(d, it["id"])
+    assert kf(d) == "project:keyframes/S01.png"                                      # the keyframe is still what was approved
+    assert R.approved_keyframe(d, "directed", "S01") == it["output"]                  # the video model gets the master
+    F.master_clear(d, "S01")
+    assert R.approved_keyframe(d, "directed", "S01") == "project:keyframes/S01.png" and F.masters(d) == {"masters": {}}
+
+
+def test_a_master_is_ignored_once_the_keyframe_changes_or_the_file_is_outside_the_project(tmp_path, tool):
+    from filmcrafter_engine import render as R
+    d = film(tmp_path)
+    it = F.upscale(d, "S01", 2)
+    F.master_set(d, it["id"])
+    with open(os.path.join(d, "keyframes.json"), "w") as f:
+        json.dump({"directed": {"S01": "project:keyframes/S01.png"}}, f)
+    outside = tmp_path / "evil.png"
+    Image.new("RGB", (10, 10)).save(outside)
+    with open(os.path.join(d, "masters.json"), "w") as f:
+        json.dump({"directed": {"S01": {"ref": "project:../evil.png", "source": "project:keyframes/S01.png"}}}, f)
+    assert R.approved_keyframe(d, "directed", "S01") == "project:keyframes/S01.png"
+    F.master_set  # a master from a replaced keyframe is refused
+    with open(os.path.join(d, "keyframes.json"), "w") as f:
+        json.dump({"directed": {"S01": "project:keyframes/other.png"}}, f)
+    with pytest.raises(SystemExit):
+        F.master_set(d, it["id"])

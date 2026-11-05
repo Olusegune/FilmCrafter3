@@ -59,6 +59,9 @@ describe("Picture quality sheet", () => {
     expect(await screen.findByAltText("Cleaned")).toHaveAttribute("src", "asset://C:/p/fidelity/u1.png");
     expect(screen.getByText(/2× larger \(3072 × 2048\) with realesrgan-x4plus/)).toBeInTheDocument();
     expect(invoke).toHaveBeenCalledWith("fidelity", { dir: "p", action: "upscale", data: { shot: "S01", scale: 2, anime: false } });
+    fireEvent.click(screen.getByRole("button", { name: "Use as the animation master" }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("fidelity", { dir: "p", action: "master_set", data: { id: "u1" } }));
+    expect(await screen.findByText(/animation master: the video model is given this picture/)).toBeInTheDocument();
     expect(invoke.mock.calls.every(([c]) => c === "fidelity")).toBe(true);
   });
 });
