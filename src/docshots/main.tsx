@@ -40,6 +40,7 @@ import { PresetsSheet } from "../PresetLibrary";
 import { MotionGraphicsSheet } from "../MotionGraphics";
 import { FirstFilm } from "../FirstFilm";
 import { ExportSheet } from "../Export";
+import { FidelitySheet } from "../FidelitySheet";
 import presetsBuiltin from "../../analysis/filmcrafter_engine/presets_builtin.json";
 import { LibrarySheet } from "../Board";
 import { Home } from "../Home";
@@ -340,6 +341,23 @@ mockIPC((cmd, a) => {
     case "film_voice": return { people: 2, recorded: 2, lines: [], voices: [] };
     case "film_cues": return { cues: [{ id: "c1" }], approved: 0 };
     case "film_audio": return { assets: [] };
+    case "video_finish": {
+      const act = (a as { action?: string }).action;
+      const rep = (level: string, score: number) => ({ frames: 240, level, confidence: "high", global: 0.6, local: 1.1, score, note: level === "Calm" ? "Brightness is steady from frame to frame." : "Brightness pulses a little between frames." });
+      if (act === "videos") return { videos: [{ ref: "project:exports/Last Train - YouTube.mp4", name: "Last Train - YouTube.mp4", bytes: 48e6, at: 1 }] };
+      if (act === "presets") return { looks: [{ id: "none", label: "No look", note: "Colour and grain stay as they are." }, { id: "clean", label: "Clean", note: "A touch of contrast and a gentle noise clean-up." }, { id: "film", label: "Film", note: "Warmer shadows and fine grain." }], profiles: [{ id: "web", label: "Web (H.264)", note: "Plays everywhere.", ext: "mp4" }, { id: "master", label: "Master (H.264, high quality)", note: "Large; for editing.", ext: "mp4" }], strengths: ["gentle", "balanced", "strong"] };
+      if (act === "flicker") return { ref: "project:exports/Last Train - YouTube.mp4", report: rep("Some", 4.1), limits: "Measures brightness only; it does not judge colour shifts or how things move." };
+      if (act === "restore") return { id: "r1", source: "project:exports/Last Train - YouTube.mp4", output: "project:restore/r1.mp4", output_path: "C:/Films/Last Train/restore/r1.mp4", strength: "balanced", before: rep("Some", 4.1), after: rep("Calm", 0.7), gain: 3.4, better: true, note: "Calmer. The original is untouched." };
+      return { id: "f1", source: "project:exports/Last Train - YouTube.mp4", output: "project:finish/f1.mp4", output_path: "C:/Films/Last Train/finish/f1.mp4", look: "clean", profile: "web", bytes: 41e6, source_bytes: 48e6 };
+    }
+    case "fidelity": {
+      const act = (a as { action?: string }).action;
+      const rep = { width: 1536, height: 1024, aspect: "3:2", format: "PNG", analysed_at: "1536×1024", reduced: false, verdict: "optional", action: "Optional: Clean Enhance can tidy this up.", low_resolution: false, not_assessed: ["Faces and hands (needs an image model)", "Whether the picture suits the story"],
+        rows: [{ id: "sharpness", label: "Sharpness", level: "Moderate", value: 0.24, confidence: "high", note: "The sharpest parts are only gently defined.", depth_of_field: false }, { id: "noise", label: "Noise", level: "Low", value: 0.8, confidence: "high", note: "Clean." }, { id: "blockiness", label: "Compression blocks", level: "Unknown", value: null, confidence: "low", note: "Too little detail to tell." }] };
+      if (act === "upscale_status") return { available: false, help: "Real-ESRGAN is not installed. Install realesrgan-ncnn-vulkan and set FILMCRAFTER_REALESRGAN, or put it in engine/tools/realesrgan." };
+      if (act === "masters") return { masters: {} };
+      return { shot: "S01-04", ref: "project:keyframes/S01-04.png", report: rep };
+    }
     case "export_project": { const v = (a as { preset?: string }).preset === "vertical"; const dr = (a as { dir?: string }).dir === "f-draft"; return { path: v ? "C:/Films/Last Train/exports/Last Train - TikTok - 2026-11-05 1010.mp4" : "C:/Films/Last Train/exports/Last Train - YouTube - 2026-11-05 1009.mp4", preset: v ? "TikTok / Reels 9:16" : "YouTube 16:9", width: v ? 1080 : 1920, height: v ? 1920 : 1080, fps: 24, duration: 144.5, shots: 6, rendered: 6, draft: dr, loudness: null, check: null, overlays: 0, captions: 0, subtitles: null }; }
     case "golden": return { video: ["S01-01", "S01-02"], still: [], none: [], stale: [] };
     case "key_status": return { openai: true, fal: true, kie: true, google: false, elevenlabs: false, midjourney: false, byteplus: false };
@@ -758,6 +776,7 @@ const card = (children: ReactNode, width = 480) => <div className="sheet glass" 
 const scenes: Record<string, () => ReactNode> = {
   agentstudio: () => <AgentStudio project={{ dir: DIR, ...(renderFixture as object), directed: null, jobs: reviewJobs.slice(0, 3), keyframes: {}, concepts: null, treatment: null, song_path: DIR + "/soundtrack.wav", doc: null } as never} onHome={noop} onManual={noop} />,
   directorstyle: () => <DirectorStyleSheet dir={DIR} onClose={noop} />,
+  fidelity: () => <FidelitySheet dir="f1" shot="S01-04" onClose={noop} onChanged={noop} />,
   exportsheet: () => <ExportSheet dir="f1" projectAspect="16:9" shots={6} rendered={6} onClose={noop} />,
   exportdraft: () => <ExportSheet dir="f-draft" projectAspect="16:9" shots={6} rendered={3} onClose={noop} />,
   guide: () => <FirstFilm dir={DIR} pro={true} onGo={noop} onClose={noop} progress={{ story: { kind: "screenplay", locked: true, as_is: true }, cast: { characters: 2, places: 2, pictures: 2, style: true }, shots: { count: 6, edited: 1 }, make: { shots: 6, storyboard: 6, keyframe: 6, video: 6 } }} />,
