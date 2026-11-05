@@ -173,3 +173,21 @@
 .pd-flaglist ul { margin: 4px 0 8px 18px; padding: 0; font-size: 12.5px; }
 .pd-flaglist li { margin: 4px 0; }
 .pd-flagkind { font-weight: 700; margin-right: 4px; }
+
+/* picture fidelity: quality report and before/after */
+.fid-sheet { max-width: 760px; }
+.fid-rows { display: grid; gap: 6px; margin: 10px 0; }
+.fid-row { display: grid; grid-template-columns: 170px 110px 1fr; gap: 10px; align-items: baseline; padding: 6px 10px; border: 1px solid var(--line); background: rgba(244, 247, 250, .03); font-size: 12.5px; }
+.fid-row b { color: var(--frost); }
+.fid-row .lvl { font-weight: 600; }
+.fid-row .lvl.warn { color: var(--amber, #e0a64a); }
+.fid-row small { color: var(--smoke); }
+.fid-verdict { padding: 8px 12px; border: 1px solid var(--line); margin: 8px 0; }
+.fid-verdict.recommended { border-color: var(--amber, #e0a64a); }
+.fid-compare { position: relative; overflow: hidden; border: 1px solid var(--line); background: #000; user-select: none; touch-action: none; }
+.fid-compare img { display: block; width: 100%; height: auto; }
+.fid-compare .after { position: absolute; inset: 0; }
+.fid-compare .tag { position: absolute; top: 8px; padding: 2px 8px; font-size: 11px; background: rgba(0, 0, 0, .6); color: #fff; }
+.fid-compare.full { overflow: auto; max-height: 60vh; }
+.fid-compare.full img { width: auto; max-width: none; }
+.fid-range { width: 100%; margin: 8px 0; }

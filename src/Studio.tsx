@@ -34,6 +34,7 @@ import { LayersPanel } from "./Layers";
 import { LayerStrip } from "./LayerStrip";
 import { LayerLanes, LANE_H } from "./LayerLanes";
 import { UpscaleSheet, type UpscaleRequest } from "./UpscaleSheet";
+import { FidelitySheet } from "./FidelitySheet";
 import { TransitionHandles } from "./TransitionHandles";
 import { snapPoints } from "./laneMath";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
@@ -166,6 +167,8 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
   const [cleanOpen, setCleanOpen] = useState(false);
   const [frameOpen, setFrameOpen] = useState(false);
   const [upscaling, setUpscaling] = useState<UpscaleRequest | null>(null);
+  const [fidelityShot, setFidelityShot] = useState<string | null>(null);
+  useEffect(() => { const on = (e: Event) => setFidelityShot((e as CustomEvent<string>).detail); window.addEventListener("pf-open-fidelity", on); return () => window.removeEventListener("pf-open-fidelity", on); }, []);
   useEffect(() => { const on = (e: Event) => setUpscaling((e as CustomEvent<UpscaleRequest>).detail); window.addEventListener("pf-open-upscale", on); return () => window.removeEventListener("pf-open-upscale", on); }, []);
   const barRef = useRef<HTMLElement | null>(null);
   const narrowWindow = useNarrow(1320);
@@ -723,6 +726,7 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
       {cmdResult && <CommandToast result={cmdResult} onDismiss={() => setCmdResult(null)}
                                   onSelect={(id) => { setSel({ kind: "shot", id }); const sh = shots.find((x) => x.id === id); if (sh) seek(sh.start); }}
                                   onUndo={async () => { try { await api.undoCommand(project.dir, cmdResult.id!); setCmdResult(null); onReload(); } catch (e) { setError(errorText(e)); } }} />}
+      {fidelityShot && <FidelitySheet dir={project.dir} shot={fidelityShot} onClose={() => setFidelityShot(null)} onChanged={() => { reloadBoard(); onReload(); window.dispatchEvent(new Event("pf-media-changed")); }} />}
       {upscaling && <UpscaleSheet dir={project.dir} req={upscaling} onClose={() => setUpscaling(null)} onChanged={() => { reloadBoard(); onReload(); window.dispatchEvent(new Event("pf-media-changed")); }} />}
       {lightOpen && <LightingSheet dir={project.dir} onClose={() => setLightOpen(false)} onChanged={mediaChanged}
                                    onSelect={(id) => { setSel({ kind: "shot", id }); const sh = shots.find((x) => x.id === id); if (sh) seek(sh.start); }} />}

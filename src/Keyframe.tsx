@@ -3,6 +3,7 @@ import { api, AUTO_IMAGE_MODEL, errorText, type CatalogItem, type Job, type KeyS
 import { useRouting } from "./Routing";
 import { ModelPicker } from "./ModelPicker";
 import { openUpscale } from "./UpscaleSheet";
+import { openFidelity } from "./FidelitySheet";
 import { ACTIVE_STATES, ConfirmRender, defaultProvider, PROVIDER_NAME } from "./Render";
 import { Cta, DockBar, DockSlot, PanelHead, Pill, priceLabel, useEstimate } from "./Dock";
 import { FormatRow } from "./FormatRow";
@@ -99,6 +100,7 @@ export function KeyframePanel({ dir, shot, plan, jobs, keys, director, approved,
             <span className="dim num kf-meta">{shownJob!.model.split("/").slice(-2).join("/")}</span>
             {inUse && approved && <button className="link" onClick={() => setFixHand(true)} title="Redraw only a hand, and leave the rest of the picture alone">Fix a hand…</button>}
             {inUse && <button className="link" onClick={() => approve(null)}>Stop using this keyframe</button>}
+            {inUse && <button className="link" onClick={() => openFidelity(shot.id)} title="Measure sharpness, noise and compression, and tidy this picture for free (the original is kept)">Check quality…</button>}
             {inUse && <button className="link" onClick={() => openUpscale({ kind: "keyframe", shot: shot.id })} title="Make this keyframe sharper and larger (Topaz, Recraft…)">Upscale…</button>}
           </div>
         </div>

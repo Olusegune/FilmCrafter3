@@ -359,6 +359,26 @@ function InputWidget({ f, value, onChange }: { f: ManifestInput; value: unknown;
 
 // ---------------------------------------------------------------- confirmation
 
+/** Quality Preflight: before video is paid for, measure each shot's keyframe (free, on this computer) and say if a clean-up is worth doing first. Never blocks the render. */
+function PicturePreflight({ dir, shots }: { dir: string; shots: string[] }) {
+  const [flagged, setFlagged] = useState<{ shot: string; verdict: string }[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      const out: { shot: string; verdict: string }[] = [];
+      for (const shot of shots.slice(0, 12)) {
+        try { const r = await api.fidelity<{ report: { verdict: string } }>(dir, "check", { shot }); if (r.report.verdict !== "ok") out.push({ shot, verdict: r.report.verdict }); } catch { /* no keyframe or unreadable: nothing to say */ }
+      }
+      if (live) setFlagged(out);
+    })();
+    return () => { live = false; };
+  }, [dir, shots]);
+  if (!flagged?.length) return null;
+  const first = flagged[0];
+  return <p className="fr-note warn" role="note">Picture check: {flagged.length === 1 ? `the keyframe of ${first.shot}` : `${flagged.length} keyframes (${flagged.slice(0, 3).map((f) => f.shot).join(", ")}${flagged.length > 3 ? "…" : ""})`}
+    {" "}could be cleaner before you pay for video. <button className="link" onClick={() => window.dispatchEvent(new CustomEvent("pf-open-fidelity", { detail: first.shot }))}>Check {first.shot}…</button> You can also render as it is.</p>;
+}
+
 export function ConfirmRender({ count, seconds, provider, model, onCancel, onConfirm, dir, shots, modelId, kind = "video" }: {
   count: number; seconds: number; provider: string; model: string; onCancel: () => void; onConfirm: () => void;
   dir?: string; shots?: string[]; modelId?: string | null; kind?: "video" | "image" | "lipsync";
@@ -390,6 +410,7 @@ export function ConfirmRender({ count, seconds, provider, model, onCancel, onCon
             </>
           ) : estErr ? <div className="dim">Couldn't fetch the price right now.</div> : <div className="dim">Checking price…</div>}
         </div>
+        {kind === "video" && dir && shots?.length ? <PicturePreflight dir={dir} shots={shots} /> : null}
         {est?.native_blocked?.length ? <p className="error-text" role="alert">This model makes no sound, and {est.native_blocked.length === 1 ? "a shot" : `${est.native_blocked.length} shots`} here
           {" "}need{est.native_blocked.length === 1 ? "s" : ""} it: this scene's dialogue is spoken by the video model. Choose a model that makes sound (for example Veo 3.1 or Kling 2.6),
           or turn native dialogue off in the scene's dialogue.</p> : est?.native_note ? <p className="fr-note warn">{est.native_note}</p> : null}

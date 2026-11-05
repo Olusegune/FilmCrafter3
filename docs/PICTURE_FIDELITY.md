@@ -1,0 +1,48 @@
+# Picture fidelity (Phase 1)
+
+A free, local quality check for a shot's keyframe, and a careful clean-up that never touches the original. Engine: `analysis/filmcrafter_engine/fidelity.py`. Screen: `src/FidelitySheet.tsx`. Native command: `fidelity` in `src-tauri/src/lib.rs`.
+
+It uses only numpy and Pillow. Nothing is sent anywhere, nothing is billed, and it has no provider or spend path. The follow-on stages (a local super-resolution model, video restoration, finishing and export profiles) are not built; see "Not in Phase 1".
+
+## Where it appears
+
+- **Keyframe → Check quality…** opens the sheet for that shot.
+- **Before rendering video**, the price sheet runs the same check on up to 12 keyframes and, if any is below par, adds one line with a link to the sheet. It never blocks the render and changes no price.
+
+## What it measures
+
+Every row is a measurement of the picture, with a confidence (high, medium or low) shown when it is not high.
+
+| Row | How |
+|---|---|
+| Sharpness | Per 64-pixel tile, how much edge strength survives a re-blur. The sharpest tiles decide the level, so a soft background around a crisp subject reads as depth of field (noted, not blamed). A picture with no crisp tile is "Soft". |
+| Noise | Immerkaer's estimator on the flat 40% of the picture. Low confidence when little of the picture is flat. |
+| Compression blocks | Step size across 8-pixel borders against the step 4 pixels away (same parity, so a picture enlarged 2× or 4× does not look like a grid). "Unknown" on a reduced, tiny, smooth or flat picture. |
+| Clipped highlights/shadows, exposure, contrast, fine texture | Plain measurements. Clipping says it may be intended. |
+
+**Not assessed:** faces and hands (that needs an image model), and whether the picture suits the story. The report says so.
+
+Pictures over 2048 px are measured on a reduced copy, and the report says that.
+
+## Clean Enhance
+
+Edge-aware noise and colour-noise smoothing, JPEG seam softening, sharpening held inside the local range (so it cannot make halos), and a little midtone contrast. The strength is Gentle, Balanced or Strong. It does not add detail that is not in the picture. The cleaned copy is a PNG in `<project>/fidelity/`, with the ICC profile kept and any alpha untouched.
+
+- The original is never written. The engine checks its SHA-256 before and after.
+- **Use the cleaned picture** points the shot's keyframe at the copy (only if the keyframe has not changed since); **Go back to the original** restores it. Both are recorded in `fidelity.json`.
+- The sheet shows the real original and cleaned files in a split slider, each at 100%, and the measurements before and after.
+
+## What the tests show, and the limits
+
+On synthetic ladders (`analysis/tests/test_fidelity.py`): sharpness falls with blur, noise and block measures rise with grain and JPEG strength, a sharp subject over a blurred background is flagged as depth of field, and plain or smooth pictures say "Unknown" rather than guessing. Against a clean reference, Clean Enhance at Balanced raised PSNR by about 1.7 dB on added grain, left blur about level (sharpening cannot recover lost detail), and removed the block pattern from heavy JPEG with PSNR roughly unchanged.
+
+Known limits:
+
+- The sharpness thresholds were tuned on synthetic images and checked on a few screenshots and one illustration, not on a library of real keyframes. Treat the level words as a guide and tell us when one is wrong.
+- A single score is not proof of a better picture. Look at the comparison for halos or changed faces.
+- On very noisy pictures the noise estimate can under-read.
+- Blur cannot be undone by this stage. For a soft or small picture use the existing **Upscale…** (paid, through Kie.ai or fal.ai).
+
+## Not in Phase 1
+
+Local Real-ESRGAN (planned: tiled for 12 GB), an animation-master asset, video restoration and temporal-flicker measurement, finishing presets, export profiles. None of these exist yet.

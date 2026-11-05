@@ -134,6 +134,15 @@ export async function installMock() {
         { id: "stop-motion", name: "Handmade Stop Motion", region: "Europe", origin: "Craft animation tradition", tags: ["gentle"], genres: [], bpm: [90, 140], energy: "mid", summary: "Felt, clay and paper worlds built by hand; visible fingerprints and charm.", camera: "", light: "", palette: ["amber", "teal", "gold"], editing: "", movement: "", design: "", look: "", acting: "" },
         { id: "wuxia", name: "Wuxia Poetry", region: "Asia", origin: "China · martial-arts cinema", tags: ["romantic"], genres: [], bpm: [90, 140], energy: "mid", summary: "Swordplay as dance: bamboo forests, flowing silk, colour-coded chapters and weightless motion.", camera: "", light: "", palette: ["amber", "teal", "gold"], editing: "", movement: "", design: "", look: "", acting: "" },
         { id: "lagos-nights", name: "Lagos Nights", region: "Africa", origin: "Nigeria · Afrobeats video", tags: ["romantic","joyful"], genres: [], bpm: [90, 140], energy: "mid", summary: "Warm, glossy city nights: rooftops, danfo lights, fashion-forward friends, easy swagger and romance.", camera: "", light: "", palette: ["amber", "teal", "gold"], editing: "", movement: "", design: "", look: "", acting: "" }], current: null } : a.action === "match" ? { song: { bpm: 120, energy: "mid", moods: ["building", "intimate"] }, matches: ["french-new-wave", "americana-road", "one-take", "stop-motion", "wuxia", "lagos-nights"].map((id, i) => ({ id, score: 0.8 - i * 0.05, why: ["tempo 120 BPM fits", "mid energy", "mood: romantic"] })) } : null;
+      case "fidelity": {
+        const rep = { width: 1536, height: 1024, aspect: "3:2", format: "PNG", analysed_at: "1536×1024", reduced: false, verdict: "optional", action: "Optional: Clean Enhance can tidy this up.", low_resolution: false,
+          not_assessed: ["Faces and hands (needs an image model)", "Whether the picture suits the story"],
+          rows: [{ id: "sharpness", label: "Sharpness", level: "Moderate", value: 0.24, confidence: "high", note: "The sharpest parts are only gently defined.", depth_of_field: false },
+                 { id: "noise", label: "Noise", level: "Low", value: 0.8, confidence: "high", note: "Clean." }] };
+        if (a.action === "check") return { shot: "S01-04", ref: "project:keyframes/S01-04.png", report: rep };
+        if (a.action === "enhance") return { id: "f1", shot: "S01-04", source: "project:keyframes/S01-04.png", output: "project:fidelity/S01-04_f1_clean.png", strength: 0.5, state: "ready", size: [1536, 1024], source_path: "x.png", output_path: "y.png", before_report: rep, after_report: { ...rep, verdict: "ok" } };
+        return a.action === "status" ? { items: [] } : { shot: "S01-04" };
+      }
       case "upscale": {
         if (a.action === "tools") { const media = (a.data as { media?: string } | undefined)?.media;
           return { tools: [
