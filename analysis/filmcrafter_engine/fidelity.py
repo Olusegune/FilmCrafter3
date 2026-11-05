@@ -9,6 +9,7 @@ Free, local and deterministic: only numpy and Pillow, nothing is sent anywhere, 
             sharpens what is there. The result is a new PNG in the project's fidelity folder, with the measurements before and after. The original file is never changed.
   apply     Use the cleaned picture as the shot's keyframe (the original stays and "revert" brings it back).
   revert    Back to the original keyframe.
+  upscale   Local super-resolution with a Real-ESRGAN tool the user has installed (realesrgan-ncnn-vulkan). Free, on this computer, tiled so it fits a 12 GB card. Never downloads anything.
   status    What has been cleaned in this project.
 """
 from __future__ import annotations
@@ -17,6 +18,8 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
+import subprocess
 import sys
 import time
 import uuid
@@ -390,6 +393,104 @@ def enhance(d: str, shot: str, strength: float = 0.5) -> dict:
 def _brief(rep: dict) -> dict:
     return {r["id"]: {"level": r["level"], "value": r["value"]} for r in rep["rows"]}
 
+# ---- local super-resolution (optional; needs the user's own realesrgan-ncnn-vulkan install) ----
+
+UPSCALE_TIMEOUT = 1800
+MAX_OUT_SIDE = 8192
+TILE_SIZE = 200          # pixels per tile: keeps memory low (a 12 GB card is comfortable; 0 would let the tool choose)
+INSTALL_HELP = ("Local upscaling needs the free Real-ESRGAN ncnn-vulkan tool. Download it from the Real-ESRGAN project's releases, unzip it, then set the FILMCRAFTER_REALESRGAN "
+                "environment variable to the realesrgan-ncnn-vulkan program (its models folder must sit next to it), or put the folder at engine/tools/realesrgan. Nothing is downloaded for you.")
+
+
+def local_tool() -> str | None:
+    """The upscaler program, if one is installed. Looked up only in places the user controls."""
+    names = ("realesrgan-ncnn-vulkan.exe", "realesrgan-ncnn-vulkan")
+    cands = [os.environ.get("FILMCRAFTER_REALESRGAN", "")]
+    here = os.path.dirname(os.path.abspath(__file__))
+    cands += [os.path.join(here, "..", "tools", "realesrgan", n) for n in names]
+    cands += [shutil.which(n) or "" for n in names]
+    for c in cands:
+        if c and os.path.isfile(c):
+            return os.path.abspath(c)
+    return None
+
+
+def upscale_status() -> dict:
+    exe = local_tool()
+    if not exe:
+        return {"available": False, "models": [], "help": INSTALL_HELP}
+    mdir = os.path.join(os.path.dirname(exe), "models")
+    models = sorted(f[:-6] for f in os.listdir(mdir) if f.endswith(".param")) if os.path.isdir(mdir) else []
+    return {"available": bool(models), "tool": exe, "models": models, "tile": TILE_SIZE,
+            "help": "" if models else "The tool was found but its models folder is empty. Put the model files (.param and .bin) in the models folder next to it."}
+
+
+def _pick_model(models: list[str], model: str | None, anime: bool) -> str:
+    if model:
+        if model not in models:
+            raise SystemExit("That upscaling model is not installed.")
+        return model
+    want = ["realesr-animevideov3", "realesrgan-x4plus-anime"] if anime else ["realesrgan-x4plus", "realesr-animevideov3"]
+    for m in want:
+        if m in models:
+            return m
+    return models[0]
+
+
+def upscale(d: str, shot: str, scale: int = 2, model: str | None = None, anime: bool = False) -> dict:
+    """Make a larger copy of a shot's keyframe with the local tool. The original is never written; "apply" and "revert" work as for Clean Enhance."""
+    if scale not in (2, 3, 4):
+        raise SystemExit("Choose 2x, 3x or 4x.")
+    st = upscale_status()
+    if not st["available"]:
+        raise SystemExit(st["help"])
+    plan, ref = keyframe_ref(d, shot)
+    src = _local(d, ref)
+    before_sha = _sha(src)
+    im = _open(src)
+    if max(im.size) * scale > MAX_OUT_SIDE:
+        raise SystemExit(f"{scale}x would make this picture larger than {MAX_OUT_SIDE} pixels on a side. Choose a smaller factor.")
+    name = _pick_model(st["models"], model, anime)
+    folder = os.path.join(d, FOLDER)
+    os.makedirs(folder, exist_ok=True)
+    item_id = uuid.uuid4().hex[:10]
+    out = os.path.join(folder, f"{file_name(shot)}_{item_id}_up{scale}x.png")
+    tmp = f"{out}.{os.getpid()}.tmp.png"
+    cmd = [st["tool"], "-i", src, "-o", tmp, "-n", name, "-s", str(scale), "-t", str(TILE_SIZE), "-f", "png"]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=UPSCALE_TIMEOUT, cwd=os.path.dirname(st["tool"]))
+    except subprocess.TimeoutExpired:
+        raise SystemExit("The upscaler took too long and was stopped. Nothing was changed.")
+    except OSError as e:
+        raise SystemExit(f"The upscaler could not start: {e}")
+    if proc.returncode != 0 or not os.path.isfile(tmp):
+        if os.path.isfile(tmp):
+            os.remove(tmp)
+        raise SystemExit("The upscaler did not finish (the graphics card may be unsupported or out of memory). Nothing was changed.")
+    try:
+        with Image.open(tmp) as chk:
+            chk.verify()
+        os.replace(tmp, out)
+    except Exception:
+        if os.path.isfile(tmp):
+            os.remove(tmp)
+        raise SystemExit("The upscaler made a file that could not be read. Nothing was changed.")
+    if _sha(src) != before_sha:
+        raise SystemExit("The original changed while it was being upscaled. Nothing was saved.")
+    out_im = _open(out)
+    if out_im.size[0] < im.size[0] or out_im.size[1] < im.size[1]:
+        os.remove(out)
+        raise SystemExit("The upscaler returned a smaller picture. Nothing was changed.")
+    before, after = analyze(src), analyze(out)
+    item = {"id": item_id, "shot": shot, "plan": plan, "source": ref, "source_sha256": before_sha, "output": R.PROJECT_MEDIA + os.path.relpath(out, d).replace(os.sep, "/"),
+            "method": "local_upscale", "model": name, "scale": scale, "strength": 0, "state": "ready", "created": int(time.time()), "size": [out_im.size[0], out_im.size[1]],
+            "before": _brief(before), "after": _brief(after)}
+    items = _ledger(d)
+    items.append(item)
+    R._write(os.path.join(d, LEDGER), items[-200:])
+    return {**item, "source_path": src, "output_path": out, "before_report": before, "after_report": after,
+            "note": f"Made {out_im.size[0]}x{out_im.size[1]} from {im.size[0]}x{im.size[1]} on this computer with {name}. A model invents plausible detail: look closely at faces, hands and text before using it."}
+
 
 def apply(d: str, item_id: str) -> dict:
     items = _ledger(d)
@@ -429,7 +530,7 @@ def status(d: str, shot: str | None = None) -> dict:
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="filmcrafter-fidelity")
-    ap.add_argument("action", choices=["check", "enhance", "apply", "revert", "status"])
+    ap.add_argument("action", choices=["check", "enhance", "apply", "revert", "status", "upscale_status", "upscale"])
     ap.add_argument("project")
     ap.add_argument("--data", default="{}")
     a = ap.parse_args(argv)
@@ -437,6 +538,8 @@ def main(argv: list[str]) -> int:
         x = json.loads(a.data)
         if a.action == "check": res = check(a.project, str(x["shot"]))
         elif a.action == "enhance": res = enhance(a.project, str(x["shot"]), float(x.get("strength", 0.5)))
+        elif a.action == "upscale_status": res = upscale_status()
+        elif a.action == "upscale": res = upscale(a.project, str(x["shot"]), int(x.get("scale", 2)), x.get("model"), bool(x.get("anime", False)))
         elif a.action == "apply": res = apply(a.project, str(x["id"]))
         elif a.action == "revert": res = revert(a.project, str(x["shot"]))
         else: res = status(a.project, x.get("shot"))

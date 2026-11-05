@@ -1020,7 +1020,7 @@ async fn upscale(app: AppHandle, dir: String, action: String, data: Option<Value
 /// Picture fidelity (filmcrafter_engine.fidelity): measure a keyframe and make a cleaned copy of it. Free and local: nothing is sent anywhere or billed, and the original is never changed.
 #[tauri::command]
 async fn fidelity(app: AppHandle, dir: String, action: String, data: Option<Value>) -> Result<Value, String> {
-    if !["check", "enhance", "apply", "revert", "status"].contains(&action.as_str()) {
+    if !["check", "enhance", "apply", "revert", "status", "upscale_status", "upscale"].contains(&action.as_str()) {
         return Err("Unknown fidelity action.".into());
     }
     let d = project_dir(&dir)?.to_string_lossy().to_string();

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Sheet } from "./Sheet";
-import { api, errorText, type FidelityCheck, type FidelityItem, type FidelityReport } from "./api";
+import { api, errorText, type FidelityCheck, type FidelityItem, type FidelityReport, type FidelityUpscaleStatus } from "./api";
 import * as I from "./icons";
 
 export const openFidelity = (shot: string) => window.dispatchEvent(new CustomEvent("pf-open-fidelity", { detail: shot }));
@@ -60,13 +60,20 @@ export function FidelitySheet({ dir, shot, onClose, onChanged }: { dir: string; 
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
   const [applied, setApplied] = useState(false);
+  const [up, setUp] = useState<FidelityUpscaleStatus | null>(null);
+  const [anime, setAnime] = useState(false);
   useEffect(() => {
     setBusy("Measuring…");
     api.fidelity<FidelityCheck>(dir, "check", { shot }).then(setCheck).catch((e) => setErr(errorText(e))).finally(() => setBusy(""));
+    api.fidelity<FidelityUpscaleStatus>(dir, "upscale_status").then(setUp).catch(() => setUp(null));
   }, [dir, shot]);
   const clean = async () => {
     setBusy("Cleaning…"); setErr(""); setItem(null);
     try { setItem(await api.fidelity<FidelityItem>(dir, "enhance", { shot, strength })); } catch (e) { setErr(errorText(e)); } finally { setBusy(""); }
+  };
+  const larger = async (scale: number) => {
+    setBusy("Enlarging…"); setErr(""); setItem(null); setApplied(false);
+    try { setItem(await api.fidelity<FidelityItem>(dir, "upscale", { shot, scale, anime })); } catch (e) { setErr(errorText(e)); } finally { setBusy(""); }
   };
   const use = async () => {
     if (!item) return;
@@ -93,12 +100,24 @@ export function FidelitySheet({ dir, shot, onClose, onChanged }: { dir: string; 
           <div role="radiogroup" aria-label="How strong" style={{ display: "flex", gap: 6 }}>
             {STRENGTHS.map((s) => <button key={s.v} role="radio" aria-checked={s.v === strength} disabled={!!busy} className={`btn small ${s.v === strength ? "primary" : "ghost"}`} onClick={() => setStrength(s.v)}>{s.label}</button>)}
           </div>
-          <button className="btn primary" onClick={clean} disabled={!!busy}>{busy === "Cleaning…" ? busy : item ? "Clean again" : "Clean up (free)"}</button>
+          <button className="btn primary" onClick={clean} disabled={!!busy}>{busy === "Cleaning…" ? busy : item && !item.method ? "Clean again" : "Clean up (free)"}</button>
+        </div>)}
+      {check && up && (
+        <div className="fid-local" style={{ marginTop: 10 }}>
+          <b>Make it larger on this computer (free)</b>
+          {up.available ? (
+            <div className="wiz-row">
+              <button className="btn small" onClick={() => larger(2)} disabled={!!busy}>2× larger</button>
+              <button className="btn small" onClick={() => larger(4)} disabled={!!busy}>4× larger</button>
+              <label className="dim"><input type="checkbox" checked={anime} onChange={(e) => setAnime(e.target.checked)} disabled={!!busy} /> Drawing or animation</label>
+              <span className="dim">{busy === "Enlarging…" ? "Enlarging… this can take a few minutes." : "Uses your installed Real-ESRGAN, in small tiles. A model invents plausible detail, so check faces, hands and text."}</span>
+            </div>
+          ) : <p className="dim" style={{ fontSize: 12, margin: "4px 0" }}>{up.help}</p>}
         </div>)}
       {item && item.source_path && item.output_path && (
         <div style={{ marginTop: 12 }}>
           <BeforeAfter before={api.mediaUrl(item.source_path)} after={api.mediaUrl(item.output_path)} w={item.size[0]} h={item.size[1]} />
-          <p className="dim" style={{ marginTop: 6 }}>Measured again: sharpness {diff("sharpness")} · noise {diff("noise")} · compression blocks {diff("blocking")}. Look at the picture too: numbers cannot see halos or changed faces.</p>
+          <p className="dim" style={{ marginTop: 6 }}>{item.method ? `${item.scale}× larger (${item.size[0]} × ${item.size[1]}) with ${item.model}. ` : ""}Measured again: sharpness {diff("sharpness")} · noise {diff("noise")} · compression blocks {diff("blocking")}. Look at the picture too: numbers cannot see halos or changed faces.</p>
           <div className="wiz-row" style={{ marginTop: 8 }}>
             {!applied ? <button className="btn primary" onClick={use} disabled={!!busy}>Use the cleaned picture</button> : <button className="btn ghost" onClick={undo} disabled={!!busy}>Go back to the original</button>}
             <button className="btn ghost" onClick={onClose} disabled={!!busy}>{applied ? "Done" : "Keep the original"}</button>

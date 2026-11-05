@@ -160,7 +160,8 @@ export type UpscaleTool = { id: string; provider: "kie" | "fal"; model: string; 
 export type FidelityRow = { id: string; label: string; level: string; value: number | null; confidence: "high" | "medium" | "low"; note: string; depth_of_field?: boolean };
 export type FidelityReport = { width: number; height: number; aspect: string; format: string; analysed_at: string; reduced: boolean; rows: FidelityRow[]; verdict: "ok" | "optional" | "recommended"; action: string; low_resolution: boolean; not_assessed: string[] };
 export type FidelityCheck = { shot: string; ref: string; report: FidelityReport };
-export type FidelityItem = { id: string; shot: string; source: string; output: string; strength: number; state: "ready" | "applied" | "reverted"; size: [number, number]; source_path?: string; output_path?: string; before_report?: FidelityReport; after_report?: FidelityReport; note?: string };
+export type FidelityUpscaleStatus = { available: boolean; tool?: string; models: string[]; tile?: number; help: string };
+export type FidelityItem = { id: string; shot: string; source: string; output: string; strength: number; method?: "local_upscale"; model?: string; scale?: number; state: "ready" | "applied" | "reverted"; size: [number, number]; source_path?: string; output_path?: string; before_report?: FidelityReport; after_report?: FidelityReport; note?: string };
 export type UpscaleRun = { id: string; tool: string; provider: string; model: string; kind: "keyframe" | "take"; shot: string; source: string; factor: number; state: "queued" | "submitted" | "ready" | "failed" | "undone";
   output: string | null; error: string | null; cost: number | null; job?: string };
 export type ModelTrack = { provider: string; model: string; takes: number; failed: number; failures: Record<string, number>; cost: number; reviews: Record<string, number>; sound: Record<string, number>; sung: number };
@@ -256,7 +257,7 @@ export const api = {
     invoke<T>("editor_export", { dir, action: "package", data: { target, film } }),
   fonts: <T = FontList>(dir: string, action: "list" | "add", data: Record<string, unknown> = {}) => invoke<T>("fonts", { dir, action, data }),
   golden: <T = unknown>(dir: string, action: "status" | "preview" | "split" | "changes", data: Record<string, unknown> = {}) => invoke<T>("golden", { dir, action, data }),
-  fidelity: <T = unknown>(dir: string, action: "check" | "enhance" | "apply" | "revert" | "status", data: Record<string, unknown> = {}) => invoke<T>("fidelity", { dir, action, data }),
+  fidelity: <T = unknown>(dir: string, action: "check" | "enhance" | "apply" | "revert" | "status" | "upscale_status" | "upscale", data: Record<string, unknown> = {}) => invoke<T>("fidelity", { dir, action, data }),
   upscale: <T = unknown>(dir: string, action: "tools" | "status" | "resume" | "revert" | "run", data: Record<string, unknown> = {}) => invoke<T>("upscale", { dir, action, data }),
   track: (dir: string) => invoke<TrackStats>("track", { dir, action: "stats" }),
   lipsyncCheck: <T = unknown>(dir: string, action: "count" | "run" | "timing", data: Record<string, unknown> = {}) => invoke<T>("lipsync_check", { dir, action, data }),

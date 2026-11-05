@@ -43,6 +43,16 @@ Known limits:
 - On very noisy pictures the noise estimate can under-read.
 - Blur cannot be undone by this stage. For a soft or small picture use the existing **Upscale…** (paid, through Kie.ai or fal.ai).
 
-## Not in Phase 1
+## Local upscaling (Phase 2, optional)
 
-Local Real-ESRGAN (planned: tiled for 12 GB), an animation-master asset, video restoration and temporal-flicker measurement, finishing presets, export profiles. None of these exist yet.
+The sheet can make a 2x/3x/4x copy with a Real-ESRGAN program running on this computer. Free, nothing is sent anywhere.
+
+- **You install the tool; nothing is downloaded for you.** Get `realesrgan-ncnn-vulkan` from the Real-ESRGAN project's releases, then either set the `FILMCRAFTER_REALESRGAN` environment variable to the program or put the folder at `engine/tools/realesrgan`. Its `models` folder must sit next to it. Until then the sheet says how to install it and shows no buttons.
+- It runs in 200-pixel tiles so it fits a 12 GB card, with a 30-minute limit, no shell, and the model name checked against what is installed. The output is limited to 8192 px on a side.
+- The result goes through the same compare slider, "Use it" and "Go back to the original" as Clean Enhance. The original file is never written.
+- A model **invents plausible detail**. The sheet says so; check faces, hands and text.
+- **Tested with a stand-in program only.** The tests check our arguments, tiling, safety, files and ledger. The real Real-ESRGAN program was not run here (no model or GPU), so a first run on your machine is the real test. Models for drawings (`realesr-animevideov3`) are chosen when you tick "Drawing or animation".
+
+## Not built yet
+
+The animation master as a separate asset (today the larger picture simply becomes the keyframe, with the original kept), video restoration and temporal-flicker measurement, finishing presets, export profiles.

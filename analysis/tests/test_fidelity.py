@@ -167,3 +167,84 @@ def test_no_keyframe_and_unreadable_picture_give_plain_messages(tmp_path):
         f.write(b"not a picture")
     with pytest.raises(SystemExit):
         F.check(d, "S01")
+
+
+# ---- local super-resolution: the program is faked (no model is installed here), so these test our side: arguments, safety, files, ledger ----
+
+class FakeRun:
+    def __init__(self, fail=False, rc=0):
+        self.calls, self.fail, self.rc = [], fail, rc
+
+    def __call__(self, cmd, **kw):
+        self.calls.append((cmd, kw))
+        if not self.fail:
+            src, out, s = cmd[cmd.index("-i") + 1], cmd[cmd.index("-o") + 1], int(cmd[cmd.index("-s") + 1])
+            im = Image.open(src).convert("RGB")
+            im.resize((im.width * s, im.height * s), Image.LANCZOS).save(out, format="PNG")
+
+        class P:
+            returncode = self.rc
+            stdout = stderr = ""
+        return P()
+
+
+@pytest.fixture
+def tool(tmp_path, monkeypatch):
+    t = tmp_path / "tool"
+    (t / "models").mkdir(parents=True)
+    exe = t / "realesrgan-ncnn-vulkan.exe"
+    exe.write_bytes(b"x")
+    for m in ("realesrgan-x4plus", "realesr-animevideov3"):
+        (t / "models" / (m + ".param")).write_bytes(b"x")
+    monkeypatch.setenv("FILMCRAFTER_REALESRGAN", str(exe))
+    fake = FakeRun()
+    monkeypatch.setattr(F.subprocess, "run", fake)
+    return fake
+
+
+def test_upscale_says_how_to_install_when_the_tool_is_missing(tmp_path, monkeypatch):
+    monkeypatch.setenv("FILMCRAFTER_REALESRGAN", str(tmp_path / "nope.exe"))
+    monkeypatch.setattr(F.shutil, "which", lambda n: None)
+    monkeypatch.setattr(F, "local_tool", lambda: None)
+    assert F.upscale_status()["available"] is False and "Nothing is downloaded" in F.upscale_status()["help"]
+    with pytest.raises(SystemExit, match="Nothing is downloaded"):
+        F.upscale(film(tmp_path), "S01")
+
+
+def test_upscale_runs_tiled_without_a_shell_keeps_the_original_and_applies_and_reverts(tmp_path, tool):
+    d = film(tmp_path)
+    orig = os.path.join(d, "keyframes", "S01.png")
+    before = sha(orig)
+    assert F.upscale_status()["available"] and "realesrgan-x4plus" in F.upscale_status()["models"]
+    it = F.upscale(d, "S01", 2)
+    cmd, kw = tool.calls[0]
+    assert isinstance(cmd, list) and cmd[cmd.index("-t") + 1] == str(F.TILE_SIZE) and cmd[cmd.index("-n") + 1] == "realesrgan-x4plus" and not kw.get("shell")
+    assert it["size"] == [1600, 1066] and it["method"] == "local_upscale" and "invents plausible detail" in it["note"]
+    assert sha(orig) == before and kf(d) == "project:keyframes/S01.png"
+    assert not [f for f in os.listdir(os.path.join(d, "fidelity")) if f.endswith(".tmp.png")]
+    F.apply(d, it["id"])
+    assert kf(d) == it["output"]
+    F.revert(d, "S01")
+    assert kf(d) == "project:keyframes/S01.png" and sha(orig) == before
+
+
+def test_upscale_refuses_bad_scale_unknown_model_and_giant_output(tmp_path, tool):
+    d = film(tmp_path)
+    with pytest.raises(SystemExit):
+        F.upscale(d, "S01", 8)
+    with pytest.raises(SystemExit, match="not installed"):
+        F.upscale(d, "S01", 2, model="../../evil")
+    assert F.upscale(d, "S01", 2, anime=True)["model"] == "realesr-animevideov3"
+    Image.new("RGB", (4500, 100), (9, 9, 9)).save(os.path.join(d, "keyframes", "S01.png"))
+    with pytest.raises(SystemExit, match="larger than"):
+        F.upscale(d, "S01", 2)
+    assert len(tool.calls) == 1                                                      # the refused ones never started the program
+
+
+def test_upscale_failure_changes_nothing(tmp_path, tool):
+    d = film(tmp_path)
+    tool.fail = True
+    with pytest.raises(SystemExit, match="did not finish"):
+        F.upscale(d, "S01", 2)
+    assert not os.path.isdir(os.path.join(d, "fidelity")) or not [f for f in os.listdir(os.path.join(d, "fidelity")) if f.endswith(".png")]
+    assert F.status(d)["items"] == []

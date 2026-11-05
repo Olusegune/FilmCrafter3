@@ -141,6 +141,7 @@ export async function installMock() {
                  { id: "noise", label: "Noise", level: "Low", value: 0.8, confidence: "high", note: "Clean." }] };
         if (a.action === "check") return { shot: "S01-04", ref: "project:keyframes/S01-04.png", report: rep };
         if (a.action === "enhance") return { id: "f1", shot: "S01-04", source: "project:keyframes/S01-04.png", output: "project:fidelity/S01-04_f1_clean.png", strength: 0.5, state: "ready", size: [1536, 1024], source_path: "x.png", output_path: "y.png", before_report: rep, after_report: { ...rep, verdict: "ok" } };
+        if (a.action === "upscale_status") return { available: false, models: [], help: "Local upscaling needs the free Real-ESRGAN ncnn-vulkan tool. Nothing is downloaded for you." };
         return a.action === "status" ? { items: [] } : { shot: "S01-04" };
       }
       case "upscale": {

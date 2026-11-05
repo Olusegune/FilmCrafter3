@@ -42,4 +42,23 @@ describe("Picture quality sheet", () => {
     await screen.findByText("Ready to animate. No clean-up needed.");
     expect(invoke.mock.calls.every(([c]) => c === "fidelity")).toBe(true);
   });
+  it("offers local upscaling only when the tool is installed, and says how to get it when not", async () => {
+    invoke.mockImplementation((_c: string, a: { action?: string }) => Promise.resolve(a.action === "upscale_status" ? { available: false, models: [], help: "Local upscaling needs the free Real-ESRGAN tool. Nothing is downloaded for you." } : { shot: "S01", ref: "x", report: rep("ok") }));
+    render(<FidelitySheet dir="p" shot="S01" onClose={() => {}} onChanged={() => {}} />);
+    expect(await screen.findByText(/Nothing is downloaded for you/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "2× larger" })).toBeNull();
+  });
+  it("enlarges with the installed tool, shows the real files and the factor, and stays local", async () => {
+    invoke.mockImplementation((_c: string, a: { action?: string }) => {
+      if (a.action === "upscale_status") return Promise.resolve({ available: true, models: ["realesrgan-x4plus"], help: "" });
+      if (a.action === "upscale") return Promise.resolve({ id: "u1", shot: "S01", source: "project:k.png", output: "project:fidelity/u1.png", strength: 0, method: "local_upscale", model: "realesrgan-x4plus", scale: 2, state: "ready", size: [3072, 2048], source_path: "C:/p/k.png", output_path: "C:/p/fidelity/u1.png", before_report: rep("optional"), after_report: rep("ok") });
+      return Promise.resolve({ shot: "S01", ref: "x", report: rep("ok") });
+    });
+    render(<FidelitySheet dir="p" shot="S01" onClose={() => {}} onChanged={() => {}} />);
+    fireEvent.click(await screen.findByRole("button", { name: "2× larger" }));
+    expect(await screen.findByAltText("Cleaned")).toHaveAttribute("src", "asset://C:/p/fidelity/u1.png");
+    expect(screen.getByText(/2× larger \(3072 × 2048\) with realesrgan-x4plus/)).toBeInTheDocument();
+    expect(invoke).toHaveBeenCalledWith("fidelity", { dir: "p", action: "upscale", data: { shot: "S01", scale: 2, anime: false } });
+    expect(invoke.mock.calls.every(([c]) => c === "fidelity")).toBe(true);
+  });
 });
