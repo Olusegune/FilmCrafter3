@@ -219,6 +219,7 @@ def test_upscale_runs_tiled_without_a_shell_keeps_the_original_and_applies_and_r
     it = F.upscale(d, "S01", 2)
     cmd, kw = tool.calls[0]
     assert isinstance(cmd, list) and cmd[cmd.index("-t") + 1] == str(F.TILE_SIZE) and cmd[cmd.index("-n") + 1] == "realesrgan-x4plus" and not kw.get("shell")
+    assert cmd[cmd.index("-s") + 1] == "4"        # a 4x model is always run at 4x (the tool garbles other factors); the result is resized here to the 2x asked for
     assert it["size"] == [1600, 1066] and it["method"] == "local_upscale" and "invents plausible detail" in it["note"]
     assert sha(orig) == before and kf(d) == "project:keyframes/S01.png"
     assert not [f for f in os.listdir(os.path.join(d, "fidelity")) if f.endswith(".tmp.png")]

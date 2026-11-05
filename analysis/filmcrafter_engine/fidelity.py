@@ -20,6 +20,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -439,6 +440,12 @@ def _pick_model(models: list[str], model: str | None, anime: bool) -> str:
     return models[0]
 
 
+def _native_scale(name: str) -> int:
+    """The factor a model was trained for ("realesrgan-x4plus" -> 4). The tool garbles the picture when asked for any other factor with a 4x model (seen with v0.2.5.0 on a real run), so it is always run at this one and the result is resized here."""
+    m = re.search(r"-x(\d)", name) or re.search(r"x(\d)plus", name)
+    return int(m.group(1)) if m and m.group(1) in "234" else 4
+
+
 def upscale(d: str, shot: str, scale: int = 2, model: str | None = None, anime: bool = False) -> dict:
     """Make a larger copy of a shot's keyframe with the local tool. The original is never written; "apply" and "revert" work as for Clean Enhance."""
     if scale not in (2, 3, 4):
@@ -458,7 +465,7 @@ def upscale(d: str, shot: str, scale: int = 2, model: str | None = None, anime: 
     item_id = uuid.uuid4().hex[:10]
     out = os.path.join(folder, f"{file_name(shot)}_{item_id}_up{scale}x.png")
     tmp = f"{out}.{os.getpid()}.tmp.png"
-    cmd = [st["tool"], "-i", src, "-o", tmp, "-n", name, "-s", str(scale), "-t", str(TILE_SIZE), "-f", "png"]
+    cmd = [st["tool"], "-i", src, "-o", tmp, "-n", name, "-s", str(_native_scale(name)), "-t", str(TILE_SIZE), "-f", "png"]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=UPSCALE_TIMEOUT, cwd=os.path.dirname(st["tool"]))
     except subprocess.TimeoutExpired:
@@ -472,6 +479,10 @@ def upscale(d: str, shot: str, scale: int = 2, model: str | None = None, anime: 
     try:
         with Image.open(tmp) as chk:
             chk.verify()
+        target = (im.size[0] * scale, im.size[1] * scale)
+        with Image.open(tmp) as made:
+            if made.size != target:                  # the tool ran at the model's own factor: bring it to the one asked for
+                made.convert("RGB").resize(target, Image.LANCZOS).save(tmp, "PNG")
         os.replace(tmp, out)
     except Exception:
         if os.path.isfile(tmp):

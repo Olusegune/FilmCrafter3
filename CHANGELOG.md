@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Local upscaling: found on a real run that Real-ESRGAN ncnn-vulkan v0.2.5.0 garbles the picture when asked for a factor other than its model's own (2x with the 4x model). The engine now always runs the model at its own factor and resizes to the 2x/3x/4x you chose.
+
 - **Animation master, flicker check, finishing and delivery (free, local).** A cleaned or enlarged picture can be chosen as a shot's animation master: the video model is given it while your keyframe stays as approved (and is ignored if the keyframe changes). The Export sheet has **Finish and deliver**: measure a finished video for flicker (cuts, fades and motion are not counted), make a measurably calmer copy, and make a delivery copy with a finishing look (clean, film grain) in a profile (Web, Master, ProRes, H.265, Small). Originals are never changed. Thresholds were tuned on synthetic clips.
 
 - **Local upscaling on the picture quality sheet (optional, free).** If you have installed the Real-ESRGAN ncnn-vulkan program, the sheet can make a 2x/3x/4x copy in small tiles on this computer, with the same compare slider and undo. Nothing is downloaded for you, the sheet explains how to install it, and the original is never written. Tested with a stand-in program; the real one has not been run here. Also: Agent Studio now plays video previews in a video element instead of a broken picture, and its screenshot mock and rail test match the current screens.
