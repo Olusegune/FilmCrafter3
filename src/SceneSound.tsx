@@ -1,3 +1,4 @@
+import { ProAudio } from "./ProAudio";
 import { AudioCheck } from "./AudioCheck";
 import { SoundDesign } from "./SoundDesign";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -82,6 +83,7 @@ export function SceneSound({ dir }: { dir: string }) {
       <SoundDesign dir={dir} scene={scene} assets={assets} onChanged={() => void reload()} />
 
       <AudioCheck dir={dir} />
+      <ProAudio dir={dir} />
 
       <section>
         <h3>How it is mixed <span className="dim">for the whole film</span></h3>
@@ -96,14 +98,14 @@ export function SceneSound({ dir }: { dir: string }) {
             <select className="text-input" value={String(mix.peak_db)} onChange={(e) => void act("mix", () => api.audioMix("set_settings", dir, { peak_db: Number(e.target.value) }))}>
               <option value="-1">-1 dB (safe)</option><option value="-2">-2 dB</option><option value="-3">-3 dB</option><option value="-6">-6 dB</option></select></label>
           <div className="field"><span>Leave out of the film</span>
-            <div className="sm-row">{(["sfx", "ambience", "music"] as const).map((k) => <label key={k} className="ov-check"><input type="checkbox" checked={mix.mute_lanes.includes(k)}
-              onChange={(e) => void act("mix", () => api.audioMix("set_settings", dir, { mute_lanes: e.target.checked ? [...mix.mute_lanes, k] : mix.mute_lanes.filter((x) => x !== k) }))} /> {k === "sfx" ? "Effects" : k === "ambience" ? "Ambience" : "Music"}</label>)}</div></div>
+            <div className="sm-row">{(["foley", "sfx", "ambience", "music"] as const).map((k) => <label key={k} className="ov-check"><input type="checkbox" checked={mix.mute_lanes.includes(k)}
+              onChange={(e) => void act("mix", () => api.audioMix("set_settings", dir, { mute_lanes: e.target.checked ? [...mix.mute_lanes, k] : mix.mute_lanes.filter((x) => x !== k) }))} /> {k === "foley" ? "Foley" : k === "sfx" ? "Effects" : k === "ambience" ? "Ambience" : "Music"}</label>)}</div></div>
         </div>}
         <div className="sm-row"><span className="dim">Hear this scene:</span>
-          {([[null, "Everything"], ["dialogue", "Voices only"], ["sfx", "Effects only"], ["ambience", "Ambience only"], ["music", "Music only"]] as [string | null, string][]).map(([k, label]) =>
+          {([[null, "Everything"], ["dialogue", "Voices only"], ["foley", "Foley only"], ["sfx", "Effects only"], ["ambience", "Ambience only"], ["music", "Music only"]] as [string | null, string][]).map(([k, label]) =>
             <button key={label} className="btn sm ghost" disabled={!!busy} onClick={() => void go("hear", async () => setHeard(await api.audioMix<MixPreview>("preview", dir, { scene, solo: k })))}>{label}</button>)}</div>
         <div className="sm-row"><span className="dim">Hear the whole film:</span>
-          {([[null, "Everything"], ["dialogue", "Voices only"], ["sfx", "Effects only"], ["ambience", "Ambience only"], ["music", "Music only"]] as [string | null, string][]).map(([k, label]) =>
+          {([[null, "Everything"], ["dialogue", "Voices only"], ["foley", "Foley only"], ["sfx", "Effects only"], ["ambience", "Ambience only"], ["music", "Music only"]] as [string | null, string][]).map(([k, label]) =>
             <button key={label} className="btn sm ghost" disabled={!!busy} title="Every scene's voices and approved sound, laid end to end, as the exported film will sound (without the picture and without the loudness target)"
               onClick={() => void go("hear", async () => setHeard(await api.audioMix<MixPreview>("preview", dir, { scene: "all", solo: k })))}>{label}</button>)}</div>
         {heard && <div className="ss-heard"><audio controls autoPlay src={`${api.mediaUrl(`${dir}/${heard.file}`)}?v=${Date.now()}`} aria-label={heard.whole ? "The whole film's mix" : "The scene's mix"} />

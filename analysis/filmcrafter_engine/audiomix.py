@@ -30,7 +30,7 @@ RATE = 44100
 BLOCK = 30.0                       # seconds mixed at a time
 CACHE_MAX = 120.0                  # a sound up to this long is read once and kept; a longer one is read a block at a time
 DEFAULTS = {"schema": 1, "ducking_db": -12.0, "duck_attack": 0.15, "duck_release": 0.6, "target_lufs": None, "peak_db": -1.0, "mute_lanes": [], "solo": None}
-LANES = ("dialogue", "sfx", "ambience", "music")
+LANES = ("dialogue", "foley", "sfx", "ambience", "music")        # foley: the sounds made for what a shot shows (sounddesign.py); a cue with no `foley` mark is an ordinary effect
 VOICE_MARGIN = (0.1, 0.2)          # seconds the ducking starts before a voice and stays after it
 NO_WINDOW = 0x08000000 if os.name == "nt" else 0
 
@@ -123,7 +123,7 @@ def placements(d: str, shot_times: dict, duration: float, st: dict | None = None
             if c.get("approval") == "approved":
                 skipped.append({"cue": cid, "why": "It has no sound yet."})
             continue
-        lane = c.get("kind", "sfx")
+        lane = "foley" if c.get("foley") and c.get("kind", "sfx") == "sfx" else c.get("kind", "sfx")
         if c.get("muted") or lane in st["mute_lanes"] or (solo and lane != solo):
             continue
         a = assets.get(c["asset_id"])
@@ -325,7 +325,11 @@ def mix_cues(d: str, base_path: str | None, shot_times: dict, duration: float, o
                 w.write(mix)
                 if progress:
                     progress(min(1.0, (i0 + n) / total))
-        info = _finish(raw, out, st)
+        if st.get("raw_float"):                                  # a stem for the pro export: the mix as it is before the master stage, 32-bit float, no limiter and no loudness change
+            os.replace(raw, out)
+            info = {"limiter": False, "target_lufs": None, "loudness_before": None}
+        else:
+            info = _finish(raw, out, st)
     finally:
         if base is not None:
             base.close()

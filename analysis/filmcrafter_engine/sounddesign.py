@@ -471,7 +471,7 @@ def to_cues(d: str, scn: int) -> dict:
             continue
         pl = placement(e)
         ev_stamp[e["id"]] = sync(e["id"], e.get("cue_id"), {"kind": "sfx", "asset_id": e["asset_id"], "scene": int(scn), "shot": e["shot"], "start": e["start"], "duration": e.get("duration"), "gain_db": pl["gain_db"],
-                                                            "pan": pl["pan"], "loop": False, "note": f"Foley: {e['action']} {e['source_object']}".strip()[:600]})
+                                                            "pan": pl["pan"], "loop": False, "foley": True, "note": f"Foley: {e['action']} {e['source_object']}".strip()[:600]})
 
     def change(r2):
         pf = r2["profiles"].get(env["id"]) if env else None

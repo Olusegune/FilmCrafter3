@@ -337,6 +337,8 @@ export const api = {
   castVoice: <T = CastStatus>(action: "status" | "library" | "set" | "clear" | "design" | "design_save" | "clone" | "estimate" | "speak" | "preview" | "takes" | "use_take" | "sample" | "ledger" | "ledger_resolve" | "set_limit", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_cast_voice", { action, target, data }),
   /** Perform a line yourself and hear it in a character's voice (filmcrafter_engine.revoice): local, free. `install` needs `confirmed: true`; a real person's reference voice needs `consent: true`. */
   revoice: <T = RevoiceStatus>(action: "status" | "reference" | "revoke" | "convert" | "install", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_revoice", { action, target, data }),
+  /** Professional audio export (filmcrafter_engine.proaudio): stems, mixes, Broadcast WAV, cue sheet, OpenTimelineIO. `plan` writes nothing; `export` writes into exports/audio. Free and local. */
+  proAudio: <T = ProAudioResult>(action: "plan" | "export", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_proaudio", { action, target, data }),
   /** Timing and ADR for a line (filmcrafter_engine.adrsync): placement in frames, dub-fit, lining up, ADR retakes. Free and local; a recording is never changed. */
   adrSync: <T = LineTiming>(action: "get" | "nudge" | "fit_plan" | "fit_make" | "align" | "adr_mark" | "adr_list" | "adr_take", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_adrsync", { action, target, data }),
   /** The audio quality inspector (filmcrafter_engine.audioqa): objective measurements of the film's sound, as things to listen to. Free, local, read-only. */
@@ -589,6 +591,10 @@ export type BibleMedia = { path: string; kind: string; label: string };
 export type BibleState = { id: string; label: string; notes: string; wardrobe?: string; age?: string };
 export type VoiceProfile = { description: string; age_range: string; accent: string; timbre: string; pace: string; emotional_range: string; delivery: string; notes: string; approved: boolean;
   language?: string; pitch_range?: string; vocal_weight?: string; texture?: string; breathiness?: string; rhythm?: string; articulation?: string; mannerisms?: string; pronunciation?: string };
+export type ProAudioSpec = { rate: number; bits: number; bwf: boolean; stems: string[]; mixes: string[]; target_lufs: number | null; peak_db: number; start_tc: string; media: boolean; title?: string };
+export type ProAudioPlan = { seconds: number; shots: number; spec: ProAudioSpec; lanes: Record<string, string>; files: number; estimated_bytes: number; skipped: { cue: string; why: string }[]; positions: string };
+export type ProAudioMix = { file: string; lufs: number | null; true_peak_db: number | null; master_gain_db: number; capped: boolean; note: string };
+export type ProAudioResult = { folder: string; relative: string; files: number; problems: string[]; ok: boolean; stems: string[]; mixes: ProAudioMix[]; lanes_without_sound: Record<string, string>; cue_sheet: string[]; otio: string | null; seconds: number; not_checked: string[] };
 export type FitPlan = { fits: boolean; tempo: number | null; target: number; recording: number; class: "fits" | "natural" | "audible" | "too_much" | "no_room"; words: string };
 export type LineTiming = { shot: string; person: string; key: string; fps: number[]; fps_label: string; shot_seconds: number; recording: { file: string; seconds: number; source: string }; offset_frames: number; offset_seconds: number;
   starts: string; ends: string; shot_ends: string; runs_past_shot: boolean; starts_before_shot: boolean; fit: FitPlan; adr: { needs: boolean; reason: string } };
@@ -730,7 +736,7 @@ export type GenEstimate = { expected?: number | null; provider: string; label: s
   needs_unknown_cost_accepted: boolean; needs_rights_ack: boolean; rights_note: string; has_key: boolean };
 export type GenResult = { asset?: AudioAsset; assets?: AudioAsset[]; cached: boolean; cost?: { unit: string; estimate?: number | null; reported?: number | null; amount?: number; basis?: string }; note: string; pending?: { task: string; state: string } };
 export type RightsReport = { assets: { id: string; name: string; kind: string; commercial: string; in_plan: boolean; source: string; why: string }[]; blocking: { id: string; name: string; why: string }[]; ok: boolean };
-export type MixSettings = { schema: number; ducking_db: number; duck_attack: number; duck_release: number; target_lufs: number | null; peak_db: number; mute_lanes: ("dialogue" | "sfx" | "ambience" | "music")[]; solo: string | null };
+export type MixSettings = { schema: number; ducking_db: number; duck_attack: number; duck_release: number; target_lufs: number | null; peak_db: number; mute_lanes: ("dialogue" | "foley" | "sfx" | "ambience" | "music")[]; solo: string | null };
 export type ActionBeat = { n: number; phase: string; kind: "establish" | "action" | "reaction" | "insert" | "aftermath"; actor: string | null; momentum: "A" | "B" | "even"; text: string; seconds: number; framing: string; movement: string; angle: string; lens: string; sound: string; title: string; carrying: string };
 export type ActionPlan = { id: string; type: string; scene: number; place: string; weapon: string; sides: { a: string[]; b: string[] }; intensity: string; outcome: string; geography: string; people: string[]; beats: ActionBeat[]; seconds: number;
   warnings: string[]; after: string; applied: string[]; status: "draft" | "applied" };

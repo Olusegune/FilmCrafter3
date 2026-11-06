@@ -9,3 +9,5 @@ pillow
 # Optional: splitting a video model's own sound into voices and the rest (Sound layers); the app works without it.
 # demucs needs torch: pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu   (or the cu124 index with an NVIDIA GPU)
 # demucs
+# Optional, for the tests only: reads the OpenTimelineIO file the pro audio export writes, with the real library (the test is skipped without it); the app does not use it.
+# opentimelineio
