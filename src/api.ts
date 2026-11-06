@@ -337,6 +337,8 @@ export const api = {
   castVoice: <T = CastStatus>(action: "status" | "library" | "set" | "clear" | "design" | "design_save" | "clone" | "estimate" | "speak" | "preview" | "takes" | "use_take" | "sample" | "ledger" | "ledger_resolve" | "set_limit", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_cast_voice", { action, target, data }),
   /** Perform a line yourself and hear it in a character's voice (filmcrafter_engine.revoice): local, free. `install` needs `confirmed: true`; a real person's reference voice needs `consent: true`. */
   revoice: <T = RevoiceStatus>(action: "status" | "reference" | "revoke" | "convert" | "install", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_revoice", { action, target, data }),
+  /** Timing and ADR for a line (filmcrafter_engine.adrsync): placement in frames, dub-fit, lining up, ADR retakes. Free and local; a recording is never changed. */
+  adrSync: <T = LineTiming>(action: "get" | "nudge" | "fit_plan" | "fit_make" | "align" | "adr_mark" | "adr_list" | "adr_take", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_adrsync", { action, target, data }),
   /** The audio quality inspector (filmcrafter_engine.audioqa): objective measurements of the film's sound, as things to listen to. Free, local, read-only. */
   audioQa: <T = AudioQaReport>(action: "film" | "inspect", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_audioqa", { action, target, data }),
   /** Sound design for a scene (filmcrafter_engine.sounddesign): soundscape profiles and Foley events, put into the film as ordinary cues. Free and local. */
@@ -587,6 +589,13 @@ export type BibleMedia = { path: string; kind: string; label: string };
 export type BibleState = { id: string; label: string; notes: string; wardrobe?: string; age?: string };
 export type VoiceProfile = { description: string; age_range: string; accent: string; timbre: string; pace: string; emotional_range: string; delivery: string; notes: string; approved: boolean;
   language?: string; pitch_range?: string; vocal_weight?: string; texture?: string; breathiness?: string; rhythm?: string; articulation?: string; mannerisms?: string; pronunciation?: string };
+export type FitPlan = { fits: boolean; tempo: number | null; target: number; recording: number; class: "fits" | "natural" | "audible" | "too_much" | "no_room"; words: string };
+export type LineTiming = { shot: string; person: string; key: string; fps: number[]; fps_label: string; shot_seconds: number; recording: { file: string; seconds: number; source: string }; offset_frames: number; offset_seconds: number;
+  starts: string; ends: string; shot_ends: string; runs_past_shot: boolean; starts_before_shot: boolean; fit: FitPlan; adr: { needs: boolean; reason: string } };
+export type AlignSuggestion = { ok: boolean; shift_seconds: number; strength: number; z: number; reliable: boolean; frames: number; move_to_frame: number; move_by_frames: number; guide: string; words: string; fps_label: string };
+export type FitMade = { shot: string; person: string; take: string; tempo: number; seconds: number | null; cached: boolean; attached: boolean; natural: boolean; next: string };
+export type AdrRow = { shot: string; person: string; key: string; marked: boolean; reasons: string[]; adr_takes: number };
+export type AdrList = { lines: AdrRow[]; marked: number; note: string };
 export type QaFinding = { severity: "fix" | "look" | "note"; code: string; where: string; what: string; measured: unknown; limit: unknown; person?: string; confidence?: "low" | "high" };
 export type QaItem = { where: string; role: string; ok: boolean; why?: string; findings: QaFinding[]; loudness?: { lufs: number; range_lu: number | null; true_peak_db: number | null } | null; metrics?: { seconds?: number; peak_db?: number } };
 export type AudioQaReport = { summary: { fix: number; look: number; note: number; files: number }; items: QaItem[]; consistency: QaFinding[]; target_lufs: number | null; not_measured: string[]; notes: string[]; says: string };
@@ -680,7 +689,7 @@ export type CastStatus = { key: boolean; models: { id: string; label: string; ta
 export type ElevenVoice = { voice_id: string; name: string; category: string; description: string; labels: Record<string, string>; preview_url: string };
 export type CastEstimate = { rows: ({ shot: string; speaker: string; ok: true; characters: number; credits: number; cached: boolean; text: string } | { shot: string; speaker: string; ok: false; why: string })[]; characters: number; credits: number; basis: string };
 export type CastPreview = { id: string; file: string; seconds: number };
-export type CastTake = { file: string; text: string; model: string; voice_name: string; at: number; current: boolean; another_take?: boolean; kind?: "speech" | "revoice"; performed_by?: string; performance?: string };
+export type CastTake = { file: string; text: string; model: string; voice_name: string; at: number; current: boolean; another_take?: boolean; kind?: "speech" | "revoice" | "adr" | "dubfit"; performed_by?: string; performance?: string; note?: string };
 export type RevoiceModel = { id: string; name: string; licence: string; by: string; packages: string[]; size_note: string; needs: string; status: string };
 export type RevoiceRuntime = { model: RevoiceModel; installed: boolean; since: number | null; versions: Record<string, string | null> | null; device: string | null; folder: string; how: string };
 export type RevoicePerson = { key: string; person: string; file: string | null; seconds: number | null; source: "film_take" | "own_voice" | "permission" | null; holder: string | null; scope: string | null; consent: { given: boolean; basis: string } | null; revoked: boolean; at: number | null };

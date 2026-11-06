@@ -575,14 +575,16 @@ def _attach_generated(d: str, sid: str, name: str, path: str, voice: dict) -> di
         return {"shot": sid, "speaker": V.pretty(name), "seconds": cur.get("seconds"), "notes": [], "replaced": False, "unchanged": True}
     res = V.attach(d, sid, name, path, fit=True)
     side = V._read(_sidecar(path), None)
-    revoiced = isinstance(side, dict) and side.get("kind") == "revoice"        # a person's own performance, voice changed on this computer (see revoice.py)
+    kind = side.get("kind") if isinstance(side, dict) and side.get("kind") in ("revoice", "adr", "dubfit") else None     # a person's performance re-voiced (revoice.py), an ADR retake or a fitted take (adrsync.py)
+    revoiced = kind == "revoice"
+    labels = {"revoice": f"{name} (performed, re-voiced)", "adr": f"{name} (ADR retake)", "dubfit": f"{name} (fitted to the shot)"}
 
     def mark(meta):
         for e in meta["shots"].get(sid, []):
             if e.get("key") == k:
-                e["source"] = "revoice" if revoiced else "elevenlabs"
+                e["source"] = kind or "elevenlabs"
                 e["gen"] = gen
-                e["name"] = (f"{name} (performed, re-voiced)" if revoiced else f"{name} (ElevenLabs, {voice.get('voice_name') or 'voice'})")[:120]
+                e["name"] = (labels[kind] if kind else f"{name} (ElevenLabs, {voice.get('voice_name') or 'voice'})")[:120]
                 if revoiced:
                     e["synthetic"] = True
     safeio.update_json(V._meta_path(d), mark, {"schema": 1, "shots": {}}, check=V._meta_ok)
@@ -629,8 +631,10 @@ def takes(d: str, shot: str, speaker: str) -> dict:
             continue
         out.append({"file": f"voice/_generated/{f}", "text": str(meta.get("text") or "")[:1500], "model": meta.get("model"), "voice_name": str(meta.get("voice_name") or "")[:80],
                     "at": int(meta.get("at") or 0), "current": f == cur, "another_take": bool(meta.get("another_take")),
-                    "kind": "revoice" if meta.get("kind") == "revoice" else "speech", "performed_by": str(meta.get("performed_by") or "")[:80] if meta.get("kind") == "revoice" else "",
-                    "performance": str(meta.get("performance") or "") if meta.get("kind") == "revoice" else ""})
+                    "kind": meta.get("kind") if meta.get("kind") in ("revoice", "adr", "dubfit") else "speech",
+                    "performed_by": str(meta.get("performed_by") or "")[:80] if meta.get("kind") in ("revoice", "adr") else "",
+                    "performance": str(meta.get("performance") or meta.get("original") or "") if meta.get("kind") in ("revoice", "adr") else "",
+                    "note": str(meta.get("note") or "")[:300] if meta.get("kind") in ("adr", "dubfit") else ""})
     out.sort(key=lambda t: -t["at"])
     return {"takes": out[:30], "person": name, "shot": sid}
 

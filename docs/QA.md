@@ -1,4 +1,12 @@
-# QA report: FilmCrafter 0.41.0 (2026-11-06)
+# QA report: FilmCrafter 0.42.0 (2026-11-06)
+
+## 0.42.0: timing, dub-fit and ADR
+
+TypeScript clean; **801 Vitest tests in 103 files** (11 new in `timingadr.dom.test.tsx`); **15 Rust tests**; **2,665 engine tests passed, 8 skipped** (23 new in `tests/test_adrsync.py`; `tests/test_security.py` confirms the new `film_adrsync` command's actions match the engine's; the existing voice, cast-voice and mix tests still pass with the new take kinds and the line offset). The new tests use real audio and real ffmpeg: a fitted take has the length the tempo predicts and the same pitch (measured by FFT at 440 Hz), the real mixer places a moved line 12 frames later or earlier, the line-up estimate finds a known shift in both directions and does not confidently match unrelated sound, and the original recording is byte-identical after every operation. Bandit on `adrsync.py`: two low notes (the subprocess import and the ffmpeg call, which uses a fixed argument list on a film-internal path and a validated tempo; no shell). Manual review: every number from the screen is validated (whole frames only, a bounded offset, a tempo between 0.5 and 2, a target length between 0.3 and 120 s), a relative path is checked with `inside` and `..` refused, results are checked for length and silence before they are kept, records are written atomically with the app's safe writer, nothing is replaced (retakes and fitted takes are new takes; a replaced recording goes to `voice/_removed`), and the cast-voice take list and `use_take` still require a take's record to name the same person. Found while testing and fixed: the line-up suggestion was first computed as "current offset plus the measured shift", so applying it twice would have doubled the move; it is now the absolute target and a separate "move by" amount, and a test applies it and asks again. `rafter run` could not be used (quota).
+
+**Not tested:** anything by ear (fitted takes, ADR retakes); real recordings against a real picture sound (a video model's own sound is only a guide if it says the same thing at the same pace); the panel on a real film; Windows scaling or screen-reader use of the new panel. Not built: word-level alignment, drop-frame timecode, pitch-shifted fitting, an ADR booth that plays the picture while recording.
+
+## 0.41.0: audio quality inspector
 
 ## 0.41.0: audio quality inspector
 

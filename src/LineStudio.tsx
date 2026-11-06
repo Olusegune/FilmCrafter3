@@ -7,6 +7,7 @@ import { priceWords, VoiceMaker } from "./CastVoices";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { Revoice } from "./Revoice";
 import { PerformancePlanner } from "./PerformancePlanner";
+import { TimingAdr } from "./TimingAdr";
 import { Waveform } from "./Waveform";
 import { notifyVoice, useCast, useVoiceStatus } from "./voiceHooks";
 import { aiAskWords } from "./soundWords";
@@ -188,12 +189,15 @@ export function LineEditor({ dir, shotId, who }: { dir: string; shotId: string; 
               <div key={t.file} className={`ls-take ${t.current ? "cur" : ""}`}>
                 <button className="vchip-play" onClick={() => play(t.file)} aria-label={`${playing === t.file ? "Stop" : "Hear"} this take`}>{playing === t.file ? <I.Pause size={12} /> : <I.Play size={12} />}</button>
                 {t.kind === "revoice" ? <><q>Performed by {t.performed_by || "a person"}, in {who}'s voice</q><span className="dim ls-model">re-voiced on this computer · synthetic</span></>
+                  : t.kind === "adr" ? <><q>ADR retake{t.performed_by ? ` by ${t.performed_by}` : ""}</q><span className="dim ls-model">{t.note || "a new recording of the line"}</span></>
+                  : t.kind === "dubfit" ? <><q>Fitted to the shot</q><span className="dim ls-model">{t.note || "tempo changed, pitch kept"}</span></>
                   : <><q>{t.text}</q><span className="dim ls-model">{t.model?.replace("eleven_", "").replace("_", " ")}{t.another_take ? " · another take" : ""}</span></>}
                 {t.current ? <span className="ls-cur">in the film</span> : <button className="btn sm" disabled={!!busy} onClick={() => void useTake(t)}>Use this take</button>}
               </div>))}
           </div>}
         </section>
         <PerformancePlanner dir={dir} shotId={shotId} who={who} onChanged={() => { void loadSpoken().then((m) => { if (m) setText(m.text); }); }} />
+        <TimingAdr dir={dir} shotId={shotId} who={who} onChanged={() => { loadTakes(); notifyVoice(); }} />
         <Revoice dir={dir} shotId={shotId} who={who} takes={takes} onChanged={loadTakes} />
         {err && <p className="error-text" role="alert">{err}</p>}
         <p className="dim vr-hint">Nothing is deleted: a take or recording you replace is kept in the film's voice/_removed folder.</p>

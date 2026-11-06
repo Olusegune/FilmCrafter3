@@ -446,7 +446,15 @@ def to_render(d: str, rd: str) -> int:
             if not os.path.isfile(dst) or os.path.getmtime(dst) < os.path.getmtime(src) or os.path.getsize(dst) != os.path.getsize(src):
                 shutil.copyfile(src, dst)
             says = " ".join(x["line"] for x in c.get("dialogue") or [] if key_of(x.get("speaker")) == e["key"] and x.get("line"))
-            rows.append({"speaker": e["speaker"], "key": e["key"], "path": f"assets/voice/{name}", "seconds": e["seconds"], "line": says})
+            row = {"speaker": e["speaker"], "key": e["key"], "path": f"assets/voice/{name}", "seconds": e["seconds"], "line": says}
+            try:
+                from . import adrsync
+                off = adrsync.offset_seconds(d, sid, e["key"])                  # a line moved by whole frames (adrsync.nudge): the mixer applies it, the recording is not changed
+            except Exception:
+                off = 0.0
+            if off:
+                row["offset"] = round(off, 4)
+            rows.append(row)
             n += 1
         if rows:
             out[sid] = rows
@@ -541,9 +549,10 @@ def mix_into(d: str, base_path: str, items: list[dict], duration: float, out: st
         stop = min(total, int(round((it["end"] + max(0.0, float(it.get("tail") or 0.0))) * rate)))      # an L cut: it carries on over the next picture
         for r in rows:
             x = shotsound.decode(inside(d, r["path"]) or "", 2)
-            lo, hi = max(at, first, 0), min(at + len(x), stop, total)
+            pos = at + int(round(float(r.get("offset") or 0.0) * rate))        # a line moved by whole frames (adrsync) sits that much earlier or later; the next line's place does not move
+            lo, hi = max(pos, first, 0), min(pos + len(x), stop, total)
             if hi > lo:
-                track[lo:hi] += x[lo - at: hi - at]
+                track[lo:hi] += x[lo - pos: hi - pos]
                 n += 1
             at += len(x) + int(GAP * rate)
     peak = float(np.max(np.abs(track))) if total else 0.0

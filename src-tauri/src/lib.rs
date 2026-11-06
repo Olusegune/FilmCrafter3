@@ -1420,6 +1420,19 @@ async fn film_revoice(app: AppHandle, action: String, target: String, data: Valu
     tauri::async_runtime::spawn_blocking(move || run_engine_result(&app, "revoice", &args, &[])).await.map_err(err)?
 }
 
+/// Timing and ADR for a line (filmcrafter_engine.adrsync): move a line by whole frames, fit it to its shot with a pitch-preserving tempo change (a new take, never a replacement), suggest how to line it up
+/// with the picture's own sound, mark lines for ADR and add retakes as new takes. Free and local; nothing is sent anywhere and no key is given to the engine. A recording is never changed.
+#[tauri::command]
+async fn film_adrsync(app: AppHandle, action: String, target: String, data: Value) -> Result<Value, String> {
+    const ACTIONS: [&str; 8] = ["get", "nudge", "fit_plan", "fit_make", "align", "adr_mark", "adr_list", "adr_take"];
+    if !ACTIONS.contains(&action.as_str()) {
+        return Err("Unknown action.".into());
+    }
+    let dir = film_dir(&target)?;
+    let args: Vec<String> = vec!["-m".into(), "filmcrafter_engine.adrsync".into(), action, dir.to_string_lossy().into(), "--data".into(), data.to_string()];
+    tauri::async_runtime::spawn_blocking(move || run_engine_result(&app, "adrsync", &args, &[])).await.map_err(err)?
+}
+
 /// The audio quality inspector (filmcrafter_engine.audioqa): objective measurements of the film's sound (peaks, loudness, clipping, silences, noise, dropouts, clicks, mono fold-down, a line much louder
 /// than the person's others, more than one voice behind one person's lines) reported as things to listen to. Free, local and read-only: it reads sound files and writes nothing; no key is given to it.
 #[tauri::command]
@@ -2597,7 +2610,7 @@ pub fn run() {
             key_status, set_key, delete_key, splash_close, list_projects, load_project,
             ensure_renderer, render_catalog, render_preview,
             queue_render, confirm_spend, resolve_job, export_project, list_styles, set_look, app_ready, render_estimate,
-            save_project, save_project_as, pack_film, backups, film_backup, frames, film, film_bible, film_shots, film_make, film_voice, film_cast_voice, film_revoice, film_voiceid, film_performplan, film_sounddesign, film_audioqa, film_voice_direct, film_audio, film_cues, film_audiogen, film_mix, film_materials, film_choreography, film_placecare, film_audioplan, film_readiness, film_pacing, film_composition, film_spending, film_outdated, model_registry, prepare_update, save_voice_take, film_check, film_assist, film_interchange, is_film, launch_path, engine_status, setup_engine, engine_setup_size, set_project_settings, import_reference, set_keyframe, director_command, undo_command, library, parse_action, providers,
+            save_project, save_project_as, pack_film, backups, film_backup, frames, film, film_bible, film_shots, film_make, film_voice, film_cast_voice, film_revoice, film_voiceid, film_performplan, film_sounddesign, film_audioqa, film_adrsync, film_voice_direct, film_audio, film_cues, film_audiogen, film_mix, film_materials, film_choreography, film_placecare, film_audioplan, film_readiness, film_pacing, film_composition, film_spending, film_outdated, model_registry, prepare_update, save_voice_take, film_check, film_assist, film_interchange, is_film, launch_path, engine_status, setup_engine, engine_setup_size, set_project_settings, import_reference, set_keyframe, director_command, undo_command, library, parse_action, providers,
             set_onboarding, adopt_script, lighting, ai_brain, director_chat, budget, diagnostics, media, continuity, performance, routing, local_models, supervisor, direction_library, director_style, recents, hidden_count, pack_project, open_pulse, golden, lipsync_check, review_backlog, comfy_setup, comfy_install, compose, overnight, refgen, agent_studio, fidelity, video_finish, overlays, captions, director_audit, fonts, editor_export, camera, check_update, stylebible, performance_director, title_card, cleanup, custom_frame, layer_kit, colour_match, grading, editing, proxies, smart_editor, presets, series, shot_sound, acting, track, upscale, proof, shot_history, retry_cheaper, keyframe_set, hand_fix
         ])
         .run(tauri::generate_context!())
