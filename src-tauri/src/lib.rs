@@ -1555,7 +1555,7 @@ async fn film_audiogen(app: AppHandle, action: String, target: String, data: Val
 /// mix. Free and local. The finished film's mix is made by the exporter.
 #[tauri::command]
 async fn film_mix(app: AppHandle, action: String, target: String, data: Value) -> Result<Value, String> {
-    const ACTIONS: [&str; 3] = ["settings", "set_settings", "preview"];
+    const ACTIONS: [&str; 9] = ["settings", "set_settings", "preview", "automation_set", "group_set", "group_remove", "marker_add", "marker_remove", "crossfade"];
     if !ACTIONS.contains(&action.as_str()) {
         return Err("Unknown mix action.".into());
     }

@@ -29,7 +29,11 @@ from . import safeio
 RATE = 44100
 BLOCK = 30.0                       # seconds mixed at a time
 CACHE_MAX = 120.0                  # a sound up to this long is read once and kept; a longer one is read a block at a time
-DEFAULTS = {"schema": 1, "ducking_db": -12.0, "duck_attack": 0.15, "duck_release": 0.6, "target_lufs": None, "peak_db": -1.0, "mute_lanes": [], "solo": None}
+DEFAULTS = {"schema": 1, "ducking_db": -12.0, "duck_attack": 0.15, "duck_release": 0.6, "target_lufs": None, "peak_db": -1.0, "mute_lanes": [], "solo": None, "automation": {}, "groups": {}, "markers": []}
+AUTO_LANES = ("master", "dialogue", "foley", "sfx", "ambience", "music")      # a lane's volume over the film; "master" rides the whole film sound (the song and the shots' own sound too)
+CURVES = ("linear", "smooth", "hold")
+MAX_POINTS, MAX_GROUPS, MAX_MARKERS = 200, 20, 200
+AUTO_DB = (-60.0, 12.0)
 LANES = ("dialogue", "foley", "sfx", "ambience", "music")        # foley: the sounds made for what a shot shows (sounddesign.py); a cue with no `foley` mark is an ordinary effect
 VOICE_MARGIN = (0.1, 0.2)          # seconds the ducking starts before a voice and stays after it
 NO_WINDOW = 0x08000000 if os.name == "nt" else 0
@@ -68,7 +72,188 @@ def settings(d: str) -> dict:
     s = {**DEFAULTS, **{k: v for k, v in (safeio.read_json(_path(d), {}, check=_ok) or {}).items() if k in DEFAULTS}}
     s["mute_lanes"] = [x for x in s["mute_lanes"] if x in LANES]
     s["solo"] = s["solo"] if s["solo"] in LANES else None
+    s["automation"] = {k: clean_points(v) for k, v in (s["automation"] if isinstance(s["automation"], dict) else {}).items() if k in AUTO_LANES and clean_points(v)}
+    s["groups"] = clean_groups(s["groups"])
+    s["markers"] = clean_markers(s["markers"])
     return s
+
+
+# ---------------------------------------------------------------- automation, groups and markers
+
+def clean_points(raw, limit: int = MAX_POINTS, max_t: float = 36000.0) -> list[dict]:
+    """Breakpoints of a volume curve, each checked: a time in seconds, a level in dB, and how the level gets to the next point (linear, smooth or hold). Sorted by time; a time that is repeated keeps
+    the last level; anything not understood is left out."""
+    pts: dict[float, dict] = {}
+    for p in (raw if isinstance(raw, list) else [])[: limit * 2]:
+        if not isinstance(p, dict):
+            continue
+        try:
+            t, db = float(p.get("t")), float(p.get("db"))
+        except (TypeError, ValueError):
+            continue
+        if t != t or db != db or not (0 <= t <= max_t) or not (AUTO_DB[0] <= db <= AUTO_DB[1]):
+            continue
+        pts[round(t, 4)] = {"t": round(t, 4), "db": round(db, 2), "curve": p.get("curve") if p.get("curve") in CURVES else "linear"}
+    return [pts[k] for k in sorted(pts)][:limit]
+
+
+def clean_groups(raw) -> dict:
+    out = {}
+    for name, g in (raw.items() if isinstance(raw, dict) else []):
+        n = " ".join(str(name).split())[:40]
+        if not n or not isinstance(g, dict) or len(out) >= MAX_GROUPS:
+            continue
+        try:
+            db = float(g.get("gain_db", 0.0))
+        except (TypeError, ValueError):
+            db = 0.0
+        out[n] = {"gain_db": round(max(AUTO_DB[0], min(AUTO_DB[1], db)), 1) if db == db else 0.0, "muted": g.get("muted") is True}
+    return out
+
+
+def clean_markers(raw) -> list[dict]:
+    out = []
+    for m in (raw if isinstance(raw, list) else [])[: MAX_MARKERS * 2]:
+        try:
+            t = float(m.get("t"))
+        except (TypeError, ValueError, AttributeError):
+            continue
+        name = " ".join(str(m.get("name") or "").split())[:60]
+        if t == t and 0 <= t <= 36000 and name:
+            out.append({"t": round(t, 4), "name": name})
+    return sorted(out, key=lambda m: (m["t"], m["name"]))[:MAX_MARKERS]
+
+
+def snap_time(d: str, t: float) -> float:
+    """A time moved to the nearest whole frame at the film's frame rate (so a point sits on a frame, as the picture does)."""
+    from . import adrsync
+    f = adrsync.film_fps(d)
+    return round(round(float(t) * f.num / f.den) * f.den / f.num, 4)
+
+
+def auto_gain(points, t0: float, n: int, rate: int = RATE):
+    """The linear gain a volume curve gives each of n samples starting t0 seconds in: before the first point and after the last the level is held, between two points it follows the first point's curve
+    (linear in dB, an eased S, or a step). No points: no change."""
+    import numpy as np
+    if not points or n <= 0:
+        return np.ones(max(0, n), dtype=np.float32)
+    ts = np.array([p["t"] for p in points], dtype=np.float64)
+    db = np.array([p["db"] for p in points], dtype=np.float64)
+    t = t0 + np.arange(n, dtype=np.float64) / rate
+    i = np.clip(np.searchsorted(ts, t, side="right") - 1, 0, len(ts) - 1)
+    j = np.minimum(i + 1, len(ts) - 1)
+    span = np.maximum(ts[j] - ts[i], 1e-9)
+    f = np.clip((t - ts[i]) / span, 0.0, 1.0)
+    f = np.where(j == i, 0.0, f)
+    curve = np.array([p.get("curve", "linear") for p in points])[i]
+    f = np.where(curve == "smooth", f * f * (3 - 2 * f), np.where(curve == "hold", 0.0, f))
+    return (10 ** ((db[i] + (db[j] - db[i]) * f) / 20)).astype(np.float32)
+
+
+def lane_points(st: dict, lane: str) -> list[dict]:
+    return (st.get("automation") or {}).get(lane) or []
+
+
+def _save(d: str, change) -> dict:
+    Q._film(d)
+    cur = settings(d)
+    change(cur)
+    safeio.write_json(_path(d), cur)
+    return settings(d)
+
+
+def set_automation(d: str, lane: str, points) -> dict:
+    """Replace one lane's volume curve (or the master's). Points are snapped to whole frames; a time or level out of range is refused, not guessed. An empty list clears it."""
+    if lane not in AUTO_LANES:
+        raise SystemExit("Choose master, dialogue, foley, effects, ambience or music.")
+    if not isinstance(points, list) or len(points) > MAX_POINTS:
+        raise SystemExit(f"A volume curve has at most {MAX_POINTS} points.")
+    for p in points:
+        try:
+            t, db = float(p["t"]), float(p["db"])
+        except (TypeError, ValueError, KeyError):
+            raise SystemExit("Each point needs a time in seconds and a level in dB.")
+        if not (0 <= t <= 36000) or not (AUTO_DB[0] <= db <= AUTO_DB[1]):
+            raise SystemExit(f"A point's time must be 0 to 36000 s and its level {AUTO_DB[0]:g} to {AUTO_DB[1]:g} dB.")
+    snapped = [{**p, "t": snap_time(d, float(p["t"]))} for p in points]
+
+    def change(cur):
+        cur["automation"] = {k: v for k, v in cur["automation"].items() if k != lane}
+        pts = clean_points(snapped)
+        if pts:
+            cur["automation"][lane] = pts
+    return _save(d, change)
+
+
+def set_group(d: str, name: str, gain_db=None, muted=None) -> dict:
+    """Make a group of cues (a cue joins it by its `group` name) or change its level or mute. A group's level adds to each member's own; a muted group is left out of the film."""
+    n = " ".join(str(name or "").split())[:40]
+    if not n:
+        raise SystemExit("Give the group a name.")
+
+    def change(cur):
+        g = cur["groups"].get(n) or {"gain_db": 0.0, "muted": False}
+        if gain_db is not None:
+            g["gain_db"] = round(_num(gain_db, AUTO_DB[0], AUTO_DB[1], 0.0, "The group's level"), 1)
+        if muted is not None:
+            g["muted"] = muted is True
+        if n not in cur["groups"] and len(cur["groups"]) >= MAX_GROUPS:
+            raise SystemExit(f"There can be at most {MAX_GROUPS} groups.")
+        cur["groups"][n] = g
+    return _save(d, change)
+
+
+def remove_group(d: str, name: str) -> dict:
+    """Take a group away. The cues that named it are not changed; with no group of that name they simply have no group level."""
+    n = " ".join(str(name or "").split())[:40]
+
+    def change(cur):
+        if n not in cur["groups"]:
+            raise SystemExit("There is no group of that name.")
+        del cur["groups"][n]
+    return _save(d, change)
+
+
+def marker_add(d: str, t, name: str) -> dict:
+    """A named point on the film's timeline (a place to find again; it is written into the cue sheet and the editable timeline of the audio export). Snapped to a frame."""
+    nm = " ".join(str(name or "").split())[:60]
+    if not nm:
+        raise SystemExit("Give the marker a name.")
+    tt = _num(t, 0, 36000, 0.0, "The marker's time")
+
+    def change(cur):
+        if len(cur["markers"]) >= MAX_MARKERS:
+            raise SystemExit(f"There can be at most {MAX_MARKERS} markers.")
+        cur["markers"] = clean_markers(cur["markers"] + [{"t": snap_time(d, tt), "name": nm}])
+    return _save(d, change)
+
+
+def marker_remove(d: str, index) -> dict:
+    def change(cur):
+        if isinstance(index, bool) or not isinstance(index, int) or not (0 <= index < len(cur["markers"])):
+            raise SystemExit("That marker is not there.")
+        del cur["markers"][index]
+    return _save(d, change)
+
+
+def crossfade(d: str, cue_a: str, cue_b: str, seconds) -> dict:
+    """Overlap two sounds in one place on the timeline so the first fades out as the second fades in: the second starts `seconds` before the first ends, and both fades are that long. Only for two cues
+    anchored to the same shot or scene, and both with a length. The sounds themselves are not changed."""
+    sec = _num(seconds, 0.05, 10, 1.0, "The crossfade")
+    rows = {c["id"]: c for c in Q.listing(d)["cues"]}
+    a, b = rows.get(str(cue_a)), rows.get(str(cue_b))
+    if not a or not b or cue_a == cue_b:
+        raise SystemExit("Choose two different cues from the plan.")
+    if (a.get("shot") or None) != (b.get("shot") or None) or int(a["scene"]) != int(b["scene"]):
+        raise SystemExit("Both cues must belong to the same shot or the same scene.")
+    la = float(a.get("duration") or a.get("asset_seconds") or 0)
+    lb = float(b.get("duration") or b.get("asset_seconds") or 0)
+    if la <= sec or lb <= sec:
+        raise SystemExit("Both sounds must be longer than the crossfade.")
+    end_a = float(a.get("start") or 0) + la
+    Q.update(d, cue_a, {"fade_out": sec})
+    Q.update(d, cue_b, {"start": round(max(0.0, end_a - sec), 2), "fade_in": sec})
+    return {"a": cue_a, "b": cue_b, "seconds": sec, "b_starts": round(max(0.0, end_a - sec), 2)}
 
 
 def set_settings(d: str, data: dict) -> dict:
@@ -149,7 +334,12 @@ def placements(d: str, shot_times: dict, duration: float, st: dict | None = None
             skipped.append({"cue": cid, "why": "It falls outside the film."})
             continue
         duck = c.get("ducking") == "on" or (c.get("ducking", "auto") == "auto" and lane in ("music", "ambience"))
-        out.append({"cue": cid, "path": path, "start": start, "end": end, "gain": 10 ** (float(c.get("gain_db") or 0) / 20), "fade_in": float(c.get("fade_in") or 0), "fade_out": float(c.get("fade_out") or 0),
+        grp = (st.get("groups") or {}).get(str(c.get("group") or ""))
+        if grp and grp.get("muted"):
+            continue                                                     # a muted group is left out of the film, like a muted lane
+        group_db = float(grp["gain_db"]) if grp else 0.0
+        out.append({"cue": cid, "path": path, "start": start, "end": end, "gain": 10 ** ((float(c.get("gain_db") or 0) + group_db) / 20), "fade_in": float(c.get("fade_in") or 0), "fade_out": float(c.get("fade_out") or 0),
+                    "auto": clean_points(c.get("auto"), 50), "group": str(c.get("group") or ""),
                     "loop": bool(c.get("loop")), "duck": duck, "asset_seconds": float(a["seconds"]), "lane": lane, "pan": max(-1.0, min(1.0, float(c.get("pan") or 0)))})
     return out, skipped
 
@@ -283,11 +473,14 @@ def mix_cues(d: str, base_path: str | None, shot_times: dict, duration: float, o
     import numpy as np
     import soundfile as sf
     film = film_of(d)
-    if film is None or not os.path.isfile(Q._path(film)):
-        return None                                              # not a film, or a film with no plan: the soundtrack is left exactly as it is
+    if film is None:
+        return None                                              # not a film: nothing is planned there
     st = st or settings(film)
+    master = [] if st.get("raw_float") else lane_points(st, "master")           # a stem is the mix before the master stage: the master curve is not in it
+    if not os.path.isfile(Q._path(film)) and not master:
+        return None                                              # a film with no plan and no master curve: the soundtrack is left exactly as it is
     plan, skipped = placements(film, shot_times, duration, st, only_scene, preview)
-    if not plan:
+    if not plan and not master:
         return {"none": True, "skipped": skipped} if skipped else None
     total = int(round(duration * RATE))
     spans = dialogue_spans(d, shot_times, windows)
@@ -318,9 +511,16 @@ def mix_cues(d: str, base_path: str | None, shot_times: dict, duration: float, o
                     seg = seg * _fade_gain(a, b - a, s0, s1, int(p["fade_in"] * RATE), int(p["fade_out"] * RATE))[:, None] * np.float32(p["gain"])
                     if p.get("pan"):
                         seg = seg * pan_gains(p["pan"])[None, :]
+                    if p.get("auto"):
+                        seg = seg * auto_gain(p["auto"], (a - s0) / RATE, b - a)[:, None]                  # the cue's own volume curve (seconds from its start)
+                    lane_pts = lane_points(st, p["lane"])
+                    if lane_pts:
+                        seg = seg * auto_gain(lane_pts, a / RATE, b - a)[:, None]                          # the lane's volume curve (seconds on the film)
                     (ducked if p["duck"] else plain)[a - i0:b - i0] += seg
                 env = duck_envelope(spans, i0 / RATE, n, st)
                 mix += plain + ducked * env[:, None]
+                if master:
+                    mix *= auto_gain(master, i0 / RATE, n)[:, None]
                 peak_in = max(peak_in, float(np.max(np.abs(mix))) if n else 0.0)
                 w.write(mix)
                 if progress:
@@ -410,9 +610,12 @@ def _voices_base(film: str, times: dict, duration: float, out: str) -> str | Non
     if not rows:
         return None
     track = np.zeros((int(duration * RATE), 2), dtype=np.float32)
+    dpts = lane_points(settings(film), "dialogue")
     for a, f, e in rows:
         x = decode(f, 2)[: max(0, int(round((e - a) * RATE)))]
         i = int(round(a * RATE))
+        if dpts and len(x):
+            x = x * auto_gain(dpts, i / RATE, len(x))[:, None]                      # the dialogue lane's volume curve
         track[i:i + len(x)] += x[: len(track) - i]
     peak = float(np.max(np.abs(track))) if len(track) else 0.0
     if peak > 0.98:
@@ -463,7 +666,7 @@ def preview(d: str, scene, solo: str | None = None) -> dict:
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(prog="audiomix")
-    ap.add_argument("action", choices=["settings", "set_settings", "preview"])
+    ap.add_argument("action", choices=["settings", "set_settings", "preview", "automation_set", "group_set", "group_remove", "marker_add", "marker_remove", "crossfade"])
     ap.add_argument("film")
     ap.add_argument("--data", default="{}")
     a = ap.parse_args(argv)
@@ -476,6 +679,18 @@ def main(argv: list[str]) -> int:
             res = settings(d)
         elif a.action == "set_settings":
             res = set_settings(d, x)
+        elif a.action == "automation_set":
+            res = set_automation(d, x.get("lane", ""), x.get("points"))
+        elif a.action == "group_set":
+            res = set_group(d, x.get("name", ""), x.get("gain_db"), x.get("muted"))
+        elif a.action == "group_remove":
+            res = remove_group(d, x.get("name", ""))
+        elif a.action == "marker_add":
+            res = marker_add(d, x.get("t"), x.get("name", ""))
+        elif a.action == "marker_remove":
+            res = marker_remove(d, x.get("index"))
+        elif a.action == "crossfade":
+            res = crossfade(d, x.get("a", ""), x.get("b", ""), x.get("seconds"))
         else:
             res = preview(d, x.get("scene", 0), x.get("solo"))
         emit(event="result", data=res)

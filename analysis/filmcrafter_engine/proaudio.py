@@ -161,12 +161,16 @@ def _dialogue_float(d: str, items: list[dict], duration: float, out: str) -> boo
     if not items:
         return False
     track = np.zeros((int(round(duration * RATE)), 2), dtype=np.float32)
+    dpts = M.lane_points(M.settings(d), "dialogue")
     for it in items:
         x = shotsound.decode(it["path"], 2)
         i = int(round(it["start"] * RATE))
         n = min(len(x), int(round((it["end"] - it["start"]) * RATE)), len(track) - i)
         if n > 0 and i >= 0:
-            track[i:i + n] += x[:n]
+            seg = x[:n]
+            if dpts:
+                seg = seg * M.auto_gain(dpts, i / RATE, n)[:, None]                  # the dialogue lane's volume curve, as in the film's mix
+            track[i:i + n] += seg
     sf.write(out, track, RATE, subtype="FLOAT")
     return True
 
@@ -198,10 +202,11 @@ def render_stems(d: str, work: str, lanes: list[str], times: dict, duration: flo
 
 # ---------------------------------------------------------------- summing, measuring, the master gain
 
-def _sum_files(files: list[str], out: str) -> None:
+def _sum_files(files: list[str], out: str, master: list[dict] | None = None) -> None:
     import numpy as np
     import soundfile as sf
     readers = [sf.SoundFile(f) for f in files]
+    at = 0
     try:
         with sf.SoundFile(out, "w", RATE, 2, subtype="FLOAT") as w:
             while True:
@@ -215,6 +220,9 @@ def _sum_files(files: list[str], out: str) -> None:
                         acc[: len(x)] += x[:, :2]
                 if not n:
                     break
+                if master:
+                    acc = acc * M.auto_gain(master, at / RATE, len(acc))[:, None]        # the master volume curve rides the mixes (the stems are before it)
+                at += len(acc)
                 w.write(acc)
     finally:
         for r in readers:
@@ -372,6 +380,9 @@ def cue_rows(d: str, times: dict, duration: float, items: list[dict], start_s: f
                      "tc_out": tc(p["end"]), "seconds": round(p["end"] - p["start"], 2), "level_db": round(20 * __import__("math").log10(max(p["gain"], 1e-6)), 1), "pan": round(float(p.get("pan") or 0), 2),
                      "asset": a.get("id") or "", "origin": a.get("source") or "", "provider": gen.get("provider") or "", "model": gen.get("model") or "", "licence": lic.get("source") or "",
                      "commercial": lic.get("commercial") or "", "licence_note": lic.get("note") or "", "approval": c.get("approval") or "", "file": a.get("file") or ""})
+    for mk in st.get("markers") or []:
+        rows.append({"lane": "MARKER", "name": mk["name"], "scene": "", "shot": "", "tc_in": tc(mk["t"]), "tc_out": tc(mk["t"]), "seconds": 0, "level_db": "", "pan": "", "asset": "", "origin": "marker", "provider": "",
+                     "model": "", "licence": "", "commercial": "", "licence_note": "", "approval": "", "file": ""})
     rows.sort(key=lambda r: (r["tc_in"], r["lane"]))
     return rows
 
@@ -413,8 +424,9 @@ def _pack(clips: list[dict]) -> list[list[dict]]:
     return tracks
 
 
-def otio_timeline(title: str, fps: T.FrameRate, lanes: dict[str, list[dict]], duration: float, start_s: float) -> dict:
-    stack = {"OTIO_SCHEMA": "Stack.1", "name": "tracks", "children": [], "metadata": {}, "source_range": None, "effects": [], "markers": [], "enabled": True, "color": None}
+def otio_timeline(title: str, fps: T.FrameRate, lanes: dict[str, list[dict]], duration: float, start_s: float, markers: list[dict] | None = None) -> dict:
+    stack = {"OTIO_SCHEMA": "Stack.1", "name": "tracks", "children": [], "metadata": {}, "source_range": None, "effects": [], "enabled": True, "color": None,
+             "markers": [{"OTIO_SCHEMA": "Marker.2", "name": m["name"], "color": "GREEN", "marked_range": _range(m["t"], 0.0, fps), "comment": "", "metadata": {}} for m in (markers or [])]}
     for lane in STEMS:
         for n, track in enumerate(_pack(lanes.get(lane, [])), 1):
             kids, at = [], 0.0
@@ -508,7 +520,7 @@ def export(d: str, spec: dict | None = None) -> dict:
                 continue
             emit(event="progress", stage=f"mixing {kind}", progress=0.8)
             summed = os.path.join(work, f"sum-{kind}.wav")
-            _sum_files(use, summed)
+            _sum_files(use, summed, M.lane_points(M.settings(d), "master"))
             meas = _measure(summed)
             g = master_gain(meas, _peak(summed), sp["target_lufs"], sp["peak_db"])
             label = "FINAL" if kind == "final" else "M&E"
@@ -562,7 +574,7 @@ def export(d: str, spec: dict | None = None) -> dict:
                 else:
                     lanes_clips[lane].append({"name": os.path.basename(rel)[9:], "start": p["start"], "end": min(p["end"], p["start"] + a), "media": rel, "media_seconds": a, "meta": {"cue": p["cue"]}})
             otio_name = f"{title} audio.otio"
-            safeio.write_json(os.path.join(out, otio_name), otio_timeline(title, fps, lanes_clips, duration, start_s), backup=False)
+            safeio.write_json(os.path.join(out, otio_name), otio_timeline(title, fps, lanes_clips, duration, start_s, M.settings(d).get("markers")), backup=False)
         report = {"schema": 1, "title": title, "made": stamp, "spec": sp, "seconds": round(duration, 3), "start_tc": sp["start_tc"], "fps": [fps.num, fps.den], "stems": [r for r in written if "lane" in r], "mixes": mixes,
                   "lanes_without_sound": why, "cue_sheet": sheet, "otio": otio_name, "media_files": media_made, "not_checked": NOT_CHECKED, "skipped_cues": M.placements(d, times, duration, M.settings(d))[1][:20]}
         problems = verify(out, report, sp, duration, start_s)

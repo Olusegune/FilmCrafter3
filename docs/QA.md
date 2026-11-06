@@ -1,4 +1,12 @@
-# QA report: FilmCrafter 0.43.1 (2026-11-06)
+# QA report: FilmCrafter 0.44.0 (2026-11-06)
+
+## 0.44.0: mixer automation and the same left rail on every film screen
+
+Engine: **2,719 tests collected, 2,712 passed, 7 skipped, none failed** (19 new in `test_mixerauto.py`, measured on real audio; the old suites were re-run unchanged). Bandit (medium and above): no findings. TypeScript clean; **829 Vitest tests in 107 files** (10 for the curves panel, 3 for the rail); 15 Rust tests. Security review by hand (the scan service quota is used up): every new action is on the fixed action list the shell checks; lane names, point counts, levels, group names and marker counts are validated in the engine; the film path goes through the same `film_dir` check; nothing is deleted, nothing is sent anywhere, no paid call. Bugs found by the tests and fixed before release: a panel that cleared a typed marker or group even when the engine refused it. Test mistakes found and corrected (not product faults): a export test that read the first export after the second had replaced it; windows that fell outside a 4.5 s film.
+
+Navigation: the left rail (Home, the golden-path steps with a tick on finished steps and a dot on the next one, Settings) is now on every film screen and in Agent Studio; the timeline Studio's rail gained Story, Cast and Shots to go back. Checked by component tests and type checks; **not yet looked at in the installed app by a person**.
+
+**Still not tested:** anything by ear; dragging a curve (the screen edits numbers); an editor opening the markers.
 
 ## 0.43.1: real-speech tests
 

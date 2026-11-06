@@ -363,7 +363,7 @@ export const api = {
   voiceDirect: <T = unknown>(action: "performance" | "performance_set" | "performance_clear" | "natural_estimate" | "natural_suggest" | "voices_estimate" | "voices_suggest" | "voices_match" | "scene_plan" | "scene_voice" | "table_read", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_voice_direct", { action, target, data }),
   filmCues: <T = CueList>(action: "list" | "add" | "update" | "approve" | "remove" | "restore" | "refresh" | "quick" | "director_estimate" | "director_suggest", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_cues", { action, target, data }),
   audioGen: <T = unknown>(action: "providers" | "estimate" | "generate" | "pending" | "check" | "rights", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_audiogen", { action, target, data }),
-  audioMix: <T = MixSettings>(action: "settings" | "set_settings" | "preview", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_mix", { action, target, data }),
+  audioMix: <T = MixSettings>(action: "settings" | "set_settings" | "preview" | "automation_set" | "group_set" | "group_remove" | "marker_add" | "marker_remove" | "crossfade", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_mix", { action, target, data }),
   filmChoreography: <T = ActionPlan>(action: "types" | "generate" | "update" | "apply" | "list" | "remove" | "get", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_choreography", { action, target, data }),
   filmAudioPlan: (action: "report" | "apply" | "set", target: string, data: Record<string, unknown> = {}) => invoke<SoundPlan>("film_audioplan", { action, target, data }),
   filmReadiness: (target: string) => invoke<Readiness>("film_readiness", { action: "report", target }),
@@ -724,7 +724,7 @@ export type TableRead = { scene: number; lines: { shot: string; speaker: string;
 export type CueFresh = { code: "asset_removed" | "asset_changed" | "asset_missing" | "shot_gone" | "timing_changed" | "after_shot"; why: string };
 export type Cue = { id: string; kind: "dialogue" | "sfx" | "ambience" | "music"; asset_id: string | null; asset_name: string | null; asset_file: string | null; asset_seconds: number | null; plan?: { description: string; search: string };
   scene: number; shot: string | null; start: number; duration: number | null; gain_db: number; fade_in: number; fade_out: number; loop: boolean; ducking: "auto" | "on" | "off";
-  approval: "suggested" | "approved" | "rejected"; note: string; source: "manual" | "director" | "quick"; fresh: CueFresh[]; needs_sound: boolean; created: number; updated: number; muted?: boolean };
+  approval: "suggested" | "approved" | "rejected"; note: string; source: "manual" | "director" | "quick"; fresh: CueFresh[]; needs_sound: boolean; created: number; updated: number; muted?: boolean; group?: string; auto?: AutoPoint[] };
 export type CueDialogue = { id: string; kind: "dialogue"; derived: true; scene: number; shot: string; speaker: string; file: string; duration: number | null; start: number; source: string; text: string };
 export type CueList = { cues: Cue[]; dialogue: CueDialogue[]; removed: { id: string; kind: string; scene: number | null }[]; id?: string;
   scenes: Record<string, { shots: { id: string; seconds: number; sound: string }[]; seconds: number }>; counts: { cues: number; needs_sound: number; suggested: number } };
@@ -736,7 +736,10 @@ export type GenEstimate = { expected?: number | null; provider: string; label: s
   needs_unknown_cost_accepted: boolean; needs_rights_ack: boolean; rights_note: string; has_key: boolean };
 export type GenResult = { asset?: AudioAsset; assets?: AudioAsset[]; cached: boolean; cost?: { unit: string; estimate?: number | null; reported?: number | null; amount?: number; basis?: string }; note: string; pending?: { task: string; state: string } };
 export type RightsReport = { assets: { id: string; name: string; kind: string; commercial: string; in_plan: boolean; source: string; why: string }[]; blocking: { id: string; name: string; why: string }[]; ok: boolean };
-export type MixSettings = { schema: number; ducking_db: number; duck_attack: number; duck_release: number; target_lufs: number | null; peak_db: number; mute_lanes: ("dialogue" | "foley" | "sfx" | "ambience" | "music")[]; solo: string | null };
+export type MixSettings = { schema: number; ducking_db: number; duck_attack: number; duck_release: number; target_lufs: number | null; peak_db: number; mute_lanes: ("dialogue" | "foley" | "sfx" | "ambience" | "music")[]; solo: string | null;
+  automation?: Record<string, AutoPoint[]>; groups?: Record<string, { gain_db: number; muted: boolean }>; markers?: { t: number; name: string }[] };
+export type AutoPoint = { t: number; db: number; curve: "linear" | "smooth" | "hold" };
+export type Crossfaded = { a: string; b: string; seconds: number; b_starts: number };
 export type ActionBeat = { n: number; phase: string; kind: "establish" | "action" | "reaction" | "insert" | "aftermath"; actor: string | null; momentum: "A" | "B" | "even"; text: string; seconds: number; framing: string; movement: string; angle: string; lens: string; sound: string; title: string; carrying: string };
 export type ActionPlan = { id: string; type: string; scene: number; place: string; weapon: string; sides: { a: string[]; b: string[] }; intensity: string; outcome: string; geography: string; people: string[]; beats: ActionBeat[]; seconds: number;
   warnings: string[]; after: string; applied: string[]; status: "draft" | "applied" };

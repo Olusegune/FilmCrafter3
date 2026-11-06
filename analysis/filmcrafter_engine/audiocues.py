@@ -198,6 +198,21 @@ def _clean_fields(c: dict, data: dict, shots: dict) -> None:
         c["duration"] = None if data["duration"] in (None, "", 0) else round(_num(data["duration"], 0.1, 36000, 1.0, "The length"), 2)
     if "gain_db" in data:
         c["gain_db"] = round(_num(data["gain_db"], GAIN[0], GAIN[1], 0.0, "The level"), 1)
+    if "group" in data:
+        c["group"] = " ".join(str(data["group"] or "").split())[:40]                  # the name of a mix group (audiomix.set_group); empty: no group
+    if "auto" in data:
+        raw = data["auto"] if isinstance(data["auto"], list) else []
+        if len(raw) > 50:
+            raise SystemExit("A cue's volume curve has at most 50 points.")
+        from . import audiomix as M
+        for p in raw:
+            try:
+                t, db = float(p["t"]), float(p["db"])
+            except (TypeError, ValueError, KeyError):
+                raise SystemExit("Each point needs a time in seconds from the start of the sound and a level in dB.")
+            if not (0 <= t <= 36000) or not (M.AUTO_DB[0] <= db <= M.AUTO_DB[1]):
+                raise SystemExit(f"A point's time must be 0 to 36000 s and its level {M.AUTO_DB[0]:g} to {M.AUTO_DB[1]:g} dB.")
+        c["auto"] = M.clean_points(raw, 50)
     if "foley" in data:
         c["foley"] = bool(data["foley"])                   # a sound made for what a shot shows (sounddesign.py): its own lane in the mix and in the pro export
     if "pan" in data:
@@ -254,7 +269,7 @@ def add(d: str, data: dict) -> dict:
         while cid in taken:
             cid = f"q-{uuid.uuid4().hex[:8]}"
         now = int(time.time())
-        c = {"id": cid, "kind": kind, "asset_id": asset["id"] if asset else None, "scene": 0, "shot": None, "start": 0.0, "duration": None, "gain_db": 0.0, "pan": 0.0, "foley": False, "fade_in": 0.0, "fade_out": 0.0,
+        c = {"id": cid, "kind": kind, "asset_id": asset["id"] if asset else None, "scene": 0, "shot": None, "start": 0.0, "duration": None, "gain_db": 0.0, "pan": 0.0, "foley": False, "group": "", "auto": [], "fade_in": 0.0, "fade_out": 0.0,
              "loop": bool(asset and asset.get("category") == "ambience"), "ducking": "auto", "muted": False, "approval": approval, "note": "", "source": src, "created": now, "updated": now}
         if "scene" not in data and "shot" not in data:
             raise SystemExit("Choose the scene or the shot this belongs to.")

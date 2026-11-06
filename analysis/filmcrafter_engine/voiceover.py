@@ -537,6 +537,12 @@ def mix_into(d: str, base_path: str, items: list[dict], duration: float, out: st
     if not placed:
         return None
     total = int(round(duration * rate))
+    try:
+        from . import audiomix
+        film = audiomix.film_of(d)
+        dpts = audiomix.lane_points(audiomix.settings(film), "dialogue") if film else []      # the dialogue lane's volume curve: it rides the voices only, never the song
+    except Exception:
+        dpts = []
     track = np.zeros((total, 2), dtype=np.float32)
     base = shotsound.decode(base_path, 2)[:total]
     track[: len(base)] = base
@@ -552,7 +558,11 @@ def mix_into(d: str, base_path: str, items: list[dict], duration: float, out: st
             pos = at + int(round(float(r.get("offset") or 0.0) * rate))        # a line moved by whole frames (adrsync) sits that much earlier or later; the next line's place does not move
             lo, hi = max(pos, first, 0), min(pos + len(x), stop, total)
             if hi > lo:
-                track[lo:hi] += x[lo - pos: hi - pos]
+                seg = x[lo - pos: hi - pos]
+                if dpts:
+                    from . import audiomix
+                    seg = seg * audiomix.auto_gain(dpts, lo / rate, hi - lo, rate)[:, None]
+                track[lo:hi] += seg
                 n += 1
             at += len(x) + int(GAP * rate)
     peak = float(np.max(np.abs(track))) if total else 0.0

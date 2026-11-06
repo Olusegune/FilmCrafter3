@@ -513,7 +513,7 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
     catch (e) { setError(errorText(e)); }
   };
 
-  if (workspace === "agent") return <AgentStudio project={{ ...project, jobs }} onHome={onHome} onManual={() => chooseWorkspace("manual")} />;
+  if (workspace === "agent") return <AgentStudio project={{ ...project, jobs }} onHome={onHome} onSettings={onSettings} onManual={() => chooseWorkspace("manual")} />;
 
   return (
     <div className={`studio ${focus ? "focus" : ""}`}>
@@ -521,6 +521,11 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
       <nav className="rail" aria-label="Main">
         <div className="logo"><I.Mark size={26} /></div>
         <RailBtn icon={<I.Home />} label="Home" onClick={onHome} />
+        {isFilm && onFilm && <>
+          <RailBtn icon={<I.Folder />} label="Story" onClick={() => onFilm("story")} why="Back to the story step" />
+          <RailBtn icon={<I.User />} label="Cast" onClick={() => onFilm("cast")} why="Back to cast and world" />
+          {director && <RailBtn icon={<I.Film />} label="Shots" onClick={() => onFilm("shots")} why="Back to the shot list" />}
+        </>}
         <RailBtn icon={<I.Folder />} label="Project" onClick={() => { setSel(null); setInspector(true); }} />
         <RailBtn icon={<I.Assets />} label="Library" onClick={() => setLibraryOpen(true)} />
         <RailBtn icon={<I.Studio />} label="Studio" active />

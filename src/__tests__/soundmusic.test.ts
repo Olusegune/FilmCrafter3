@@ -210,7 +210,7 @@ describe("Stage E (lanes and mixing)", () => {
     expect(s).toContain("a preview: the film is not changed");
     expect(s).toContain("a limiter so nothing clips");
     expect(s).toContain("Online video (-16 LUFS)");
-    expect(rd("src-tauri/src/lib.rs")).toMatch(/ACTIONS: \[&str; 3\] = \["settings", "set_settings", "preview"\]/);
+    expect(rd("src-tauri/src/lib.rs")).toMatch(/ACTIONS: \[&str; 9\] = \["settings", "set_settings", "preview", "automation_set", "group_set", "group_remove", "marker_add", "marker_remove", "crossfade"\]/);
     expect(rd("src/api.ts")).toContain('invoke<T>("film_mix"');
   });
 });

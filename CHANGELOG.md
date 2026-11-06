@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.44.0 (2026-11-06)
+
+- **Mixer automation (free, local).** Sound & Music > Scenes > **Volume curves and groups**: a volume curve for the voices, each sound lane and the whole film (points in dB with straight, eased or step shapes, snapped to frames); a curve on a single cue that moves with it; **groups** of cues with one level and one mute; **markers** that go into the audio export's cue sheet and the timeline file; and a **crossfade** between two sounds. The curves reach the previews, the voice mix and the professional audio export (stems carry the lane curves; only the mixes carry the whole-film curve). Old films sound exactly as before. Details and limits: `docs/MIXER_AUTOMATION.md`.
+- **The same left rail on every film screen.** The rail the timeline Studio has (Home on top, Settings at the bottom) now also appears on the Story, Cast, Shots, Studio and Export screens and in Agent Studio, with the steps of the golden path in order, a tick on a finished step and a dot on the next one. The timeline Studio's rail gained Story, Cast and Shots buttons to go back. Home is the only screen without it.
+- Tests measure real audio through the real mixer (levels at chosen times, a crossfade by frequency, markers read back by OpenTimelineIO). Not judged by ear; the screen edits numbers, not a draggable curve.
+
 ## 0.43.1 (2026-11-06)
 
 - **Real-speech tests, and what they found.** The new sound tools were run on real speech (two Windows text-to-speech voices, checked with Windows' offline recognizer), on one small paid ElevenLabs call (three short lines, about 136 credits estimated, 30 reported) and with the real engine's answers fed to the real screens. **The audio quality inspector reported false clicks and noise on clean real speech**: a loud low voice's sharp pulses counted as clicks and a breath counted as room noise. Fixed (a click must also beat 0.6 of the local peak and the neighbouring blocks; the noise floor is the quietest 5%, limit -45 dBFS) and covered by regression tests with two short real-speech recordings. Measured and fine: dub-fit keeps pitch and the recognizer's word error did not rise; line-up against a different voice is within 6 ms; a 48 kHz / 24-bit export changes nothing the recognizer can hear; the screens and the engine agree on every field. Nothing was judged by ear. See `docs/REAL_TESTS.md`.

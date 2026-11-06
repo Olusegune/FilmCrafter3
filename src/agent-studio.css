@@ -25,3 +25,6 @@
 @media (max-width: 900px) { .agent-analysis { display: block; overflow: auto; }.analysis-main,.analysis-decisions { overflow: visible; }.analysis-decisions { border-left: 0; border-top: 1px solid var(--line); }.analysis-facts { grid-template-columns: 1fr; } }
 .production-models { margin-top: 18px; padding: 13px; border: 1px solid var(--line); border-radius: 8px; background: #12171d; }.production-models summary { cursor: pointer; font-weight: 700; display: flex; justify-content: space-between; gap: 10px; }.production-models summary small { color: var(--smoke); font-weight: 400; }.production-models[open] summary { margin-bottom: 12px; }.production-models label { display: grid; gap: 6px; margin: 10px 0; font-size: 12px; font-weight: 600; }.production-models select { width: 100%; min-width: 0; padding: 9px; color: white; background: #191e24; border: 1px solid var(--line-strong); border-radius: 7px; }
 .analysis-facts section { min-width: 0; }.analysis-facts p,.analysis-facts span { overflow-wrap: anywhere; }.analysis-decisions { min-width: 0; }
+
+.agent-shell { grid-template-columns: 68px minmax(0, 1fr); }
+.agent-shell > .film-rail { grid-row: 1 / span 2; }

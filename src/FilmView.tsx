@@ -9,6 +9,7 @@ import { CastWorld } from "./CastWorld";
 import { ShotLab } from "./ShotLab";
 import { MakeFilm, type MakeTab } from "./MakeFilm";
 import { FirstFilm } from "./FirstFilm";
+import { FilmRail, type RailItem } from "./FilmRail";
 import type { StudioSheet } from "./guideSteps";
 import { NextStep } from "./NextStep";
 import { SpendingSheet } from "./SpendingSheet";
@@ -27,7 +28,7 @@ export function FilmView({ dir, onHome, onSettings, onStudio, initialStage }: { 
   const [writing, setWriting] = useState(false);
   const [scene, setScene] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
-  const [stage, setStage] = useState<"story" | "cast" | "shots" | "make">(initialStage === "studio" || initialStage === "storyboard" ? "make" : "story");        // the studio can bring you back to a step
+  const [stage, setStage] = useState<"story" | "cast" | "shots" | "make">(initialStage === "studio" || initialStage === "storyboard" ? "make" : initialStage === "cast" || initialStage === "shots" ? initialStage : "story");        // the studio can bring you back to a step
   const [makeTab, setMakeTab] = useState<MakeTab>(initialStage === "storyboard" ? "storyboard" : "keyframe");
   const [progress, setProgress] = useState<FilmProgress | null>(null);
   const [suggested, setSuggested] = useState<{ text: string; kind: StoryKind } | null>(null);          // the next step the writing helper proposed: opens in the new-version sheet to edit and save
@@ -95,7 +96,15 @@ export function FilmView({ dir, onHome, onSettings, onStudio, initialStage }: { 
     await run("lock", () => api.film<FilmStatus>("lock", dir, { version: f.version }));
   };
 
+  const railIcon: Record<string, import("react").ReactNode> = { story: <I.Folder />, cast: <I.User />, shots: <I.Film />, make: <I.Studio />, export: <I.Export /> };
+  const doneIds = STAGES.filter((s) => stageDone(s.id, progress)).map((s) => s.id);
+  const firstTodo = STAGES.filter((s) => studio || s.id !== "shots").find((s) => !doneIds.includes(s.id) && s.id !== "export")?.id;
+  const railItems: RailItem[] = STAGES.filter((s) => s.ready && (studio || s.id !== "shots")).map((s, i) => ({ id: s.id, label: s.id === "cast" ? "Cast" : s.label, icon: railIcon[s.id], active: s.id === activeId, done: doneIds.includes(s.id), next: s.id === firstTodo && s.id !== activeId,
+    title: `Step ${i + 1}: ${s.label}${doneIds.includes(s.id) ? " (done)" : s.id === firstTodo ? " (next)" : ""}`, onClick: () => goStage(s.id) }));
+
   return (
+    <div className="film-shell">
+    <FilmRail items={railItems} onHome={onHome} onSettings={onSettings} />
     <div className="film">
       <header className="film-top">
         <button className="btn ghost sm" onClick={onHome}>‹ Home</button>
@@ -239,6 +248,7 @@ export function FilmView({ dir, onHome, onSettings, onStudio, initialStage }: { 
         goStage(where === "voice" ? "make" : where === "sound" ? "cast" : where);
       }} />}
       {writing && <NewVersion from={f} initial={suggested} onClose={() => { setWriting(false); setSuggested(null); }} onSaved={(s) => { setF(s); setWriting(false); setScene(null); }} dir={dir} />}
+    </div>
     </div>
   );
 }

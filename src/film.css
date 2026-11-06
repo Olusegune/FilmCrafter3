@@ -1251,3 +1251,12 @@
 .dt-warn { color: #ef6b73; margin: 6px 0 0; }
 
 .sp-cost { margin: 0; }
+
+/* the left rail on the film screens: the same rail as the timeline Studio */
+.film-shell { display: flex; height: 100vh; background: var(--obsidian, #090b0f); }
+.film-shell > .film { flex: 1; min-width: 0; }
+.film-rail { flex: none; width: 68px; }
+.film-rail button.done svg { color: var(--signal); }
+.film-rail .rail-tick { position: absolute; top: 4px; right: 8px; width: 14px; height: 14px; border-radius: 999px; background: var(--signal, #64b7ff); color: #06101a; display: grid; place-items: center; }
+.film-rail .rail-next { position: absolute; top: 6px; right: 12px; width: 8px; height: 8px; border-radius: 999px; background: var(--warning, #ffb52e); }
+@media (max-width: 700px) { .film-rail { display: none; } }

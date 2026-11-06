@@ -1,4 +1,5 @@
 import { ProAudio } from "./ProAudio";
+import { MixerAutomation } from "./MixerAutomation";
 import { AudioCheck } from "./AudioCheck";
 import { SoundDesign } from "./SoundDesign";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -113,6 +114,8 @@ export function SceneSound({ dir }: { dir: string }) {
           {heard.skipped.map((s) => <span key={s.cue} className="ss-warn">One cue was left out: {s.why}</span>)}</div>}
         <p className="dim sm-note">The finished film is mixed when you export it: approved cues only, the voices on top, a limiter so nothing clips. Muting here leaves a lane out of the film; the previews only help you listen.</p>
       </section>
+
+      <MixerAutomation dir={dir} cues={cues} onChanged={() => void reload()} />
 
       <section>
         <h3>The shots' sound notes</h3>
