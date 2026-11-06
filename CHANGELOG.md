@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.45.0 (2026-11-06)
+
+- **Music director (free, local).** Sound & Music > Scenes > **Music director**: motifs (musical ideas tied to a character, place or theme), spotting per scene (music, music in the world, or silence on purpose, from which shot to which, with an energy arc), a free **suggest from the scene** that names the words it acted on (and proposes silence when nothing calls for music), the words to ask a music maker with (nothing is sent), a search of your library, and **records** of who approved or revoked which music, for which scenes, with a licence note and history. **Put into the film** turns approved spots that have music into ordinary music cues; music whose licence says commercial use is not allowed is never put in. A report lists scenes with no decision, unused motifs, big energy jumps and music with no recorded decision. Nothing is generated or paid for. Details and limits: `docs/MUSIC_DIRECTOR.md`.
+
 ## 0.44.0 (2026-11-06)
 
 - **Mixer automation (free, local).** Sound & Music > Scenes > **Volume curves and groups**: a volume curve for the voices, each sound lane and the whole film (points in dB with straight, eased or step shapes, snapped to frames); a curve on a single cue that moves with it; **groups** of cues with one level and one mute; **markers** that go into the audio export's cue sheet and the timeline file; and a **crossfade** between two sounds. The curves reach the previews, the voice mix and the professional audio export (stems carry the lane curves; only the mixes carry the whole-film curve). Old films sound exactly as before. Details and limits: `docs/MIXER_AUTOMATION.md`.

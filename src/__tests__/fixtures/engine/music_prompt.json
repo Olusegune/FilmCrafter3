@@ -1,0 +1,11 @@
+{
+ "duration": 13.4,
+ "how": "Paste this into the music generator in Sound & Music. Nothing has been sent or charged; the price is shown there first. Then choose the result for this spot.",
+ "instrumental": true,
+ "prompt": "Instrumental film score cue, no vocals. Mood: tender. Instruments: piano. Intensity moves from 1 to 3 on a scale of 0 to 5. Motif (Mama's theme): four rising notes, slow. Enters: when she turns.",
+ "shots": [
+  "S01-01",
+  "S01-02"
+ ],
+ "spot": "sp-b8e2c784"
+}

@@ -14,6 +14,10 @@ import sdScene from "../fixtures/engine/sounddesign_scene.json";
 import sdSuggest from "../fixtures/engine/sounddesign_suggest.json";
 import sdToCues from "../fixtures/engine/sounddesign_to_cues.json";
 import sdCandidates from "../fixtures/engine/sounddesign_candidates.json";
+import muGet from "../fixtures/engine/music_get.json";
+import muSuggest from "../fixtures/engine/music_suggest.json";
+import muPrompt from "../fixtures/engine/music_prompt.json";
+import muToCues from "../fixtures/engine/music_to_cues.json";
 import qaFilm from "../fixtures/engine/audioqa_film.json";
 import adGet from "../fixtures/engine/adrsync_get.json";
 import adAlign from "../fixtures/engine/adrsync_align.json";
@@ -34,6 +38,7 @@ vi.mock("../../ask", () => ({ ask: () => Promise.resolve(true) }));
 import { VoiceIdentity } from "../../VoiceIdentity";
 import { PerformancePlanner } from "../../PerformancePlanner";
 import { SoundDesign } from "../../SoundDesign";
+import { MusicDirector } from "../../MusicDirector";
 import { AudioCheck } from "../../AudioCheck";
 import { TimingAdr } from "../../TimingAdr";
 import { ProAudio } from "../../ProAudio";
@@ -106,6 +111,25 @@ describe("the screens with the real engine's answers", () => {
     fireEvent.click(screen.getByRole("button", { name: "Put into the film" }));
     expect(await screen.findByText(/made, \d+ brought up to date/)).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole("button", { name: "Find in my library" })[0]);
+    clean(container);
+  });
+
+  it("music director: the real plan, a suggestion, the words for the music and putting it into the film", async () => {
+    const assets = [{ id: (muGet as unknown as { spots: { asset_id: string }[] }).spots[0].asset_id, name: "theme", kind: "music" }] as unknown as AudioAsset[];
+    invoke.mockImplementation(answers({ "film_music:get": muGet, "film_music:suggest": muSuggest, "film_music:prompt": muPrompt, "film_music:to_cues": muToCues }));
+    const { container } = render(<MusicDirector dir="film" scene={1} shots={[{ id: "S01-01", seconds: 3 }]} assets={assets} onChanged={() => {}} />);
+    fireEvent.click(screen.getByRole("button", { name: "Open the music director…" }));
+    await screen.findByLabelText("State of the music plan");
+    expect(screen.getAllByText("Mama's theme").length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Mood")).toHaveValue("tender");
+    expect(screen.getByLabelText("Music for this spot")).toHaveValue(assets[0].id);
+    expect(screen.getByText(/by Ada for scene 1/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Suggest from the scene (free)" }));
+    await screen.findByLabelText("Suggestion");
+    fireEvent.click(screen.getByRole("button", { name: "Words to ask for it" }));
+    expect(await screen.findByText(/Instrumental film score cue, no vocals/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Put into the film" }));
+    expect(await screen.findByRole("status")).toHaveTextContent(/made, \d+ updated/);
     clean(container);
   });
 

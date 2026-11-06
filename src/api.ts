@@ -345,6 +345,8 @@ export const api = {
   audioQa: <T = AudioQaReport>(action: "film" | "inspect", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_audioqa", { action, target, data }),
   /** Sound design for a scene (filmcrafter_engine.sounddesign): soundscape profiles and Foley events, put into the film as ordinary cues. Free and local. */
   soundDesign: <T = SoundDesignScene>(action: "scene" | "profile_set" | "suggest" | "event_add" | "event_update" | "event_remove" | "candidates" | "to_cues", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_sounddesign", { action, target, data }),
+  /** The music director (filmcrafter_engine.musicdirector): motifs, spotting, the words to ask for music, records of approvals, cues from approved spots. Free and local; nothing is generated or sent. */
+  music: <T = MusicPlan>(action: "get" | "suggest" | "motif_set" | "motif_remove" | "spot_set" | "spot_remove" | "prompt" | "candidates" | "record_set" | "to_cues" | "report", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_music", { action, target, data }),
   /** A vocal performance plan for a line (filmcrafter_engine.performplan). Free; `apply` only sets the spoken version, it speaks and pays for nothing. */
   performPlan: <T = PerformPlanView>(action: "get" | "set" | "apply" | "clear", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_performplan", { action, target, data }),
   /** A character's voice identity (filmcrafter_engine.voiceid): lock, listening ratings, casting comparison, cast library. Free; sends and pays for nothing. */
@@ -612,6 +614,15 @@ export type FoleyEvent = { id: string; scene: number; shot: string; action: stri
 export type FoleyProposal = Pick<FoleyEvent, "action" | "source_object" | "by" | "material" | "surface" | "intensity" | "distance" | "side" | "start" | "motivated_by">;
 export type SoundDesignScene = { scene: number; environment: { id: string; name: string } | null; profile: SoundProfile | null; layers: AmbienceLayer[]; events: FoleyEvent[]; shots: { id: string; duration: number }[];
   coverage: { events: number; approved: number; without_sound: string[]; layers: number; layers_without_sound: string[]; has_profile: boolean; environment: string | null }; made?: string[]; updated?: string[]; waiting?: { kind: string; id: string; name: string }[] };
+export type Motif = { id: string; name: string; kind: "character" | "place" | "theme"; subject: string; mood: string; tempo: string; key: string; description: string; note: string; instruments: string[] };
+export type MusicSpot = { id: string; scene: number; start_shot: string | null; end_shot: string | null; decision: "score" | "source" | "silence"; role: string; energy_in: number; energy_out: number; mood: string; tempo: string; intent: string;
+  enters: string; exits: string; note: string; instruments: string[]; motif_ids: string[]; level_db: number; fade_in: number; fade_out: number; asset_id: string | null; approval: "suggested" | "approved" | "rejected"; source: string; cue_id: string | null; cue: { approval: string } | null };
+export type MusicRecord = { status: "approved" | "revoked"; by: string; scenes: number[]; licence_ref: string; at: number; history: { status: string; by: string; scenes: number[]; licence_ref: string; at: number }[] };
+export type MusicReport = { scenes: { scene: number; seconds: number; spots: number; decisions: string[]; scored_seconds: number }[]; undecided: number[]; motifs: { id: string; name: string; kind: string; scenes: number[]; note: string }[];
+  jumps: { from_scene: number; to_scene: number; from_energy: number; to_energy: number; note: string }[]; records: { id: string; name: string; commercial: string; status: string; by: string; scenes: number[]; problems: string[] }[]; music_share: number; seconds: number; needs_attention: boolean };
+export type MusicPlan = { motifs: Motif[]; spots: MusicSpot[]; records: Record<string, MusicRecord>; report: MusicReport; id?: string; made?: string[]; updated?: string[]; waiting?: { id: string; mood: string }[]; blocked?: { id: string; why: string }[]; silent?: { id: string; decision: string }[] };
+export type MusicSuggestion = { scene: number; proposal: Partial<MusicSpot> & { scene: number; decision: MusicSpot["decision"] }; because: { shot: string; word: string; mood: string }[]; motifs: string[]; spoken_shots: number; shots: number; note: string };
+export type MusicPrompt = { spot: string; prompt: string; duration: number; instrumental: boolean; shots: string[]; how: string };
 export type PlanArc = { at: number; emotion: string; intensity: number };
 export type PlanEvent = { kind: string; after_word: number; intensity: number };
 export type PlanPause = { after_word: number; ms: number };

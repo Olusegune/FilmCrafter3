@@ -1,5 +1,6 @@
 import { ProAudio } from "./ProAudio";
 import { MixerAutomation } from "./MixerAutomation";
+import { MusicDirector } from "./MusicDirector";
 import { AudioCheck } from "./AudioCheck";
 import { SoundDesign } from "./SoundDesign";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -82,6 +83,8 @@ export function SceneSound({ dir }: { dir: string }) {
         <ul className="ss-cues dlg">{dialogue.map((x) => <li key={x.id}><b>{x.speaker}</b> <span className="dim">{x.shot} · {x.source === "elevenlabs" ? "spoken by ElevenLabs" : "your recording"}</span> <q>{x.text}</q></li>)}</ul></section>}
 
       <SoundDesign dir={dir} scene={scene} assets={assets} onChanged={() => void reload()} />
+
+      <MusicDirector dir={dir} scene={scene} shots={info.shots.map((x) => ({ id: x.id, seconds: x.seconds }))} assets={assets} onChanged={() => void reload()} />
 
       <AudioCheck dir={dir} />
       <ProAudio dir={dir} />

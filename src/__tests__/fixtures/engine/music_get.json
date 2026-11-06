@@ -1,0 +1,129 @@
+{
+ "motifs": [
+  {
+   "created": 1794002223.1850266,
+   "description": "four rising notes",
+   "id": "mo-536809dd",
+   "instruments": [
+    "piano"
+   ],
+   "key": "",
+   "kind": "character",
+   "mood": "tender",
+   "name": "Mama's theme",
+   "note": "",
+   "subject": "Mama",
+   "tempo": "slow",
+   "updated": 1794002223.1850266
+  }
+ ],
+ "records": {
+  "a-music-7f3e415a": {
+   "at": 1794002223.2140005,
+   "by": "Ada",
+   "history": [
+    {
+     "at": 1794002223.2140005,
+     "by": "Ada",
+     "licence_ref": "fixture",
+     "scenes": [
+      1
+     ],
+     "status": "approved"
+    }
+   ],
+   "licence_ref": "fixture",
+   "scenes": [
+    1
+   ],
+   "status": "approved"
+  }
+ },
+ "report": {
+  "jumps": [],
+  "motifs": [
+   {
+    "id": "mo-536809dd",
+    "kind": "character",
+    "name": "Mama's theme",
+    "note": "Used in one scene only: a motif is an idea the film comes back to.",
+    "scenes": [
+     1
+    ]
+   }
+  ],
+  "music_share": 0.86,
+  "needs_attention": true,
+  "records": [
+   {
+    "by": "Ada",
+    "commercial": "unknown",
+    "id": "a-music-7f3e415a",
+    "name": "theme",
+    "problems": [
+     "Commercial use is not known."
+    ],
+    "scenes": [
+     1
+    ],
+    "status": "approved"
+   }
+  ],
+  "scenes": [
+   {
+    "decisions": [
+     "score"
+    ],
+    "scene": 1,
+    "scored_seconds": 13.4,
+    "seconds": 13.4,
+    "spots": 1
+   },
+   {
+    "decisions": [],
+    "scene": 2,
+    "scored_seconds": 0,
+    "seconds": 2.2,
+    "spots": 0
+   }
+  ],
+  "seconds": 15.6,
+  "undecided": [
+   2
+  ]
+ },
+ "spots": [
+  {
+   "approval": "approved",
+   "asset_id": "a-music-7f3e415a",
+   "created": 1794002223.199341,
+   "cue": {
+    "approval": "approved"
+   },
+   "cue_id": "q-36f88974",
+   "decision": "score",
+   "end_shot": null,
+   "energy_in": 1,
+   "energy_out": 3,
+   "enters": "when she turns",
+   "exits": "",
+   "fade_in": 1.5,
+   "fade_out": 2.0,
+   "id": "sp-b8e2c784",
+   "instruments": [],
+   "intent": "",
+   "level_db": -6.0,
+   "mood": "tender",
+   "motif_ids": [
+    "mo-536809dd"
+   ],
+   "note": "",
+   "role": "",
+   "scene": 1,
+   "source": "manual",
+   "start_shot": "S01-01",
+   "tempo": "",
+   "updated": 1794002223.199341
+  }
+ ]
+}

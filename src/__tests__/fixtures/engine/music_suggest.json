@@ -1,0 +1,31 @@
+{
+ "because": [
+  {
+   "mood": "tension",
+   "shot": "S01-01",
+   "word": "slams"
+  }
+ ],
+ "motifs": [
+  "mo-536809dd"
+ ],
+ "note": "A proposal from the written words only. Where music enters and leaves is estimated from the first word that pushed: move it to the moment you see it.",
+ "proposal": {
+  "decision": "score",
+  "end_shot": "S01-02",
+  "energy_in": 3,
+  "energy_out": 4,
+  "intent": "Words in the scene point to tension.",
+  "mood": "tension",
+  "motif_ids": [
+   "mo-536809dd"
+  ],
+  "role": "underscore",
+  "scene": 1,
+  "source": "derived",
+  "start_shot": "S01-01"
+ },
+ "scene": 1,
+ "shots": 2,
+ "spoken_shots": 1
+}

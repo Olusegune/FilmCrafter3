@@ -68,7 +68,7 @@
    "where": "Mama in S01-02"
   },
   {
-   "asset": "a-sfx-d91fc36f",
+   "asset": "a-sfx-37d41990",
    "findings": [],
    "loudness": null,
    "metrics": {
@@ -94,7 +94,7 @@
    "where": "rain (ambience)"
   },
   {
-   "asset": "a-sfx-b6ac2027",
+   "asset": "a-sfx-c3f3234b",
    "findings": [],
    "loudness": null,
    "metrics": {
@@ -120,7 +120,7 @@
    "where": "hit (sfx)"
   },
   {
-   "asset": "a-music-285cb0c0",
+   "asset": "a-music-7f3e415a",
    "findings": [],
    "loudness": null,
    "metrics": {
@@ -146,8 +146,8 @@
    "where": "theme (music)"
   },
   {
-   "asset": "a-sfx-b6ac2027",
-   "cue": "q-1d44c9b1",
+   "asset": "a-sfx-c3f3234b",
+   "cue": "q-c34859e4",
    "findings": [
     {
      "code": "abrupt_edit",
@@ -167,8 +167,8 @@
    "where": "hit in scene 1"
   },
   {
-   "asset": "a-music-285cb0c0",
-   "cue": "q-7256010f",
+   "asset": "a-music-7f3e415a",
+   "cue": "q-e51de298",
    "findings": [
     {
      "code": "abrupt_edit",

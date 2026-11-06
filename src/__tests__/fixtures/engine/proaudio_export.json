@@ -13,17 +13,17 @@
    "capped": false,
    "file": "mixes/Fixture Film FINAL.wav",
    "lufs": -23.0,
-   "master_gain_db": -5.5,
+   "master_gain_db": -6.4,
    "note": "",
-   "true_peak_db": -5.7
+   "true_peak_db": -6.6
   },
   {
    "capped": false,
    "file": "mixes/Fixture Film M&E.wav",
    "lufs": -23.0,
-   "master_gain_db": -5.3,
+   "master_gain_db": -6.4,
    "note": "",
-   "true_peak_db": -12.2
+   "true_peak_db": -12.4
   }
  ],
  "not_checked": [
@@ -34,7 +34,7 @@
  "ok": true,
  "otio": "Fixture Film audio.otio",
  "problems": [],
- "relative": "exports/audio/Fixture Film 2026-11-06 161115",
+ "relative": "exports/audio/Fixture Film 2026-11-06 165704",
  "seconds": 15.6,
  "stems": [
   "stems/01 DIALOGUE.wav",

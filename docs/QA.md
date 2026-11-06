@@ -1,4 +1,10 @@
-# QA report: FilmCrafter 0.44.0 (2026-11-06)
+# QA report: FilmCrafter 0.45.0 (2026-11-06)
+
+## 0.45.0: music director
+
+Engine: **2,743 tests collected, 2,736 passed, 7 skipped, none failed** (24 new in `test_musicdirector.py`, on real films, real audio and the real mixer). Bandit (medium and above): no findings. TypeScript clean; **842 Vitest tests in 108 files** (12 for the screen, 1 new real-engine contract test with four new fixtures); 15 Rust tests. Security review by hand (the scan service quota is used up): every action is on the fixed list the shell checks; text, numbers, lists, motif and spot counts are validated in the engine; the film path goes through the same `film_dir` check; no key is given to the engine; nothing is generated, sent or paid for; music whose licence says commercial use is not allowed is never put into the film; nothing is deleted. Bugs found by the tests and fixed before release: the suggested energy followed the loudest word instead of the mood the words point to most. A test mistake was corrected (a file of the wrong shape is refused and left alone by design).
+
+**Still not tested:** music generated from the words (none was made); anything by ear; the suggestion rules on films not written in English; the screens in the installed app.
 
 ## 0.44.0: mixer automation and the same left rail on every film screen
 

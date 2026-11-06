@@ -19,7 +19,7 @@ import soundfile as sf
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "analysis"))
 from filmcrafter_engine import (adrsync as AD, audiolib as AL, audiocues as Q, audioqa as QA, bible, cast_voice as C, performplan as PP, proaudio as PA, revoice as RV,  # noqa: E402
-                                shots as S, sounddesign as SD, story, voiceid as VI, voiceover as V)
+                                shots as S, sounddesign as SD, musicdirector as MD, story, voiceid as VI, voiceover as V)
 
 OUT = os.path.join(ROOT, "src", "__tests__", "fixtures", "engine")
 DATA = os.path.join(ROOT, "analysis", "tests", "data")
@@ -85,6 +85,14 @@ def main():
         dump("sounddesign_to_cues", r)
         dump("sounddesign_candidates", SD.candidates(d, SD._load(d)["events"][1]["id"]))
         Q.add(d, {"asset_id": theme["id"], "scene": 1, "shot": shot1, "start": 0.5})
+        # the music director
+        mo = MD.motif_set(d, {"name": "Mama's theme", "kind": "character", "subject": "Mama", "mood": "tender", "tempo": "slow", "instruments": ["piano"], "description": "four rising notes"})["id"]
+        dump("music_suggest", MD.suggest(d, 1))
+        sp = MD.spot_set(d, {"scene": 1, "start_shot": shot1, "mood": "tender", "energy_in": 1, "energy_out": 3, "motif_ids": [mo], "asset_id": theme["id"], "approval": "approved", "enters": "when she turns"})["id"]
+        dump("music_prompt", MD.prompt(d, sp))
+        MD.record_set(d, theme["id"], {"by": "Ada", "scenes": [1], "licence_ref": "fixture"})
+        dump("music_to_cues", MD.to_cues(d, 1))
+        dump("music_get", MD.get(d))
         # the audio inspector
         os.makedirs(os.path.join(d, "exports"), exist_ok=True)
         shutil.copyfile(os.path.join(DATA, "real_speech_zira.wav"), os.path.join(d, "exports", "cut.wav"))
