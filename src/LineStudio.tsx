@@ -5,6 +5,7 @@ import { api, errorText, type AiPrice, type CastEstimate, type CastTake, type Na
 import { ask } from "./ask";
 import { priceWords, VoiceMaker } from "./CastVoices";
 import { VoiceRecorder } from "./VoiceRecorder";
+import { Revoice } from "./Revoice";
 import { Waveform } from "./Waveform";
 import { notifyVoice, useCast, useVoiceStatus } from "./voiceHooks";
 import { aiAskWords } from "./soundWords";
@@ -185,11 +186,13 @@ export function LineEditor({ dir, shotId, who }: { dir: string; shotId: string; 
             {takes.map((t) => (
               <div key={t.file} className={`ls-take ${t.current ? "cur" : ""}`}>
                 <button className="vchip-play" onClick={() => play(t.file)} aria-label={`${playing === t.file ? "Stop" : "Hear"} this take`}>{playing === t.file ? <I.Pause size={12} /> : <I.Play size={12} />}</button>
-                <q>{t.text}</q><span className="dim ls-model">{t.model?.replace("eleven_", "").replace("_", " ")}{t.another_take ? " · another take" : ""}</span>
+                {t.kind === "revoice" ? <><q>Performed by {t.performed_by || "a person"}, in {who}'s voice</q><span className="dim ls-model">re-voiced on this computer · synthetic</span></>
+                  : <><q>{t.text}</q><span className="dim ls-model">{t.model?.replace("eleven_", "").replace("_", " ")}{t.another_take ? " · another take" : ""}</span></>}
                 {t.current ? <span className="ls-cur">in the film</span> : <button className="btn sm" disabled={!!busy} onClick={() => void useTake(t)}>Use this take</button>}
               </div>))}
           </div>}
         </section>
+        <Revoice dir={dir} shotId={shotId} who={who} takes={takes} onChanged={loadTakes} />
         {err && <p className="error-text" role="alert">{err}</p>}
         <p className="dim vr-hint">Nothing is deleted: a take or recording you replace is kept in the film's voice/_removed folder.</p>
       {recording && <VoiceRecorder dir={dir} shotId={shotId} speaker={who} onClose={() => setRecording(false)} />}

@@ -574,13 +574,17 @@ def _attach_generated(d: str, sid: str, name: str, path: str, voice: dict) -> di
     if cur and cur.get("gen") == gen and os.path.isfile(os.path.join(d, *str(cur.get("file", "")).split("/"))):
         return {"shot": sid, "speaker": V.pretty(name), "seconds": cur.get("seconds"), "notes": [], "replaced": False, "unchanged": True}
     res = V.attach(d, sid, name, path, fit=True)
+    side = V._read(_sidecar(path), None)
+    revoiced = isinstance(side, dict) and side.get("kind") == "revoice"        # a person's own performance, voice changed on this computer (see revoice.py)
 
     def mark(meta):
         for e in meta["shots"].get(sid, []):
             if e.get("key") == k:
-                e["source"] = "elevenlabs"
+                e["source"] = "revoice" if revoiced else "elevenlabs"
                 e["gen"] = gen
-                e["name"] = f"{name} (ElevenLabs, {voice.get('voice_name') or 'voice'})"[:120]
+                e["name"] = (f"{name} (performed, re-voiced)" if revoiced else f"{name} (ElevenLabs, {voice.get('voice_name') or 'voice'})")[:120]
+                if revoiced:
+                    e["synthetic"] = True
     safeio.update_json(V._meta_path(d), mark, {"schema": 1, "shots": {}}, check=V._meta_ok)
     return res
 
@@ -618,13 +622,15 @@ def takes(d: str, shot: str, speaker: str) -> dict:
     cur = next((e.get("gen") for e in V._meta(d)["shots"].get(sid, []) if e.get("key") == k), None)
     out = []
     for f in sorted(os.listdir(folder)) if os.path.isdir(folder) else []:
-        if not f.endswith(".mp3") or not f.startswith(sid + "-"):
+        if not f.endswith((".mp3", ".wav")) or not f.startswith(sid + "-"):
             continue
         meta = V._read(_sidecar(os.path.join(folder, f)), None)
         if not isinstance(meta, dict) or meta.get("key") != k:
             continue
         out.append({"file": f"voice/_generated/{f}", "text": str(meta.get("text") or "")[:1500], "model": meta.get("model"), "voice_name": str(meta.get("voice_name") or "")[:80],
-                    "at": int(meta.get("at") or 0), "current": f == cur, "another_take": bool(meta.get("another_take"))})
+                    "at": int(meta.get("at") or 0), "current": f == cur, "another_take": bool(meta.get("another_take")),
+                    "kind": "revoice" if meta.get("kind") == "revoice" else "speech", "performed_by": str(meta.get("performed_by") or "")[:80] if meta.get("kind") == "revoice" else "",
+                    "performance": str(meta.get("performance") or "") if meta.get("kind") == "revoice" else ""})
     out.sort(key=lambda t: -t["at"])
     return {"takes": out[:30], "person": name, "shot": sid}
 
@@ -637,7 +643,7 @@ def use_take(d: str, shot: str, speaker: str, file: str) -> dict:
     k, name = _person(d, speaker)
     rel = str(file or "")
     path = V.inside(d, rel)
-    if not path or not rel.startswith(f"voice/_generated/{sid}-") or not rel.endswith(".mp3") or not os.path.isfile(path):
+    if not path or not rel.startswith(f"voice/_generated/{sid}-") or not rel.endswith((".mp3", ".wav")) or not os.path.isfile(path):
         raise SystemExit("That take is not one of this line's.")
     meta = V._read(_sidecar(path), None)
     if not isinstance(meta, dict) or meta.get("key") != k:

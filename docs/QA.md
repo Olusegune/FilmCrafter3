@@ -1,4 +1,16 @@
-# QA report: FilmCrafter 0.36.2 (2026-11-04)
+# QA report: FilmCrafter 0.37.0 (2026-11-06)
+
+## 0.37.0: speech to speech ("Perform it yourself")
+
+Run on the baseline first (0.36.2 from `Olusegune/FilmCrafter3`, identical to the Desktop source folder by file hash): TypeScript clean; 740 Vitest tests; 15 Rust tests; 2,532 engine tests passed, 8 skipped; `npm audit --omit=dev` 0 vulnerabilities (5 dev-only, in vite/vitest); `pip-audit` none; `cargo audit` 0 vulnerabilities, 13 "unmaintained" warnings.
+
+After the change: TypeScript clean; **749 Vitest tests in 97 files** (9 new); **15 Rust tests**; **2,555 engine tests passed, 8 skipped** (23 new in `tests/test_revoice.py`). `tests/test_security.py` confirms the new shell command's allowed actions match the engine's. Bandit on the new files: 2 low notes (subprocess import and call; the call uses a fixed argument list, no shell). The secrets scan finds nothing real (hits are in the local Python environment and the fake token `0123456789ab` in a screenshot fixture).
+
+Security review (manual; `rafter run` could not be used because the account's scan quota was used up): command injection (none: list-form arguments), path traversal (relative paths checked with `inside`; names from hashes and validated keys), consent (refused without owner agreement, whose voice and use; revoked or changed references refused), output validation (silent, empty or wrong-length results refused), network (conversion runs with the model library offline; only Install may download), supply chain (pinned versions, but two package indexes and no hashes). Not addressed: a local user who can write to `~/.filmcrafter/voiceconv/site` can run code as themselves (they already could).
+
+**Not tested:** the real model's output quality (nobody has listened); the microphone recorder in this flow; the installed app walked through by a person; 125%/150% scaling and screen-reader use of the new panel; Install on a second, clean computer.
+
+## Earlier: 0.36.2 (2026-11-04)
 
 ## 0.36.2 proof-scene release matrix
 

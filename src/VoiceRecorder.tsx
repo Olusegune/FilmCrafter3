@@ -20,7 +20,7 @@ const micWords = (e: unknown): string => {
  * Record a line without leaving FilmCrafter. The line is shown large to read from; Space starts and stops; the take is trimmed of silence, you hear it, then Keep (Enter) attaches it to the person
  * and moves to the next line that has no voice yet, or Retake (R) to do it again (a kept take it replaces is stored in the film's voice/_removed, never deleted). Esc closes.
  */
-export function VoiceRecorder({ dir, shotId, speaker, onClose }: { dir: string; shotId: string; speaker?: string; onClose: () => void }) {
+export function VoiceRecorder({ dir, shotId, speaker, onClose, onTake }: { dir: string; shotId: string; speaker?: string; onClose: () => void; onTake?: (path: string) => void }) {
   const { st, reload } = useVoiceStatus(dir);
   const [cur, setCur] = useState(shotId);
   const [who, setWho] = useState(speaker ?? "");
@@ -99,6 +99,7 @@ export function VoiceRecorder({ dir, shotId, speaker, onClose }: { dir: string; 
     setMode("saving"); setErr("");
     try {
       const path = await api.saveVoiceTake(encodeWav(take.samples, take.rate));
+      if (onTake) { onTake(path); onClose(); return; }          // a performance to be re-voiced: nothing is attached to the shot here
       const r = await api.voice<{ attached: unknown[]; failed: { file: string; why: string }[] }>("import", dir, { items: [{ file: path, shot: cur, speaker: person.name }] });
       if (!r.attached.length) { setErr(r.failed[0]?.why ?? "That take could not be attached."); setMode("review"); return; }
       notifyVoice(); reload();
@@ -106,7 +107,7 @@ export function VoiceRecorder({ dir, shotId, speaker, onClose }: { dir: string; 
       const rest = people.find((p) => p.name !== person.name && !p.recording);
       if (rest) { setWho(rest.name); setTake(null); setMode("idle"); setSecs(0); setSaid(`Saved. Now ${rest.name}.`); } else goNext(cur);
     } catch (e) { setErr(errorText(e)); setMode("review"); }
-  }, [take, person, dir, cur, people, goNext, reload]);
+  }, [take, person, dir, cur, people, goNext, reload, onTake, onClose]);
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => {

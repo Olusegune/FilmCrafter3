@@ -335,6 +335,8 @@ export const api = {
   voice: <T = VoiceStatus>(action: "status" | "match" | "import" | "remove", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_voice", { action, target, data }),
   /** Custom voices with ElevenLabs inside a film (filmcrafter_engine.cast_voice). Looking things up is free; the engine refuses to spend without `confirmed: true`, and to clone without `consent: true`. */
   castVoice: <T = CastStatus>(action: "status" | "library" | "set" | "clear" | "design" | "design_save" | "clone" | "estimate" | "speak" | "preview" | "takes" | "use_take" | "sample" | "ledger" | "ledger_resolve" | "set_limit", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_cast_voice", { action, target, data }),
+  /** Perform a line yourself and hear it in a character's voice (filmcrafter_engine.revoice): local, free. `install` needs `confirmed: true`; a real person's reference voice needs `consent: true`. */
+  revoice: <T = RevoiceStatus>(action: "status" | "reference" | "revoke" | "convert" | "install", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_revoice", { action, target, data }),
   /** A take recorded in the app (a 16-bit WAV): saved under ~/.filmcrafter/incoming, the path comes back for `voice("import")`. */
   saveVoiceTake: (wav: Uint8Array) => invoke<string>("save_voice_take", wav),
   make: <T = MakeStatus>(action: "sync" | "status" | "tag" | "choose" | "lock" | "reference" | "import" | "soundtrack" | "progress", target: string, data: Record<string, unknown> = {}) =>
@@ -642,7 +644,12 @@ export type CastStatus = { key: boolean; models: { id: string; label: string; ta
 export type ElevenVoice = { voice_id: string; name: string; category: string; description: string; labels: Record<string, string>; preview_url: string };
 export type CastEstimate = { rows: ({ shot: string; speaker: string; ok: true; characters: number; credits: number; cached: boolean; text: string } | { shot: string; speaker: string; ok: false; why: string })[]; characters: number; credits: number; basis: string };
 export type CastPreview = { id: string; file: string; seconds: number };
-export type CastTake = { file: string; text: string; model: string; voice_name: string; at: number; current: boolean; another_take?: boolean };
+export type CastTake = { file: string; text: string; model: string; voice_name: string; at: number; current: boolean; another_take?: boolean; kind?: "speech" | "revoice"; performed_by?: string; performance?: string };
+export type RevoiceModel = { id: string; name: string; licence: string; by: string; packages: string[]; size_note: string; needs: string; status: string };
+export type RevoiceRuntime = { model: RevoiceModel; installed: boolean; since: number | null; versions: Record<string, string | null> | null; device: string | null; folder: string; how: string };
+export type RevoicePerson = { key: string; person: string; file: string | null; seconds: number | null; source: "film_take" | "own_voice" | "permission" | null; holder: string | null; scope: string | null; consent: { given: boolean; basis: string } | null; revoked: boolean; at: number | null };
+export type RevoiceStatus = { runtime: RevoiceRuntime; people: RevoicePerson[]; conversions: number };
+export type RevoiceResult = { shot: string; person: string; take: string; performance: string; seconds: number | null; cached: boolean; attached: boolean; next: string };
 export type LedgerEntry = { id: string; at: number; updated: number; action: string; person: string | null; shot: string | null; status: "prepared" | "confirmed" | "submitted" | "completed" | "refused" | "failed_before_submission" | "uncertain";
   estimate: { unit: string; amount: number | null; basis: string }; actual: { unit: string; amount: number | null; reported: boolean; source: string | null }; note: string; resolved?: { outcome: "not_charged" | "charged"; at: number } };
 export type VoiceUsage = { limits: Record<string, number>; count: number; recent: LedgerEntry[]; unresolved: LedgerEntry[];

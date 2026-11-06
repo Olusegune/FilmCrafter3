@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.37.0 (2026-11-06)
+
+- **Perform it yourself: speech to speech (experimental, free, local).** In Line Studio, act a line in your own voice and have it changed into the character's voice on this computer; it becomes a new take beside the spoken ones, marked as synthetic, and is attached only when you choose it. Voice conversion is an explicit install (shows size, licence and hardware, downloads nothing until you confirm). A real person's voice as the reference needs the owner's permission, whose voice it is and what for; permission can be taken back, and a reference changed after consent is refused. Your recording is never changed, results are cached, bad output is refused. Built with a stand-in for the model: **the real model has not been run in FilmCrafter yet**. See `docs/SPEECH_TO_SPEECH.md`. Also: the cast-voice take list and `use_take` now accept WAV takes.
+
 ## Unreleased
 
 - Local upscaling: found on a real run that Real-ESRGAN ncnn-vulkan v0.2.5.0 garbles the picture when asked for a factor other than its model's own (2x with the 4x model). The engine now always runs the model at its own factor and resizes to the 2x/3x/4x you chose.
