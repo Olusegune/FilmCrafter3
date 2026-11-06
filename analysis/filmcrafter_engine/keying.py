@@ -145,15 +145,35 @@ def clean_params(p: dict | None) -> dict:
     return x
 
 
+def auto_hi(d: np.ndarray, similarity: float) -> float:
+    """Where the ramp ends (a chroma distance), worked out from the picture: 90% of the distance the weaker-coloured fifth of the subject's pixels have from the screen."""
+    far = d[d > similarity + 0.12]
+    ref = float(np.percentile(far, 20)) if far.size > 50 else similarity + 0.3                      # the weaker-coloured parts of the subject decide: they must come out solid too
+    return max(similarity + 0.05, min(0.9 * ref, similarity + 0.6))
+
+
+def calibrate(frames: list[np.ndarray], params: dict | None = None) -> dict:
+    """Settings that hold for a whole clip: the screen colour and the ramp width are worked out once from several frames (their medians) and then fixed, so every frame is keyed the same way
+    and the edge does not breathe from frame to frame. Settings the person gave (a colour, a softness) are kept."""
+    p = clean_params(params)
+    if not frames:
+        return p
+    if p["color"] is None:
+        p["color"] = [round(float(x), 4) for x in np.median(np.stack([screen_color(f, screen=p["screen"]) for f in frames]), axis=0)]
+    if p["softness"] is None:
+        kc = chroma(np.array(p["color"], dtype=np.float32).reshape(1, 1, 3))[0, 0]
+        his = [auto_hi(np.linalg.norm(chroma(f) - kc, axis=-1), p["similarity"]) for f in frames]
+        p["softness"] = round(float(np.median(his)) - p["similarity"], 4)
+    return p
+
+
 def raw_alpha(rgb: np.ndarray, key: np.ndarray, similarity: float, softness: float | None) -> np.ndarray:
     """0 on the screen, 1 on the subject, a straight ramp between: the chroma distance from the screen colour, ignoring brightness. A pixel that is half subject and half screen is about half
     way from the screen colour to the subject's colour, so the ramp is straight. When `softness` is None the ramp ends at 90% of the distance the weaker-coloured fifth of the subject's pixels have from the
     screen (so a strongly coloured subject and a pale one both come out fully solid inside), worked out from the plate; a number sets the width of the ramp by hand."""
     d = np.linalg.norm(chroma(rgb) - chroma(key.reshape(1, 1, 3))[0, 0], axis=-1)
     if softness is None:
-        far = d[d > similarity + 0.12]
-        ref = float(np.percentile(far, 20)) if far.size > 50 else similarity + 0.3                  # the weaker-coloured parts of the subject decide: they must come out solid too
-        hi = max(similarity + 0.05, min(0.9 * ref, similarity + 0.6))
+        hi = auto_hi(d, similarity)
     else:
         hi = similarity + max(softness, 1e-4)
     return np.clip((d - similarity) / (hi - similarity), 0.0, 1.0)
@@ -367,3 +387,51 @@ def composite(bg_rgb: np.ndarray, layers: list[dict]) -> np.ndarray:
                                  anchor=anchor)
         out = over(placed, out, float(L.get("opacity", 1.0)))
     return np.clip(out, 0, 1)
+
+
+# ---------------------------------------------------------------- motion: keyframes for a layer
+
+KEY_FIELDS = ("x", "y", "scale", "rotation", "opacity")
+KEY_LIMITS = {"x": (-2.0, 3.0), "y": (-2.0, 3.0), "scale": (0.02, 8.0), "rotation": (-360.0, 360.0), "opacity": (0.0, 1.0)}
+EASES = ("linear", "smooth", "hold")
+MAX_KEYS = 50
+
+
+def clean_keys(keys) -> list[dict]:
+    """Keyframes for a layer: a time (seconds, 0 to an hour) and any of x, y, scale, rotation, opacity, each limited, and how to get to the next key (straight, eased, or a jump). Sorted by time; a key
+    with no time or no value is dropped; two at the same time keep the later."""
+    out: dict[float, dict] = {}
+    for k in (keys if isinstance(keys, list) else [])[: MAX_KEYS * 2]:
+        if not isinstance(k, dict):
+            continue
+        try:
+            t = float(k.get("t"))
+        except (TypeError, ValueError):
+            continue
+        if t != t or t < 0 or t > 3600:
+            continue
+        item: dict = {"t": round(t, 3), "ease": k.get("ease") if k.get("ease") in EASES else "linear"}
+        for f in KEY_FIELDS:
+            if f in k:
+                lo, hi = KEY_LIMITS[f]
+                item[f] = round(_num(k[f], lo, hi, (lo + hi) / 2 if f != "scale" else 1.0), 4)
+        if len(item) > 2:
+            out[item["t"]] = item
+    return [out[t] for t in sorted(out)][:MAX_KEYS]
+
+
+def interp(keys: list[dict], t: float, field: str):
+    """The value of one field at time `t`, or None when no key sets it. Held before the first key and after the last; between two keys it moves the way the earlier key says."""
+    pts = [(k["t"], k[field], k.get("ease", "linear")) for k in keys if field in k]
+    if not pts:
+        return None
+    if t <= pts[0][0]:
+        return pts[0][1]
+    for (t0, v0, ease), (t1, v1, _) in zip(pts, pts[1:]):
+        if t < t1:
+            if ease == "hold":
+                return v0
+            u = (t - t0) / max(t1 - t0, 1e-9)
+            u = u * u * (3 - 2 * u) if ease == "smooth" else u
+            return v0 + (v1 - v0) * u
+    return pts[-1][1]

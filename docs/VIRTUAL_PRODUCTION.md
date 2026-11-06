@@ -15,7 +15,7 @@ The brief has three systems: **Virtual Production Studio** (green screen, transp
 | Slice | Contents | State |
 |---|---|---|
 | 1 (0.47.0) | Cutout studio: plate check, chroma key with despill and decontamination, edge refine, RGBA PNG and mask export, stills compositing with transform, contact shadow, colour match; plate prompt (words only) | **Done, tested on synthetic plates with known answers; not yet tried on a real photograph** |
-| 2 | Production Mode selector on shots (Full scene, Green screen, Transparent, Layered); video: frame sequences, temporal alpha, PNG sequences with alpha, transform keyframes, compositing over footage | Not started |
+| 2 (0.48.0) | Production Mode on shots (Full scene, Green screen, Transparent); video: clip keying with temporal smoothing, PNG sequences and alpha video (ProRes 4444, VP9), keyframed compositions over a still or a clip, MP4 render with cancel | **Done, tested on real encoded video made for the tests; not yet tried on camera footage.** Layered scene is not built and is shown greyed |
 | 3 | WorldLock package (versioned set, stable ids, undo/redo) and 2.5D set builder (layers at depths, parallax, saved cameras) | Not started |
 | 4 | Continuity inspector on the set (object and prop state over shots, screen direction) | Not started |
 | 5 | True 3D set (glTF import, hierarchy, lights, cameras, render of several views); Blender as an optional backend | Not started |
@@ -41,6 +41,28 @@ Rail > More > **Cutouts** (any screen of a film; it opens in the timeline Studio
 - It **does not know what a person is.** There is no segmentation or matting model, so it cannot cut a subject out of a picture with no screen, it cannot track a subject through video, and green that is on the subject (a green jacket on a green screen) is keyed out with the screen. A plate whose screen is uneven or noisy gives a poor key; `Check the screen` is there to say so before time is spent. Models for those cases (a segmentation model, a video matting model) would be optional adapters installed on purpose; none is included or downloaded.
 - Hair is kept as far as the plate allows: very fine strands against a noisy screen can be lost, and no hair-specific refinement exists beyond the soft ramp and decontamination.
 - Transparent H.264 MP4 does not exist and is not offered. Stills only so far: no video, no PNG sequences, no keyframes.
+
+
+## Slice 2: clips, alpha video, keyframes and the shot's production mode (0.48.0)
+
+**Production mode (Shots > Camera).** Each shot has *How this shot is made*: **Full scene** (as before; saying so changes nothing), **Green screen** or **Transparent**. A green screen or transparent shot is asked for as a *plate*: the picture prompt gets a sentence asking for the subject on a flat, evenly lit green or blue screen (framing, light direction, angle and what the subject does are chosen on the shot), and the place is left out of the prompt because the background is put in later. **Transparent** is made the same way and keyed afterwards: none of the picture or video models in the product make transparency themselves, and nothing here pretends they do. **Layered scene** (separating a shot into background, characters and effects) is not built; the option is shown greyed.
+
+**Clips (Cutouts > 1 Pictures and clips, 2 Cut out).** Bring in a clip (MP4, MOV, WebM, MKV, AVI, M4V; up to 30 seconds, 4096 px a side, 500 MB). Keying a clip cuts it into frames (at most 30 a second, 720 frames), works out the screen colour and the edge ramp *once* from five frames (so every frame is keyed the same way and the edge does not breathe), keys each frame, and optionally **calms the edge between frames**: each frame's transparency is blended with its two neighbours, less where the edge is moving. The report gives the *flicker* (how far a frame's transparency is from the average of its neighbours, where the neighbours agree) before and after. Progress is shown and **Stop** ends the job at the next frame, removing only that run's unfinished output.
+
+**Alpha export.** A PNG sequence (straight alpha, numbered from 1), **ProRes 4444** (.mov) or **VP9 with alpha** (.webm), each only if this app's own ffmpeg can encode it (asked, not assumed; the button is greyed with the reason otherwise). Every file is read back: a frame is decoded and its transparency compared with the mask, and the screen says plainly if none was found. Transparent H.264 MP4 does not exist and is never offered.
+
+**Composition in motion (3 Compose).** A layer is a still or a clip cutout with a *start time*, *repeat* (clips), and **keyframes**: at a time, any of across, down, size, turn and opacity, each moving straight, eased or jumping to the next. The background can be a still or a clip. **Save and render a picture** draws the frame at the second you give; **Save and render a video** writes an H.264 MP4 (yuv420p, BT.709 tagged) at 1 to 30 frames a second, at most 720 frames, with progress and Stop. A cancelled render leaves no half-made file.
+
+### Limits of slice 2
+
+- Still no segmentation or matting model, no tracking, no motion blur; a clip without a screen cannot be cut out. The temporal smoothing is a plain blend, not a motion-compensated filter: fast sideways motion of the subject's edge is protected only by the "less where it moves" rule.
+- Rendering is slow in proportion to size and frames (every frame is composed on the CPU in linear light); 720 frames at 1080p takes minutes. Frames are on disk, so memory is not the limit.
+- Depth-aware occlusion, hair-specific refinement and manual mask painting are not built.
+- The keyframe screen edits numbers, not a draggable path.
+
+### Tested, and not (slice 2)
+
+Tested on a real encoded video: a subject moving across a noisy green screen with a known transparency in every frame, encoded to H.264 with the usual chroma subsampling (so the codec really blurs the edges), then keyed (alpha within 0.02 of the truth on average, more than 93% of the solid subject kept, more than 97% of the screen removed), smoothed (jitter cut to under 60%, subject position within one pixel of the truth), exported (PNG sequence, ProRes 4444 and VP9 decoded back with their transparency within 0.04 of the mask), composed with keyframes over a moving background clip and rendered to MP4 whose size, frame rate and length were read back, with real cancel checks on both jobs. The shot's production mode is tested on the prompt it changes. **Not tested:** camera footage; compression other than the one test clip; very long or very large clips; an editor opening the exported ProRes or WebM files.
 
 ## Tested, and not
 

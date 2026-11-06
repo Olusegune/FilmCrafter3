@@ -8,6 +8,7 @@ vi.mock("@tauri-apps/api/core", () => ({ invoke: (cmd: string, args: unknown) =>
 const pick = vi.fn();
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: (o: unknown) => pick(o), save: vi.fn() }));
 const reveal = vi.fn();
+vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn(() => Promise.resolve(() => {})) }));
 vi.mock("@tauri-apps/plugin-opener", () => ({ revealItemInDir: (p: string) => reveal(p) }));
 
 import { CutoutStudio, keyWords, plateWords } from "../../CutoutStudio";
@@ -29,6 +30,7 @@ const backend = (_c: string, a: { action: string; data: Record<string, unknown> 
     case "cutout_remove": st = { ...st, cutouts: st.cutouts.filter((c) => c.id !== a.data.id) }; return Promise.resolve(st);
     case "compose_set": st = { ...st, compositions: [{ ...(a.data as object), id: "cp-1" } as never] }; return Promise.resolve({ ...st, id: "cp-1" });
     case "render": return Promise.resolve({ ...st, id: "cp-1", file: "vp/renders/cp-1-1.png", width: 1280, height: 720, layers: 1, missing: [] });
+    case "capabilities": return Promise.resolve({ png: true, prores4444: true, webm: true, h264: true, note: "Transparent H.264 MP4 does not exist." });
     case "plate_prompt": return Promise.resolve({ prompt: "A woman against a flat green background.", screen: "green", notes: ["Check the screen before keying."], sent: false });
     default: return Promise.resolve(st);
   }
@@ -49,7 +51,7 @@ describe("the cutout studio", () => {
     st = state();
     invoke.mockImplementation(backend);
     await show();
-    expect(invoke).toHaveBeenCalledTimes(1);
+    expect(invoke.mock.calls.map(([cmd, a]) => `${cmd}:${a.action}`).sort()).toEqual(["film_vp:get", "film_vpvideo:capabilities"]);
     expect(screen.getByText(/nothing is generated or sent/i)).toBeInTheDocument();
     expect(screen.getByText(/does not know what a person is/i)).toBeInTheDocument();
   });
@@ -151,8 +153,8 @@ describe("the cutout studio", () => {
     fireEvent.change(within(row).getByLabelText("Layer 1 across"), { target: { value: "0.3" } });
     fireEvent.change(within(row).getByLabelText("Layer 1 size"), { target: { value: "0.8" } });
     fireEvent.click(within(row).getByLabelText("Layer 1 flip"));
-    fireEvent.click(screen.getByRole("button", { name: "Save and render" }));
-    await waitFor(() => expect(sent("render")).toEqual([{ id: "cp-1" }]));
+    fireEvent.click(screen.getByRole("button", { name: "Save and render a picture" }));
+    await waitFor(() => expect(sent("render")).toEqual([{ id: "cp-1", time: 0 }]));
     const saved = sent("compose_set")[0] as { background: string; layers: { cutout: string; x: number; scale: number; flip: boolean; anchor: string }[] };
     expect(saved.background).toBe("vs-b");
     expect(saved.layers[0]).toMatchObject({ cutout: "cu-1", x: 0.3, scale: 0.8, flip: true, anchor: "feet" });

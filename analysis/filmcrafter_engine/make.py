@@ -107,9 +107,15 @@ def _visual(c: dict) -> str:
         # who is speaking, never the words: a picture or video model draws quoted speech as a caption (found in a real run). The lines themselves reach video through the dialogue lane.
         speakers = list(dict.fromkeys(x["speaker"].title() for x in c["dialogue"][:6] if x.get("speaker")))
         say = (" " + " and ".join(speakers) + (" are talking, taking turns." if len(speakers) > 1 else " is speaking.")) if speakers else " Someone is speaking."
-    place = f" In {c['environment']['name']}." if c["environment"].get("name") else ""
+    prod = c.get("production") if isinstance(c.get("production"), dict) else {}
+    plate = prod.get("mode") in ("green_screen", "transparent")                          # made as a plate: the place is not drawn, a flat screen is asked for, and the background is put in later
+    place = f" In {c['environment']['name']}." if c["environment"].get("name") and not plate else ""
     things = ", ".join(x["name"] for x in c.get("props") or [] if x.get("name"))
-    return (f"{what}{' ' if what and not what.endswith(('.', '!', '?')) else ''}{('People: ' + who + '.') if who else ''}{place}{(' Props: ' + things + '.') if things else ''}{say}").strip()
+    clause = ""
+    if plate:
+        from . import vpstudio
+        clause = " " + vpstudio.plate_clause(prod)
+    return (f"{what}{' ' if what and not what.endswith(('.', '!', '?')) else ''}{('People: ' + who + '.') if who else ''}{place}{(' Props: ' + things + '.') if things else ''}{say}{clause}").strip()
 
 
 def _plan(d: str, bible: dict, cons: list[dict]) -> dict:

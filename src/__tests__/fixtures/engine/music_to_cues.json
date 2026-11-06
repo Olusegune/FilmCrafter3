@@ -1,13 +1,13 @@
 {
  "blocked": [],
  "made": [
-  "sp-b17f3c2e"
+  "sp-4a28aa32"
  ],
  "motifs": [
   {
-   "created": 1794004253.6591942,
+   "created": 1794006017.7724323,
    "description": "four rising notes",
-   "id": "mo-55c1eddd",
+   "id": "mo-8ab2b1c5",
    "instruments": [
     "piano"
    ],
@@ -18,16 +18,16 @@
    "note": "",
    "subject": "Mama",
    "tempo": "slow",
-   "updated": 1794004253.6591942
+   "updated": 1794006017.7724323
   }
  ],
  "records": {
-  "a-music-ce4b6ebc": {
-   "at": 1794004253.6899111,
+  "a-music-94ec9574": {
+   "at": 1794006017.8043654,
    "by": "Ada",
    "history": [
     {
-     "at": 1794004253.6899111,
+     "at": 1794006017.8043654,
      "by": "Ada",
      "licence_ref": "fixture",
      "scenes": [
@@ -47,7 +47,7 @@
   "jumps": [],
   "motifs": [
    {
-    "id": "mo-55c1eddd",
+    "id": "mo-8ab2b1c5",
     "kind": "character",
     "name": "Mama's theme",
     "note": "Used in one scene only: a motif is an idea the film comes back to.",
@@ -62,7 +62,7 @@
    {
     "by": "Ada",
     "commercial": "unknown",
-    "id": "a-music-ce4b6ebc",
+    "id": "a-music-94ec9574",
     "name": "theme",
     "problems": [
      "Commercial use is not known."
@@ -100,12 +100,12 @@
  "spots": [
   {
    "approval": "approved",
-   "asset_id": "a-music-ce4b6ebc",
-   "created": 1794004253.6744556,
+   "asset_id": "a-music-94ec9574",
+   "created": 1794006017.7885976,
    "cue": {
     "approval": "approved"
    },
-   "cue_id": "q-4938200c",
+   "cue_id": "q-c80e5658",
    "decision": "score",
    "end_shot": null,
    "energy_in": 1,
@@ -114,13 +114,13 @@
    "exits": "",
    "fade_in": 1.5,
    "fade_out": 2.0,
-   "id": "sp-b17f3c2e",
+   "id": "sp-4a28aa32",
    "instruments": [],
    "intent": "",
    "level_db": -6.0,
    "mood": "tender",
    "motif_ids": [
-    "mo-55c1eddd"
+    "mo-8ab2b1c5"
    ],
    "note": "",
    "role": "",
@@ -128,7 +128,7 @@
    "source": "manual",
    "start_shot": "S01-01",
    "tempo": "",
-   "updated": 1794004253.6744556
+   "updated": 1794006017.7885976
   }
  ],
  "updated": [],

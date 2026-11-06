@@ -1,0 +1,7 @@
+{
+ "h264": true,
+ "note": "Transparent H.264 MP4 does not exist, so it is never offered. A PNG sequence works everywhere.",
+ "png": true,
+ "prores4444": true,
+ "webm": true
+}

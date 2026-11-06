@@ -19,7 +19,7 @@ import soundfile as sf
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "analysis"))
 from filmcrafter_engine import (adrsync as AD, audiolib as AL, audiocues as Q, audioqa as QA, bible, cast_voice as C, performplan as PP, proaudio as PA, revoice as RV,  # noqa: E402
-                                shots as S, sounddesign as SD, musicdirector as MD, vpstudio as VP, story, voiceid as VI, voiceover as V)
+                                shots as S, sounddesign as SD, musicdirector as MD, vpstudio as VP, vpvideo as VV, story, voiceid as VI, voiceover as V)
 
 OUT = os.path.join(ROOT, "src", "__tests__", "fixtures", "engine")
 DATA = os.path.join(ROOT, "analysis", "tests", "data")
@@ -109,6 +109,21 @@ def main():
         cp = VP.compose_set(d, {"name": "Street scene", "background": bid, "size": [TK.W, TK.H], "layers": [{"cutout": kr["id"], "x": 0.5, "y": 1.0, "scale": 0.9, "shadow": {"strength": 0.3}, "match": 0.2}]})["id"]
         dump("vp_render", VP.render(d, cp))
         dump("vp_export", VP.export(d, kr["id"]))
+        # virtual production video: a short H.264 clip of a moving subject on a noisy green screen, keyed, exported and rendered by the real engine
+        import test_vpvideo as TV
+        import subprocess
+        fdir = os.path.join(src, "clipframes"); os.makedirs(fdir)
+        rng = np.random.default_rng(3)
+        for i in range(TV.N):
+            PILImage.fromarray((TV.frame(i, rng) * 255 + 0.5).astype(np.uint8)).save(os.path.join(fdir, f"{i + 1:03d}.png"))
+        clip = os.path.join(src, "walk.mp4"); TV.encode(fdir, clip)
+        dump("vpvideo_capabilities", VV.capabilities())
+        cid_src = VV.import_clip(d, {"path": clip, "kind": "plate", "name": "Sarah walks"})["id"]
+        ck = VV.key_clip(d, {"source": cid_src, "temporal": 0.5, "params": {"similarity": 0.02}, "name": "Sarah walks cutout"})
+        dump("vpvideo_key_clip", ck)
+        dump("vpvideo_export_clip", VV.export_clip(d, {"id": ck["id"], "format": "png"}))
+        cp2 = VP.compose_set(d, {"name": "Walk", "background": bid, "size": [TV.W, TV.H], "layers": [{"cutout": ck["id"], "x": 0.3, "y": 1.0, "scale": 0.8, "anchor": "bottom", "keys": [{"t": 0, "x": 0.2}, {"t": 1.0, "x": 0.8}]}]})["id"]
+        dump("vpvideo_render_video", VV.render_video(d, {"id": cp2, "fps": 12, "seconds": 1}))
         dump("vp_get", VP.get(d))
         # the audio inspector
         os.makedirs(os.path.join(d, "exports"), exist_ok=True)

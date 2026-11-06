@@ -359,6 +359,9 @@ def set_fields(d: str, sid: str, patch: dict) -> dict:
     for k in ("title", "story_purpose", "action", "blocking", "opening_state", "closing_state", "continuity", "sound"):
         if k in patch:
             c[k] = _text(patch[k], 120 if k == "title" else LIMIT)
+    if "production" in patch:                            # how the shot is made: a full scene, or a plate to key (vpstudio)
+        from . import vpstudio
+        c["production"] = vpstudio.clean_production(patch["production"])
     if "plan" in patch:                                  # the top-down blocking plan (blocking.py); None clears it
         from . import blocking
         c["plan"] = blocking.clean(patch["plan"])

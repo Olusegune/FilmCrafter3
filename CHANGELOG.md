@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.48.0 (2026-11-06)
+
+- **Virtual production, slice 2: video and the shot's production mode (free, local).** In the Cutout studio you can now bring in a **clip** with a green or blue screen, key every frame (the screen colour and edge settings are worked out once for the whole clip), **calm the edge between frames**, and export it with transparency as a PNG sequence, ProRes 4444 or WebM (VP9); each file is decoded again to confirm the transparency survived. **Compose** now supports a start time, repeat, and **keyframes** (place, size, turn, opacity, each straight, eased or jumping), over a picture or a clip background, and renders an **MP4** with progress and a Stop button. On the Camera tab of a shot, **How this shot is made** can be Full scene (as before), Green screen or Transparent: the picture prompt then asks for a flat, evenly lit screen and leaves the place out. Layered scene is shown greyed because it is not built. Details and limits: `docs/VIRTUAL_PRODUCTION.md`.
+- **Fix: rail tools in Agent Studio.** Layers (and the other Studio tools) did nothing when pressed in Agent Studio because that screen draws none of them. Pressing a tool there now takes you to the Manual Studio and opens it.
+- **Limits, plainly:** still no segmentation or matting model, no tracking; rendering is slow in proportion to size and frames; tested on test clips made with known answers, not camera footage.
+
 ## 0.47.0 (2026-11-06)
 
 - **Cutout studio: first slice of virtual production (free, local).** Rail > More > **Cutouts**. Bring in a plate (a subject in front of a green or blue screen) and a background; **Check the screen** says in numbers whether a key is likely to work; **Cut out** keys it (chroma key in the colour plane only, with despill, edge colour clean-up, shrink, grow, feather, hole filling) into an RGBA PNG with transparency and a mask; **Export PNG** reads the file back to confirm the transparency; **Compose** places cutouts on a background (feet-anchored, size, turn, flip, contact shadow, colour match, linear-light compositing with no halos) and renders a PNG. **Words for a clean plate** writes the text to ask an image maker for an even screen (nothing is sent). Details, limits and the plan for the rest of the brief: `docs/VIRTUAL_PRODUCTION.md`.

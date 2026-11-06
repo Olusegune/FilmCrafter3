@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 
+vi.mock("@tauri-apps/api/event", () => ({ listen: vi.fn(() => Promise.resolve(() => {})) }));
+
 import voiceidOverview from "../fixtures/engine/voiceid_overview.json";
 import voiceidCompare from "../fixtures/engine/voiceid_compare.json";
 import voiceidLibrary from "../fixtures/engine/voiceid_cast_library.json";
@@ -23,6 +25,10 @@ import vpKey from "../fixtures/engine/vp_key.json";
 import vpCheck from "../fixtures/engine/vp_plate_check.json";
 import vpRender from "../fixtures/engine/vp_render.json";
 import vpExport from "../fixtures/engine/vp_export.json";
+import vvCaps from "../fixtures/engine/vpvideo_capabilities.json";
+import vvKey from "../fixtures/engine/vpvideo_key_clip.json";
+import vvExport from "../fixtures/engine/vpvideo_export_clip.json";
+import vvRender from "../fixtures/engine/vpvideo_render_video.json";
 import qaFilm from "../fixtures/engine/audioqa_film.json";
 import adGet from "../fixtures/engine/adrsync_get.json";
 import adAlign from "../fixtures/engine/adrsync_align.json";
@@ -140,7 +146,7 @@ describe("the screens with the real engine's answers", () => {
   });
 
   it("cutout studio: the real plate check, key, export and render", async () => {
-    invoke.mockImplementation(answers({ "film_vp:get": vpGet, "film_vp:plate_check": vpCheck, "film_vp:key": { ...vpGet, id: (vpKey as unknown as { id: string }).id, report: (vpKey as unknown as { report: unknown }).report }, "film_vp:export": vpExport, "film_vp:render": vpRender, "film_vp:compose_set": vpGet }));
+    invoke.mockImplementation(answers({ "film_vp:get": vpGet, "film_vp:plate_check": vpCheck, "film_vp:key": { ...vpGet, id: (vpKey as unknown as { id: string }).id, report: (vpKey as unknown as { report: unknown }).report }, "film_vp:export": vpExport, "film_vp:render": vpRender, "film_vp:compose_set": vpGet, "film_vpvideo:capabilities": vvCaps }));
     const { container } = render(<CutoutStudio dir="film" onClose={() => {}} />);
     await screen.findByRole("tablist");
     fireEvent.click(screen.getByRole("tab", { name: /2 Cut out/ }));
@@ -153,8 +159,29 @@ describe("the screens with the real engine's answers", () => {
     fireEvent.click(screen.getByRole("tab", { name: /3 Compose/ }));
     fireEvent.change(screen.getByLabelText("Saved compositions"), { target: { value: (vpGet as unknown as { compositions: { id: string }[] }).compositions[0].id } });
     expect(screen.getByLabelText("Layer 1")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Save and render" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save and render a picture" }));
     expect(await screen.findByAltText("The rendered composition")).toBeInTheDocument();
+    clean(container);
+  });
+
+  it("cutout studio, video: the real clip key, the alpha export and the video render", async () => {
+    invoke.mockImplementation(answers({ "film_vp:get": vpGet, "film_vpvideo:capabilities": vvCaps, "film_vpvideo:key_clip": { ...vpGet, id: (vvKey as unknown as { id: string }).id, report: (vvKey as unknown as { report: unknown }).report }, "film_vpvideo:export_clip": vvExport, "film_vpvideo:render_video": vvRender, "film_vp:compose_set": vpGet }));
+    const { container } = render(<CutoutStudio dir="film" onClose={() => {}} />);
+    await screen.findByRole("tablist");
+    fireEvent.click(screen.getByRole("tab", { name: /2 Cut out/ }));
+    fireEvent.change(screen.getByLabelText("Plate"), { target: { value: (vpGet as unknown as { sources: { id: string; clip?: boolean }[] }).sources.find((x) => x.clip)!.id } });
+    fireEvent.click(screen.getByRole("button", { name: "Cut out the clip" }));
+    expect(await screen.findByLabelText("Key result")).toHaveTextContent(/before smoothing/);
+    fireEvent.click(screen.getAllByRole("button", { name: /as a PNG sequence/ })[0]);
+    expect(await screen.findByText(/PNG frames with transparency/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: /3 Compose/ }));
+    const comps = (vpGet as unknown as { compositions: { id: string; layers: { keys?: unknown[] }[] }[] }).compositions;
+    const moving = comps.find((c) => (c.layers[0]?.keys ?? []).length > 0)!;
+    fireEvent.change(screen.getByLabelText("Saved compositions"), { target: { value: moving.id } });
+    expect(screen.getByLabelText("Keyframe 2 time")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Save and render a video" }));
+    expect(await screen.findByLabelText("The rendered video")).toBeInTheDocument();
+    expect(await screen.findByText(/Video written: \d+ frames/)).toBeInTheDocument();
     clean(container);
   });
 

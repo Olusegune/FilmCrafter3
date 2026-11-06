@@ -103,4 +103,9 @@ describe("every screen of a film uses this rail and no other", () => {
     const studio = read("Studio.tsx");
     for (const t of TOOLS) expect(studio, t.id).toContain(`case "${t.id}"`);
   });
+  it("a tool pressed in Agent Studio first goes to the Manual Studio, where the tools open (Layers did nothing there)", () => {
+    const studio = read("Studio.tsx");
+    expect(studio).toContain('if (workspace === "agent" && id !== "agent") chooseWorkspace("manual");');
+    expect(studio).toContain('activeTool={workspace === "agent" ? "agent" : layersOpen ? "layers" : null}');
+  });
 });

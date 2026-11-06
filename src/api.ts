@@ -345,6 +345,8 @@ export const api = {
   audioQa: <T = AudioQaReport>(action: "film" | "inspect", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_audioqa", { action, target, data }),
   /** Sound design for a scene (filmcrafter_engine.sounddesign): soundscape profiles and Foley events, put into the film as ordinary cues. Free and local. */
   soundDesign: <T = SoundDesignScene>(action: "scene" | "profile_set" | "suggest" | "event_add" | "event_update" | "event_remove" | "candidates" | "to_cues", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_sounddesign", { action, target, data }),
+  /** Virtual production, video (filmcrafter_engine.vpvideo): clips keyed into transparent frames, alpha export, composition over time. Free and local; nothing is sent. */
+  vpVideo: <T = VpState>(action: "capabilities" | "import_clip" | "key_clip" | "export_clip" | "render_video" | "cancel", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_vpvideo", { action, target, data }),
   /** Virtual production, the cutout studio (filmcrafter_engine.vpstudio): pictures, green-screen keying into RGBA cutouts, compositions. Free and local; nothing is generated or sent. */
   vp: <T = VpState>(action: "get" | "import" | "plate_check" | "key" | "cutout_remove" | "export" | "compose_set" | "compose_remove" | "render" | "plate_prompt", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_vp", { action, target, data }),
   /** The music director (filmcrafter_engine.musicdirector): motifs, spotting, the words to ask for music, records of approvals, cues from approved spots. Free and local; nothing is generated or sent. */
@@ -616,15 +618,19 @@ export type FoleyEvent = { id: string; scene: number; shot: string; action: stri
 export type FoleyProposal = Pick<FoleyEvent, "action" | "source_object" | "by" | "material" | "surface" | "intensity" | "distance" | "side" | "start" | "motivated_by">;
 export type SoundDesignScene = { scene: number; environment: { id: string; name: string } | null; profile: SoundProfile | null; layers: AmbienceLayer[]; events: FoleyEvent[]; shots: { id: string; duration: number }[];
   coverage: { events: number; approved: number; without_sound: string[]; layers: number; layers_without_sound: string[]; has_profile: boolean; environment: string | null }; made?: string[]; updated?: string[]; waiting?: { kind: string; id: string; name: string }[] };
-export type VpSource = { id: string; kind: "plate" | "background" | "foreground"; name: string; file: string; width: number; height: number; bytes: number };
+export type VpSource = { id: string; kind: "plate" | "background" | "foreground"; name: string; file: string; width: number; height: number; bytes: number; clip?: boolean; fps?: number; seconds?: number; frames?: number };
 export type KeyParams = { screen: "green" | "blue"; color: number[] | null; similarity: number; softness: number | null; erode: number; dilate: number; feather: number; fill_holes: boolean; despill: number; decontaminate: boolean; clip_black: number; clip_white: number };
 export type PlateReport = { screen: string; color: number[]; saturation: number; border_on_screen: number; spread: number; usable: boolean; notes: string[]; width: number; height: number; source?: string };
-export type KeyReport = { subject: number; removed: number; soft_edge: number; edge_spill: number; plate: PlateReport; notes: string[]; params?: KeyParams };
-export type VpCutout = { id: string; name: string; source: string; params: KeyParams; report: KeyReport; rgba: string; mask: string; width: number; height: number };
-export type VpLayer = { cutout: string; x: number; y: number; scale: number; rotation: number; flip: boolean; anchor: "feet" | "bottom" | "centre"; opacity: number; match: number; shadow: { strength: number; blur: number; squash: number; spread: number } | null };
-export type VpComposition = { id: string; name: string; background: string | null; size: [number, number]; colour: number[]; layers: VpLayer[]; last_render?: string };
+export type KeyReport = { subject: number; removed: number; soft_edge: number; edge_spill: number; plate: PlateReport; notes: string[]; params?: KeyParams; flicker_before?: number; flicker_after?: number };
+export type VpCutout = { id: string; kind?: "still" | "clip"; fps?: number; frames?: number; seconds?: number; seq?: string; temporal?: number; name: string; source: string; params: KeyParams; report: KeyReport; rgba: string; mask: string; width: number; height: number };
+export type VpKey = { t: number; ease: "linear" | "smooth" | "hold"; x?: number; y?: number; scale?: number; rotation?: number; opacity?: number };
+export type VpLayer = { cutout: string; start?: number; loop?: boolean; keys?: VpKey[]; x: number; y: number; scale: number; rotation: number; flip: boolean; anchor: "feet" | "bottom" | "centre"; opacity: number; match: number; shadow: { strength: number; blur: number; squash: number; spread: number } | null };
+export type VpComposition = { id: string; name: string; background: string | null; size: [number, number]; colour: number[]; layers: VpLayer[]; last_render?: string; last_video?: string };
+export type VpCaps = { png: boolean; prores4444: boolean; webm: boolean; h264: boolean; note: string };
+export type VpClipExport = { id: string; format: string; path: string; file: string; frames: number; fps: number; has_alpha: boolean; alpha_error: number | null; note: string };
+export type ProductionMode = { mode: "full" | "green_screen" | "transparent"; screen: "green" | "blue"; framing: string; light: string; angle: string; movement: string };
 export type VpState = { sources: VpSource[]; cutouts: VpCutout[]; compositions: VpComposition[]; limits: { sources: number; cutouts: number; compositions: number; layers: number; side: number }; defaults: KeyParams;
-  id?: string; already_there?: boolean; report?: KeyReport; file?: string; width?: number; height?: number; layers?: number; missing?: string[] };
+  id?: string; already_there?: boolean; report?: KeyReport; file?: string; width?: number; height?: number; layers?: number; missing?: string[]; format?: string; frames?: number; fps?: number; seconds?: number };
 export type VpExport = { id: string; files: { rgba: string; mask: string }; folder: string; has_alpha: boolean; transparent_share: number; note: string };
 export type VpPlatePrompt = { prompt: string; screen: string; notes: string[]; sent: boolean };
 export type Motif = { id: string; name: string; kind: "character" | "place" | "theme"; subject: string; mood: string; tempo: string; key: string; description: string; note: string; instruments: string[] };
@@ -671,7 +677,7 @@ export type ShotCard = { id: string; scene: number; index: number; title: string
 export type ShotsView = { title: string; story_version: number | null; shots: ShotCard[]; scenes: { number: number; shots: number; seconds: number }[]; seconds: number;
   enums: { framing: string[]; angle: string[]; lens: string[]; movement: string[]; focus: string[]; dof?: string[] }; cut_max?: number; made?: string[]; id?: string; shot?: ShotContract };
 export type ShotBeat = { character: string; what: string; want: string; need: string; fear: string; hiding: string; subtext: string; start: string; turn: string; end: string };
-export type ShotContract = { id: string; scene: number; index: number; story_version: number | null; title: string; status: string; edited: boolean; story_purpose: string; action: string;
+export type ShotContract = { production?: ProductionMode; id: string; scene: number; index: number; story_version: number | null; title: string; status: string; edited: boolean; story_purpose: string; action: string;
   dialogue: { speaker: string; line: string; paren: string }[]; characters: { name: string; character_id: string | null; state_id: string | null; wardrobe_id: string | null }[];
   environment: { id: string | null; name: string; state_id: string | null }; props: { name: string; prop_id: string | null; state: string }[]; blocking: string;
   performance: { emotional_intention: string; beats: ShotBeat[]; micro_animation: string };

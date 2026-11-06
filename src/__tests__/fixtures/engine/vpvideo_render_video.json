@@ -1,0 +1,271 @@
+{
+ "compositions": [
+  {
+   "background": "vs-bb3a2c6f",
+   "colour": [
+    0.1,
+    0.1,
+    0.1
+   ],
+   "created": 1794006018.239767,
+   "id": "cp-18c6e952",
+   "last_render": "vp/renders/cp-18c6e952-1794006018.png",
+   "layers": [
+    {
+     "anchor": "feet",
+     "cutout": "cu-5fc3eaeb",
+     "flip": false,
+     "keys": [],
+     "loop": false,
+     "match": 0.2,
+     "opacity": 1.0,
+     "rotation": 0,
+     "scale": 0.9,
+     "shadow": {
+      "blur": 8,
+      "spread": 1.0,
+      "squash": 0.25,
+      "strength": 0.3
+     },
+     "start": 0.0,
+     "x": 0.5,
+     "y": 1.0
+    }
+   ],
+   "name": "Street scene",
+   "size": [
+    320,
+    400
+   ],
+   "updated": 1794006018.239767
+  },
+  {
+   "background": "vs-bb3a2c6f",
+   "colour": [
+    0.1,
+    0.1,
+    0.1
+   ],
+   "created": 1794006020.3274312,
+   "id": "cp-5834affc",
+   "last_video": "vp/renders/cp-5834affc-1794006020.mp4",
+   "layers": [
+    {
+     "anchor": "bottom",
+     "cutout": "cu-0d3ee838",
+     "flip": false,
+     "keys": [
+      {
+       "ease": "linear",
+       "t": 0.0,
+       "x": 0.2
+      },
+      {
+       "ease": "linear",
+       "t": 1.0,
+       "x": 0.8
+      }
+     ],
+     "loop": false,
+     "match": 0.0,
+     "opacity": 1.0,
+     "rotation": 0,
+     "scale": 0.8,
+     "shadow": null,
+     "start": 0.0,
+     "x": 0.3,
+     "y": 1.0
+    }
+   ],
+   "name": "Walk",
+   "size": [
+    192,
+    144
+   ],
+   "updated": 1794006020.3274312
+  }
+ ],
+ "cutouts": [
+  {
+   "created": 1794006018.2276552,
+   "height": 400,
+   "id": "cu-5fc3eaeb",
+   "mask": "vp/cutouts/cu-5fc3eaeb/mask.png",
+   "name": "Sarah",
+   "params": {
+    "clip_black": 0.0,
+    "clip_white": 1.0,
+    "color": null,
+    "decontaminate": true,
+    "despill": 0.8,
+    "dilate": 0,
+    "erode": 0,
+    "feather": 0.0,
+    "fill_holes": false,
+    "screen": "green",
+    "similarity": 0.06,
+    "softness": null
+   },
+   "report": {
+    "edge_spill": 0.044,
+    "notes": [
+     "A clean, even screen: a key should work well.",
+     "There is still screen colour on the edge: raise despill, or erode the edge by one pixel."
+    ],
+    "plate": {
+     "border_on_screen": 0.988,
+     "color": [
+      0.0902,
+      0.6588,
+      0.1804
+     ],
+     "height": 400,
+     "notes": [
+      "A clean, even screen: a key should work well."
+     ],
+     "saturation": 0.478,
+     "screen": "green",
+     "spread": 0.018,
+     "usable": true,
+     "width": 320
+    },
+    "removed": 0.7212,
+    "soft_edge": 0.0777,
+    "subject": 0.2012
+   },
+   "rgba": "vp/cutouts/cu-5fc3eaeb/cutout.png",
+   "source": "vs-abbc9ed2",
+   "width": 320
+  },
+  {
+   "created": 1794006020.2152605,
+   "fps": 12.0,
+   "frames": 24,
+   "height": 144,
+   "id": "cu-0d3ee838",
+   "kind": "clip",
+   "mask": "vp/cutouts/cu-0d3ee838/masks/00001.png",
+   "name": "Sarah walks cutout",
+   "params": {
+    "clip_black": 0.0,
+    "clip_white": 1.0,
+    "color": [
+     0.0941,
+     0.6941,
+     0.1882
+    ],
+    "decontaminate": true,
+    "despill": 0.8,
+    "dilate": 0,
+    "erode": 0,
+    "feather": 0.0,
+    "fill_holes": false,
+    "screen": "green",
+    "similarity": 0.02,
+    "softness": 0.3485
+   },
+   "report": {
+    "edge_spill": 0.0613,
+    "flicker_after": 0.00656,
+    "flicker_before": 0.01948,
+    "notes": [
+     "The screen is a little uneven: raise the softness a little and check the edge."
+    ],
+    "plate": {
+     "border_on_screen": 1.0,
+     "color": [
+      0.0941,
+      0.6941,
+      0.1882
+     ],
+     "height": 144,
+     "notes": [
+      "The screen is a little uneven: raise the softness a little and check the edge."
+     ],
+     "saturation": 0.506,
+     "screen": "green",
+     "spread": 0.04,
+     "usable": true,
+     "width": 192
+    },
+    "removed": 0.5793,
+    "soft_edge": 0.2968,
+    "subject": 0.1238
+   },
+   "rgba": "vp/cutouts/cu-0d3ee838/frames/00001.png",
+   "seconds": 2.0,
+   "seq": "vp/cutouts/cu-0d3ee838/frames/%05d.png",
+   "source": "vs-a982d99f",
+   "temporal": 0.5,
+   "width": 192
+  }
+ ],
+ "defaults": {
+  "clip_black": 0.0,
+  "clip_white": 1.0,
+  "color": null,
+  "decontaminate": true,
+  "despill": 0.8,
+  "dilate": 0,
+  "erode": 0,
+  "feather": 0.0,
+  "fill_holes": false,
+  "screen": "green",
+  "similarity": 0.06,
+  "softness": null
+ },
+ "file": "vp/renders/cp-5834affc-1794006020.mp4",
+ "format": "mp4",
+ "fps": 12.0,
+ "frames": 12,
+ "height": 144,
+ "id": "cp-5834affc",
+ "limits": {
+  "compositions": 100,
+  "cutouts": 300,
+  "layers": 24,
+  "side": 8192,
+  "sources": 300
+ },
+ "seconds": 1.0,
+ "sources": [
+  {
+   "added": 1794006018.1094143,
+   "bytes": 199305,
+   "file": "vp/sources/vs-abbc9ed2.png",
+   "height": 400,
+   "id": "vs-abbc9ed2",
+   "kind": "plate",
+   "name": "Sarah on green",
+   "sha1": "d65c87cdcab35914148bab7495300b20304843a1",
+   "width": 320
+  },
+  {
+   "added": 1794006018.1211698,
+   "bytes": 2891,
+   "file": "vp/sources/vs-bb3a2c6f.jpg",
+   "height": 400,
+   "id": "vs-bb3a2c6f",
+   "kind": "background",
+   "name": "Street",
+   "sha1": "a77fa7164bf132158e31bedcb83ca51c3c637aa3",
+   "width": 320
+  },
+  {
+   "added": 1794006019.1002102,
+   "bytes": 368482,
+   "clip": true,
+   "file": "vp/sources/vs-a982d99f.mp4",
+   "fps": 12.0,
+   "frames": 24,
+   "height": 144,
+   "id": "vs-a982d99f",
+   "kind": "plate",
+   "name": "Sarah walks",
+   "seconds": 2.0,
+   "sha1": "2eebef41cb4067f31243e6504ded78898adef097",
+   "width": 192
+  }
+ ],
+ "width": 192
+}

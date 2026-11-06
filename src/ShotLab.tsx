@@ -3,6 +3,7 @@ import { SoundCut } from "./SoundCut";
 import { PacingSheet } from "./PacingSheet";
 import { SoundPlan } from "./SoundPlan";
 import { CompositionGuide } from "./CompositionGuide";
+import { ProductionModePicker } from "./ProductionMode";
 import { ActionChoreo } from "./ActionChoreo";
 import { Sheet } from "./Sheet";
 import { api, errorText, type BibleView, type ShotBeat, type ShotContract, type ShotsView, type ShotSuggestion } from "./api";
@@ -202,6 +203,7 @@ export function ShotLab({ dir, initial }: { dir: string; initial?: string | null
           </>}
 
           {tab === "camera" && <>
+            {c && <ProductionModePicker value={c.production} locked={locked} onChange={(p) => void save({ production: p })} />}
             <div className="sl-sug"><button className="btn ghost sm" onClick={suggest}>Suggest from the feeling</button>
               {sug && <div className="sl-sugcard"><p><b>Suggested</b> <span className="dim">from {sug.from}</span></p>
                 <p className="dim">{sug.camera.framing}, {sug.camera.angle}, {sug.camera.movement}, {sug.camera.lens}, {sug.camera.focus} focus.</p><p>{sug.camera.why}</p>

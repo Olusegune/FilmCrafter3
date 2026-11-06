@@ -152,7 +152,7 @@ def import_source(d: str, data: dict) -> dict:
     if w * h > K.MAX_PIXELS or max(w, h) > MAX_SIDE:
         raise SystemExit(f"That picture is {w} by {h}: the limit is {MAX_SIDE} pixels on a side.")
     raw = open(src, "rb").read()
-    sha = hashlib.sha1(raw).hexdigest()
+    sha = hashlib.sha1(raw, usedforsecurity=False).hexdigest()
     name = _t(data.get("name") or os.path.splitext(os.path.basename(src))[0], 60) or "picture"
     holder: dict = {}
 
@@ -256,7 +256,8 @@ def _clean_layer(x: dict, cutouts: set) -> dict:
         raise SystemExit("A layer uses a cutout that isn't in the film.")
     sh = x.get("shadow") if isinstance(x.get("shadow"), dict) else None
     return {"cutout": cid, "x": round(_n(x.get("x"), -2, 3, 0.5), 4), "y": round(_n(x.get("y"), -2, 3, 1.0), 4), "scale": round(_n(x.get("scale"), 0.02, 8, 1.0), 3), "rotation": round(_n(x.get("rotation"), -360, 360, 0), 1),
-            "flip": bool(x.get("flip", False)), "anchor": x.get("anchor") if x.get("anchor") in ("feet", "bottom", "centre") else "feet", "opacity": round(_n(x.get("opacity"), 0, 1, 1.0), 2), "match": round(_n(x.get("match"), 0, 1, 0.0), 2),
+            "flip": bool(x.get("flip", False)), "anchor": x.get("anchor") if x.get("anchor") in ("feet", "bottom", "centre") else "feet",
+            "start": round(_n(x.get("start"), 0, 3600, 0.0), 3), "loop": bool(x.get("loop", False)), "keys": K.clean_keys(x.get("keys")), "opacity": round(_n(x.get("opacity"), 0, 1, 1.0), 2), "match": round(_n(x.get("match"), 0, 1, 0.0), 2),
             "shadow": ({"strength": round(_n(sh.get("strength"), 0, 1, 0.4), 2), "blur": round(_n(sh.get("blur"), 0, 60, 8), 1), "squash": round(_n(sh.get("squash"), 0.05, 1, 0.25), 2),
                         "spread": round(_n(sh.get("spread"), 0.2, 3, 1.0), 2)} if sh else None)}
 
@@ -321,28 +322,24 @@ def compose_remove(d: str, cid: str) -> dict:
     return get(d)
 
 
-def render(d: str, cid: str) -> dict:
-    """Draw a composition to a PNG: the background (or its colour), then each cutout bottom to top with its place, size, turn, shadow and colour match. Every render is kept under its own name."""
+def render(d: str, cid: str, at: float = 0.0) -> dict:
+    """Draw one frame of a composition to a PNG, at `at` seconds (0 is the first frame: keyframes and clips are read at that time). The background (or its colour), then each cutout bottom to top
+    with its place, size, turn, shadow and colour match. Every render is kept under its own name. `render_video` in `vpvideo` draws it over time."""
     _film(d)
+    from . import vpvideo
     r = _load(d)
     comp = next((c for c in r["compositions"] if c.get("id") == cid), None)
     if not comp:
         raise SystemExit("That composition isn't in the film.")
     W, H = comp["size"]
-    if comp.get("background"):
-        bg = Image.fromarray((_open_source(d, _source(r, comp["background"])) * 255 + 0.5).astype(np.uint8)).resize((W, H), Image.LANCZOS)
-        base = np.asarray(bg, dtype=np.float32) / 255.0
-    else:
-        base = np.zeros((H, W, 3), np.float32)
-        base[...] = comp["colour"]
-    layers, missing = [], []
-    for l in comp["layers"]:
-        c = next((c for c in r["cutouts"] if c["id"] == l["cutout"]), None)
-        if not c:
-            missing.append(l["cutout"])
-            continue
-        layers.append({**l, "rgba": K.load_rgba(_inside(d, c["rgba"]))})
-    out = K.composite(base, layers)
+    tmp = __import__("tempfile").mkdtemp(prefix="fc-vp-")
+    try:
+        bg, base = vpvideo._background(d, r, comp, W, H, 24.0, tmp)
+        layers = vpvideo._layer_frames(d, r, comp)
+        out = vpvideo.compose_at(d, r, comp, float(at), bg, base, layers, 24.0)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    missing = [l["cutout"] for l in comp["layers"] if not any(c["id"] == l["cutout"] for c in r["cutouts"])]
     name = f"vp/renders/{cid}-{int(time.time())}.png"
     full = _inside(d, name)
     os.makedirs(os.path.dirname(full), exist_ok=True)
@@ -356,7 +353,7 @@ def render(d: str, cid: str) -> dict:
         if c2 is not None:
             c2["last_render"] = name
     _update(d, change)
-    return {**get(d), "id": cid, "file": name, "width": W, "height": H, "layers": len(layers), "missing": missing}
+    return {**get(d), "id": cid, "file": name, "width": W, "height": H, "layers": len(comp["layers"]) - len(missing), "missing": missing}
 
 
 # ---------------------------------------------------------------- asking for a clean plate (words only)
@@ -366,6 +363,28 @@ LIGHT = {"front": "soft even light from the front", "left": "key light from came
          "top": "soft light from above"}
 ANGLE = {"eye": "eye-level camera", "low": "low camera angle", "high": "high camera angle"}
 MOVE = {"still": "the subject stands still", "walk": "the subject walks toward the camera on the spot", "turn": "the subject turns slowly", "gesture": "the subject gestures naturally while standing"}
+
+
+MODES = ("full", "green_screen", "transparent")
+
+
+def clean_production(x) -> dict:
+    """A shot's production mode and plate settings, each from its list. Anything else (a number, a list, a word not in the list) is the default: a full scene."""
+    x = x if isinstance(x, dict) else {}
+
+    def pick(key, allowed, default):
+        v = x.get(key)
+        return v if isinstance(v, str) and v in allowed else default
+    return {"mode": pick("mode", MODES, "full"), "screen": pick("screen", K.SCREENS, "green"), "framing": pick("framing", FRAMING, "full"), "light": pick("light", LIGHT, "front"),
+            "angle": pick("angle", ANGLE, "eye"), "movement": pick("movement", MOVE, "still")}
+
+
+def plate_clause(p: dict) -> str:
+    """The sentence added to a shot's picture prompt when it is made as a plate (a green screen or transparent shot): the subject on a flat, even screen, lit and framed as chosen. Words only."""
+    p = clean_production(p)
+    colour = "pure chroma-key green (#00B140)" if p["screen"] == "green" else "pure chroma-key blue (#0047BB)"
+    return (f"Made as a plate to be keyed: {FRAMING[p['framing']]}, against a perfectly flat, evenly lit {colour} background with no shadows, gradient, floor line or props behind. "
+            f"{LIGHT[p['light']].capitalize()}; {ANGLE[p['angle']]}; {MOVE[p['movement']]}. Sharp subject edges, no {p['screen']} on the subject, no reflections of the background.")
 
 
 def plate_prompt(data: dict) -> dict:
@@ -427,7 +446,7 @@ def main(argv: list[str]) -> int:
         elif a.action == "compose_remove":
             res = compose_remove(d, x.get("id", ""))
         elif a.action == "render":
-            res = render(d, x.get("id", ""))
+            res = render(d, x.get("id", ""), x.get("time") or 0.0)
         else:
             res = plate_prompt(x)
         emit(event="result", data=res)

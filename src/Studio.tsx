@@ -516,6 +516,7 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
   };
 
   const openTool = (id: ToolId) => {                                    // a tool of the rail, opened here; the same tools open from every other screen of the film by coming here with the tool already open
+    if (workspace === "agent" && id !== "agent") chooseWorkspace("manual");                  // Agent Studio draws none of these tools: go to the Manual Studio first, where they open (this was why Layers did nothing there)
     switch (id) {
       case "project": setWorkspace("manual"); setSel(null); setInspector(true); break;
       case "library": setLibraryOpen(true); break;
@@ -525,7 +526,7 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
       case "supervisor": setSupOpen(true); break;
       case "acting": setPerfOpen(true); break;
       case "continuity": setContOpen(true); break;
-      case "layers": setLayersOpen((v) => !v); break;
+      case "layers": setLayersOpen((v) => (workspace === "agent" ? true : !v)); break;
       case "lighting": setLightOpen(true); break;
       case "presets": setPresetsOpen(true); break;
       case "color": setColorOpen(true); break;
@@ -535,7 +536,7 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
     }
   };
   const railProgress = useRailProgress(isFilm ? filmDirOfRender(project.dir) : null);
-  const rail = <FilmRail hasShots={!!plan} onHome={onHome} onSettings={onSettings} onTool={openTool} alwaysMore={director || layersOpen} activeTool={layersOpen ? "layers" : workspace === "agent" ? "agent" : null}
+  const rail = <FilmRail hasShots={!!plan} onHome={onHome} onSettings={onSettings} onTool={openTool} alwaysMore={director || (layersOpen && workspace !== "agent")} activeTool={workspace === "agent" ? "agent" : layersOpen ? "layers" : null}
                          badges={{ review: shots.filter((s) => needsAttention(takes.get(s.id))).length }}
                          steps={railSteps({ pro: director, progress: railProgress, active: "make", disabled: plan ? undefined : { export: "Needs a shot plan first: press Direct My Video." },
                                             go: (id) => { if (id === "export") setExporting(true); else if (id === "make") { if (workspace === "agent") chooseWorkspace("manual"); } else if (onFilm) onFilm(id); } })} />;
