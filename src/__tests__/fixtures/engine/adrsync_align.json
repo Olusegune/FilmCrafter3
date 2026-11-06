@@ -1,0 +1,15 @@
+{
+ "fps_label": "24",
+ "frames": 0,
+ "guide": "guide.wav",
+ "move_by_frames": -3,
+ "move_to_frame": 0,
+ "ok": true,
+ "person": "Mama",
+ "reliable": true,
+ "shift_seconds": -0.01,
+ "shot": "S01-02",
+ "strength": 0.839,
+ "words": "Move it 3 frames earlier to line up with guide.wav.",
+ "z": 3.2
+}

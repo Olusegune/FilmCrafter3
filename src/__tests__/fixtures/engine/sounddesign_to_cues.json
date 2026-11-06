@@ -1,0 +1,177 @@
+{
+ "coverage": {
+  "approved": 1,
+  "environment": "Kitchen",
+  "events": 2,
+  "has_profile": true,
+  "layers": 2,
+  "layers_without_sound": [
+   "ly-3858fe31"
+  ],
+  "without_sound": [
+   "fx-8135c204"
+  ]
+ },
+ "environment": {
+  "id": "e_kitchen",
+  "name": "Kitchen"
+ },
+ "events": [
+  {
+   "action": "impact",
+   "approval": "approved",
+   "asset_id": "a-sfx-b6ac2027",
+   "by": "LILA",
+   "created": 1793999473,
+   "cue": {
+    "approval": "approved"
+   },
+   "cue_id": "q-1d44c9b1",
+   "distance": "near",
+   "duration": null,
+   "id": "fx-f8b89617",
+   "intensity": 0.5,
+   "material": "",
+   "motivated_by": "",
+   "note": "",
+   "perspective": "",
+   "placement": {
+    "gain_db": 0.0,
+    "pan": -0.6
+   },
+   "scene": 1,
+   "shot": "S01-01",
+   "side": "left",
+   "source": "manual",
+   "source_object": "basket of oranges",
+   "start": 2.0,
+   "surface": "",
+   "updated": 1793999473,
+   "variations": []
+  },
+  {
+   "action": "door",
+   "approval": "suggested",
+   "asset_id": null,
+   "by": "",
+   "created": 1793999473,
+   "cue": null,
+   "cue_id": null,
+   "distance": "mid",
+   "duration": null,
+   "id": "fx-8135c204",
+   "intensity": 0.5,
+   "material": "",
+   "motivated_by": "",
+   "note": "",
+   "perspective": "",
+   "placement": {
+    "gain_db": -6.0,
+    "pan": 0.0
+   },
+   "scene": 1,
+   "shot": "S01-01",
+   "side": "centre",
+   "source": "manual",
+   "source_object": "door",
+   "start": 3.0,
+   "surface": "",
+   "updated": 1793999473,
+   "variations": []
+  }
+ ],
+ "layers": [
+  {
+   "asset_id": "a-sfx-d91fc36f",
+   "cue": {
+    "approval": "approved"
+   },
+   "cue_id": "q-f413df06",
+   "description": "",
+   "distance": "near",
+   "id": "ly-f1550359",
+   "level_db": -6.0,
+   "loop": true,
+   "name": "Rain on the roof",
+   "placement": {
+    "gain_db": -6.0,
+    "pan": 0.0
+   }
+  },
+  {
+   "asset_id": null,
+   "cue": null,
+   "cue_id": null,
+   "description": "",
+   "distance": "far",
+   "id": "ly-3858fe31",
+   "level_db": -6.0,
+   "loop": true,
+   "name": "Generator",
+   "placement": {
+    "gain_db": -20.0,
+    "pan": 0.0
+   }
+  }
+ ],
+ "made": [
+  "ly-f1550359",
+  "fx-f8b89617"
+ ],
+ "profile": {
+  "interior": true,
+  "layers": [
+   {
+    "asset_id": "a-sfx-d91fc36f",
+    "cue_id": "q-f413df06",
+    "description": "",
+    "distance": "near",
+    "id": "ly-f1550359",
+    "level_db": -6.0,
+    "loop": true,
+    "name": "Rain on the roof"
+   },
+   {
+    "asset_id": null,
+    "cue_id": null,
+    "description": "",
+    "distance": "far",
+    "id": "ly-3858fe31",
+    "level_db": -6.0,
+    "loop": true,
+    "name": "Generator"
+   }
+  ],
+  "materials": [
+   "tin"
+  ],
+  "notes": "",
+  "recurring": "the generator coughs",
+  "reverb": "room",
+  "room_size": "small",
+  "surfaces": [
+   "wet pavement"
+  ],
+  "time_of_day": "",
+  "weather": "heavy rain"
+ },
+ "scene": 1,
+ "shots": [
+  {
+   "duration": 10.2,
+   "id": "S01-01"
+  },
+  {
+   "duration": 3.2,
+   "id": "S01-02"
+  }
+ ],
+ "updated": [],
+ "waiting": [
+  {
+   "id": "ly-3858fe31",
+   "kind": "layer",
+   "name": "Generator"
+  }
+ ]
+}

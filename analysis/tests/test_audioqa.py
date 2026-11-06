@@ -282,3 +282,43 @@ def test_the_command_line_answers_with_json(film, tmp_path, capsys):
     assert A.main(["inspect", film, "--data", "{}"]) == 1
     lines = [json.loads(x) for x in capsys.readouterr().out.splitlines() if x.strip()]
     assert [x["event"] for x in lines] == ["result", "result", "error", "error"] and lines[0]["data"]["summary"]["files"] == 1
+
+
+# ---------------------------------------------------------------- real speech (two Windows text-to-speech voices, 3.4 s each, kept as fixtures)
+
+DATA = os.path.join(os.path.dirname(__file__), "data")
+
+
+def real(name):
+    x, r = sf.read(os.path.join(DATA, f"real_speech_{name}.wav"), dtype="float32", always_2d=True)
+    assert r == 22050
+    return np.repeat(x[:, :1], 2, axis=1)
+
+
+@pytest.mark.parametrize("who", ["david", "zira"])
+def test_clean_real_speech_is_not_flagged_for_clicks_or_noise(who):
+    """Found on real speech: the first click and noise rules flagged a loud low voice's sharp pulses and a clean voice's breaths. Clean speech must report neither."""
+    x = real(who)
+    m = A.measure(x, 22050)
+    got = codes(A.findings(m, "voice", who))
+    assert m["click_count"] == 0 and "click" not in got and "noise" not in got and "clipping" not in got and "dropout" not in got
+    assert m["noise_floor_db"] is not None and m["noise_floor_db"] < -45
+
+
+@pytest.mark.parametrize("who", ["david", "zira"])
+def test_room_noise_added_to_real_speech_is_found_and_follows_the_noise_level(who):
+    x = real(who)
+    quiet = A.measure(x + np.random.default_rng(1).normal(0, 10 ** (-50 / 20), x.shape).astype("float32"), 22050)
+    noisy = A.measure(x + np.random.default_rng(1).normal(0, 10 ** (-38 / 20), x.shape).astype("float32"), 22050)
+    assert "noise" not in codes(A.findings(quiet, "voice", who)) and "noise" in codes(A.findings(noisy, "voice", who))
+    assert noisy["noise_floor_db"] == pytest.approx(-41, abs=3) and quiet["noise_floor_db"] < noisy["noise_floor_db"]
+
+
+@pytest.mark.parametrize("who", ["david", "zira"])
+def test_a_real_click_inside_real_speech_is_still_found(who):
+    x = real(who).copy()
+    i = int(1.2 * 22050)
+    x[i:i + 2] = 0.9 * np.sign(x[i - 1, 0] + 1e-9) * -1                       # a two-sample spike against the waveform
+    x[i + 2:] *= 1.0
+    m = A.measure(x, 22050)
+    assert m["click_count"] >= 1 and any(abs(t - 1.2) < 0.02 for t in m["clicks_at"])

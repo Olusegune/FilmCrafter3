@@ -1,0 +1,56 @@
+{
+ "considered": 4,
+ "note": "Only sounds the written action names are proposed, at most 6 per shot. Timing is estimated from where the action falls in the text: move each to the moment you see it.",
+ "proposals": [
+  {
+   "action": "stirring",
+   "by": "MAMA",
+   "distance": "mid",
+   "intensity": 0.5,
+   "material": "metal",
+   "motivated_by": "on a tin roof. MAMA stirs a steaming pot while LILA wal",
+   "side": "centre",
+   "source_object": "steaming pot",
+   "start": 2.0,
+   "surface": "wet pavement"
+  },
+  {
+   "action": "footsteps",
+   "by": "LILA",
+   "distance": "mid",
+   "intensity": 0.35,
+   "material": "",
+   "motivated_by": "ming pot while LILA walks in and drops a basket of oran",
+   "side": "centre",
+   "source_object": "feet",
+   "start": 4.5,
+   "surface": "wet pavement"
+  },
+  {
+   "action": "impact",
+   "by": "LILA",
+   "distance": "mid",
+   "intensity": 0.75,
+   "material": "fruit",
+   "motivated_by": "e LILA walks in and drops a basket of oranges on wet pa",
+   "side": "centre",
+   "source_object": "basket of oranges",
+   "start": 5.6,
+   "surface": "wet pavement"
+  },
+  {
+   "action": "door",
+   "by": "",
+   "distance": "mid",
+   "intensity": 0.6,
+   "material": "wood",
+   "motivated_by": "n wet pavement. The door slams.",
+   "side": "centre",
+   "source_object": "door",
+   "start": 9.3,
+   "surface": "wet pavement"
+  }
+ ],
+ "scene": 1,
+ "shot": "S01-01"
+}

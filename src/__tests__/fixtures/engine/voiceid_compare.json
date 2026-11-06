@@ -1,0 +1,80 @@
+{
+ "model": "eleven_v4",
+ "note": "Fit comes from the labels ElevenLabs gives each voice. It says nothing about how a voice performs emotion or how real an accent is: listen and rate.",
+ "person": "Mama",
+ "rows": [
+  {
+   "audition_basis": "73 characters x 1 for this model (an estimate)",
+   "audition_credits": 73,
+   "available": {
+    "local": false,
+    "where": "ElevenLabs (online; needs your key)"
+   },
+   "current": true,
+   "licence": "One of ElevenLabs' own voices; use is covered by your plan's terms.",
+   "rated": {
+    "accent": {
+     "status": "accepted",
+     "words": "You rated the accent 4.0 of 5 after listening (1 rating). This is your judgement as a listener, not a measurement."
+    },
+    "count": 1,
+    "natural": 5.0
+   },
+   "score": 2.0,
+   "voice": {
+    "category": "premade",
+    "description": "",
+    "labels": {
+     "accent": "nigerian"
+    },
+    "name": "Warm",
+    "preview_url": "",
+    "voice_id": "AbCdEfGh1234"
+   },
+   "why": [
+    "nigerian accent"
+   ]
+  },
+  {
+   "audition_basis": "73 characters x 1 for this model (an estimate)",
+   "audition_credits": 73,
+   "available": {
+    "local": false,
+    "where": "ElevenLabs (online; needs your key)"
+   },
+   "current": false,
+   "licence": "A cloned or community voice: check its owner's terms and your plan's licence before you use it in a film you share.",
+   "rated": {
+    "accent": {
+     "status": "untested",
+     "words": "Not listened to and rated yet."
+    },
+    "count": 0,
+    "natural": null
+   },
+   "score": 1.0,
+   "voice": {
+    "category": "professional",
+    "description": "calm voice",
+    "labels": {
+     "accent": "nigerian",
+     "age": "middle_aged",
+     "gender": "female"
+    },
+    "name": "Joy",
+    "preview_url": "",
+    "voice_id": "BBBBBBBBBBBB"
+   },
+   "why": [
+    "nigerian accent"
+   ]
+  }
+ ],
+ "searched": 2,
+ "wanted": {
+  "accent": "nigerian",
+  "age": "old",
+  "descriptors": [],
+  "gender": ""
+ }
+}

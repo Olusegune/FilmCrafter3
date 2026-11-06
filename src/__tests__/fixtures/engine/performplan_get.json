@@ -1,0 +1,290 @@
+{
+ "activities": [
+  "carrying",
+  "cold",
+  "crying",
+  "drinking",
+  "eating",
+  "fighting",
+  "hiding",
+  "injured",
+  "lifting",
+  "pushing",
+  "rain",
+  "running",
+  "still",
+  "tired",
+  "walking"
+ ],
+ "applied": false,
+ "compiled": {
+  "model": "eleven_v4",
+  "not_carried": [],
+  "speed": 1.0,
+  "stripped_tags": 0,
+  "tagged": true,
+  "tags": [
+   "sad",
+   "sighs",
+   "gasps"
+  ],
+  "text": "[sighs] I did not THINK... [gasps] you [sad] would come back.",
+  "unverified": [
+   "sad"
+  ],
+  "words": [
+   "I",
+   "did",
+   "not",
+   "think",
+   "you",
+   "would",
+   "come",
+   "back."
+  ]
+ },
+ "emotions": {
+  "amused": {
+   "tag": "amused",
+   "verified": false
+  },
+  "angry": {
+   "tag": "angry",
+   "verified": false
+  },
+  "annoyed": {
+   "tag": "annoyed",
+   "verified": false
+  },
+  "excited": {
+   "tag": "excited",
+   "verified": false
+  },
+  "furious": {
+   "tag": "furious",
+   "verified": false
+  },
+  "happy": {
+   "tag": "happy",
+   "verified": false
+  },
+  "nervous": {
+   "tag": "nervous",
+   "verified": false
+  },
+  "neutral": {
+   "tag": "",
+   "verified": true
+  },
+  "sad": {
+   "tag": "sad",
+   "verified": false
+  },
+  "sarcastic": {
+   "tag": "sarcastic",
+   "verified": false
+  },
+  "scared": {
+   "tag": "scared",
+   "verified": false
+  },
+  "shouting": {
+   "tag": "shouting",
+   "verified": false
+  },
+  "tender": {
+   "tag": "tender",
+   "verified": false
+  },
+  "tired": {
+   "tag": "tired",
+   "verified": false
+  },
+  "warm": {
+   "tag": "warm",
+   "verified": false
+  },
+  "whisper": {
+   "tag": "whispers",
+   "verified": true
+  }
+ },
+ "events": {
+  "breath": {
+   "group": "breathing",
+   "tag": "exhales",
+   "verified": false
+  },
+  "breath_catch": {
+   "group": "breathing",
+   "tag": "catches breath",
+   "verified": false
+  },
+  "chuckle": {
+   "group": "laughter",
+   "tag": "chuckles",
+   "verified": false
+  },
+  "clear_throat": {
+   "group": "other",
+   "tag": "clears throat",
+   "verified": false
+  },
+  "cough": {
+   "group": "other",
+   "tag": "coughs",
+   "verified": true
+  },
+  "cry": {
+   "group": "emotion",
+   "tag": "crying",
+   "verified": true
+  },
+  "gasp": {
+   "group": "emotion",
+   "tag": "gasps",
+   "verified": true
+  },
+  "giggle": {
+   "group": "laughter",
+   "tag": "giggles",
+   "verified": false
+  },
+  "groan": {
+   "group": "effort",
+   "tag": "groans",
+   "verified": false
+  },
+  "grunt": {
+   "group": "effort",
+   "tag": "grunts",
+   "verified": false
+  },
+  "heavy_breathing": {
+   "group": "breathing",
+   "tag": "breathing heavily",
+   "verified": false
+  },
+  "inhale": {
+   "group": "breathing",
+   "tag": "inhales sharply",
+   "verified": false
+  },
+  "laugh": {
+   "group": "laughter",
+   "tag": "laughs",
+   "verified": true
+  },
+  "nervous_laugh": {
+   "group": "laughter",
+   "tag": "nervous laugh",
+   "verified": false
+  },
+  "out_of_breath": {
+   "group": "breathing",
+   "tag": "out of breath",
+   "verified": true
+  },
+  "panting": {
+   "group": "breathing",
+   "tag": "panting",
+   "verified": false
+  },
+  "sigh": {
+   "group": "emotion",
+   "tag": "sighs",
+   "verified": true
+  },
+  "sniffle": {
+   "group": "other",
+   "tag": "sniffles",
+   "verified": false
+  },
+  "sob": {
+   "group": "emotion",
+   "tag": "sobs",
+   "verified": false
+  },
+  "strain": {
+   "group": "effort",
+   "tag": "straining",
+   "verified": false
+  },
+  "whimper": {
+   "group": "emotion",
+   "tag": "whimpers",
+   "verified": false
+  },
+  "wince": {
+   "group": "effort",
+   "tag": "winces",
+   "verified": false
+  }
+ },
+ "person": "Mama",
+ "plan": {
+  "approved": true,
+  "arc": [
+   {
+    "at": 0,
+    "emotion": "neutral",
+    "intensity": 0.5
+   },
+   {
+    "at": 5,
+    "emotion": "sad",
+    "intensity": 0.8
+   }
+  ],
+  "concealed": "",
+  "direction": "",
+  "emphasis": [
+   3
+  ],
+  "events": [
+   {
+    "after_word": 0,
+    "intensity": 0.5,
+    "kind": "sigh"
+   },
+   {
+    "after_word": 4,
+    "intensity": 0.5,
+    "kind": "gasp"
+   }
+  ],
+  "objective": "stop her leaving",
+  "outward": "",
+  "pace": 1.0,
+  "pauses": [
+   {
+    "after_word": 4,
+    "ms": 800
+   }
+  ],
+  "physical": {
+   "activity": "still",
+   "breathlessness": 0,
+   "effort": 0,
+   "fatigue": 0,
+   "note": "",
+   "pain": 0
+  },
+  "subtext": ""
+ },
+ "saved": true,
+ "shot": "S01-02",
+ "stale": false,
+ "text": "I did not think you would come back.",
+ "voice_model": "eleven_v4",
+ "words": [
+  "I",
+  "did",
+  "not",
+  "think",
+  "you",
+  "would",
+  "come",
+  "back."
+ ]
+}

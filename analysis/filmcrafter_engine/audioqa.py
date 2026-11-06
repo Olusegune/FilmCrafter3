@@ -30,9 +30,9 @@ LIMITS = {
     "peak_note_db": -0.1, "true_peak_look_db": -1.0,
     "silent_peak_db": -80.0,
     "long_silence_s": 2.0, "silence_db": -70.0,
-    "noise_voice_db": -50.0,
+    "noise_voice_db": -45.0,
     "dropout_ms": (5, 300), "dropout_neighbour_db": -45.0, "dropout_fix_count": 3,
-    "click_jump": 0.15, "click_times_median": 8.0,
+    "click_jump": 0.15, "click_times_median": 8.0, "click_peak_ratio": 0.6,
     "dc": 0.02, "mono_loss_db": -6.0,
     "loudness_target_tolerance_lu": 1.5,
     "voice_level_outlier_db": 6.0, "voice_level_min_takes": 3,
@@ -102,7 +102,7 @@ def measure(x, rate: int = RATE) -> dict:
         sil.append({"at": round(a * 0.05, 2), "length": round((b - a) * 0.05, 2), "where": where})
     out["silences"] = sil[:8]
     live = rms_db[rms_db > -90.0]
-    floor = float(np.percentile(live, 10)) if len(live) >= 5 else None
+    floor = float(np.percentile(live, 5)) if len(live) >= 5 else None             # the quietest 5%: on real speech the 10th percentile is often a breath or a fade, not the room (measured on two text-to-speech voices with and without added room noise)
     # a noise floor can only be read where there are quiet moments between the loud ones; a sound that never pauses has none to measure
     out["noise_floor_db"] = round(floor, 1) if floor is not None and loud.any() and float(np.median(rms_db[loud])) - floor >= 6.0 else None
     w5 = max(1, int(0.005 * rate))
@@ -126,8 +126,12 @@ def measure(x, rate: int = RATE) -> dict:
         kk = len(d) // w
         if kk:
             med = np.median(d[: kk * w].reshape(kk, w), axis=1)
-            thr = np.maximum(LIMITS["click_jump"], LIMITS["click_times_median"] * np.repeat(med, w))
-            hit = np.flatnonzero(d[: kk * w] > thr)
+            peak = np.max(np.abs(mono[: kk * w]).reshape(kk, w), axis=1)
+            # a jump is a click only when it is large for its surroundings: in the blocks either side too (a loud low voice has sharp pulses; an onset after silence is not a click) and against the local peak
+            near_med = np.maximum(med, np.maximum(np.concatenate(([0.0], med[:-1])), np.concatenate((med[1:], [0.0]))))
+            near_peak = np.maximum(peak, np.maximum(np.concatenate(([0.0], peak[:-1])), np.concatenate((peak[1:], [0.0]))))
+            thr = np.maximum.reduce([np.full(kk, LIMITS["click_jump"]), LIMITS["click_times_median"] * near_med, LIMITS["click_peak_ratio"] * near_peak])
+            hit = np.flatnonzero(d[: kk * w] > np.repeat(thr, w))
             last = -10 ** 9
             for h in hit:
                 if h - last > int(0.01 * rate):

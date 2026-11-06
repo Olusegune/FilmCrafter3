@@ -1,0 +1,30 @@
+{
+ "conversions": 0,
+ "people": [],
+ "runtime": {
+  "device": "cpu",
+  "folder": "~/.filmcrafter/voiceconv",
+  "how": "Press Install. It downloads the packages and model files once, onto this computer, and nothing is installed until you do.",
+  "installed": true,
+  "model": {
+   "by": "Resemble AI",
+   "id": "chatterbox-vc",
+   "licence": "MIT",
+   "name": "Chatterbox voice conversion",
+   "needs": "About 8 GB of memory is comfortable; a graphics card makes it quicker, but it also runs on the processor (Greenroom measured 36 s for an 8 s line on a processor).",
+   "packages": [
+    "torch==2.6.0",
+    "torchaudio==2.6.0",
+    "chatterbox-tts==0.1.7"
+   ],
+   "size_note": "Several gigabytes in total (the packages and the model files). It is not known exactly until it is installed.",
+   "status": "experimental"
+  },
+  "since": 1793987804,
+  "versions": {
+   "chatterbox-tts": "0.1.7",
+   "torch": "2.6.0+cpu",
+   "torchaudio": "2.6.0+cpu"
+  }
+ }
+}

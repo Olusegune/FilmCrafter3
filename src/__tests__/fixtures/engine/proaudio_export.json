@@ -1,0 +1,45 @@
+{
+ "cue_sheet": [
+  "Fixture Film cue sheet.csv",
+  "Fixture Film cue sheet.json"
+ ],
+ "files": 6,
+ "folder": "C:\\\\Films\\\\Fixture Film\\\\exports\\\\audio\\\\Fixture Film",
+ "lanes_without_sound": {
+  "sfx": "No approved cue in this lane."
+ },
+ "mixes": [
+  {
+   "capped": false,
+   "file": "mixes/Fixture Film FINAL.wav",
+   "lufs": -23.0,
+   "master_gain_db": -5.5,
+   "note": "",
+   "true_peak_db": -5.7
+  },
+  {
+   "capped": false,
+   "file": "mixes/Fixture Film M&E.wav",
+   "lufs": -23.0,
+   "master_gain_db": -5.3,
+   "note": "",
+   "true_peak_db": -12.2
+  }
+ ],
+ "not_checked": [
+  "Whether any particular editor imports these files without a prompt (the files are read back and measured here; no editor was opened).",
+  "How the mix sounds.",
+  "Loudness in the finished film's picture export (this is the film's sound laid out on the shot list)."
+ ],
+ "ok": true,
+ "otio": "Fixture Film audio.otio",
+ "problems": [],
+ "relative": "exports/audio/Fixture Film 2026-11-06 161115",
+ "seconds": 15.6,
+ "stems": [
+  "stems/01 DIALOGUE.wav",
+  "stems/02 FOLEY.wav",
+  "stems/03 AMBIENCE.wav",
+  "stems/04 MUSIC.wav"
+ ]
+}

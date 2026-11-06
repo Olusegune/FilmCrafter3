@@ -1,0 +1,32 @@
+{
+ "person": "Mama",
+ "shot": "S01-02",
+ "takes": [
+  {
+   "another_take": false,
+   "at": 1793999475,
+   "current": false,
+   "file": "voice/_generated/S01-02-ade1a4300bd665ea4d.wav",
+   "kind": "adr",
+   "model": null,
+   "note": "",
+   "performance": "voice/_adr/839f4084ead0e3d5.wav",
+   "performed_by": "Dee",
+   "text": "",
+   "voice_name": "ADR retake"
+  },
+  {
+   "another_take": false,
+   "at": 1793999474,
+   "current": false,
+   "file": "voice/_generated/S01-02-dfe7f507949ac5eb1e.wav",
+   "kind": "dubfit",
+   "model": null,
+   "note": "faster by 9.7%, pitch kept",
+   "performance": "",
+   "performed_by": "",
+   "text": "",
+   "voice_name": "fitted line"
+  }
+ ]
+}

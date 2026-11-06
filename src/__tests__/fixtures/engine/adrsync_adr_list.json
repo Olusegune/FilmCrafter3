@@ -1,0 +1,17 @@
+{
+ "lines": [
+  {
+   "adr_takes": 0,
+   "key": "mama",
+   "marked": true,
+   "person": "Mama",
+   "reasons": [
+    "you marked it: a dog barks",
+    "It is 3.4 s and the shot is 3.2 s."
+   ],
+   "shot": "S01-02"
+  }
+ ],
+ "marked": 1,
+ "note": "The reasons come from the audio inspector's measurements and from your own marks. A reason is a place to listen, not a verdict."
+}

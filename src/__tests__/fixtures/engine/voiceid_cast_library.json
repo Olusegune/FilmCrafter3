@@ -1,0 +1,27 @@
+{
+ "entries": [
+  {
+   "film": "Fixture Film",
+   "id": "6c3a444eb8f9",
+   "name": "Mama",
+   "note": "fixture",
+   "profile": {
+    "accent": "nigerian",
+    "age_range": "middle aged",
+    "language": "English"
+   },
+   "rights": "Check your ElevenLabs plan's terms for this voice.",
+   "saved": 1793999473,
+   "voice": {
+    "made": "library",
+    "model": "eleven_v4",
+    "similarity": 0.75,
+    "speed": 1.0,
+    "stability": 0.5,
+    "style": 0.0,
+    "voice_id": "AbCdEfGh1234",
+    "voice_name": "Warm"
+   }
+  }
+ ]
+}

@@ -1,0 +1,36 @@
+{
+ "estimated_bytes": 26956799,
+ "files": 6,
+ "lanes": {
+  "ambience": "yes",
+  "dialogue": "yes",
+  "foley": "yes",
+  "music": "yes",
+  "sfx": "no sound"
+ },
+ "positions": "Shots in scene order at their lengths; recordings in order with the usual gap, moved by Timing and ADR frames. A trimmed cut may differ.",
+ "seconds": 15.6,
+ "shots": 3,
+ "skipped": [],
+ "spec": {
+  "bits": 24,
+  "bwf": true,
+  "media": true,
+  "mixes": [
+   "final",
+   "me"
+  ],
+  "peak_db": -1.0,
+  "rate": 48000,
+  "start_tc": "00:00:00:00",
+  "stems": [
+   "dialogue",
+   "foley",
+   "sfx",
+   "ambience",
+   "music"
+  ],
+  "target_lufs": null,
+  "title": ""
+ }
+}

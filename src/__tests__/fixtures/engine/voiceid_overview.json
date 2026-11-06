@@ -1,0 +1,38 @@
+{
+ "flagged": 0,
+ "people": [
+  {
+   "accent": {
+    "status": "accepted",
+    "words": "You rated the accent 4.0 of 5 after listening (1 rating). This is your judgement as a listener, not a measurement."
+   },
+   "approved": true,
+   "consistency": {
+    "problems": [],
+    "state": "ok",
+    "words": "Same voice, model and reference as when it was locked."
+   },
+   "history": [],
+   "id": "c_mama",
+   "key": "mama",
+   "lock": {
+    "at": 1793999473,
+    "made": "library",
+    "model": "eleven_v4",
+    "reference_sha256": null,
+    "voice_id": "AbCdEfGh1234",
+    "voice_name": "Warm"
+   },
+   "name": "Mama",
+   "natural": 5.0,
+   "ratings": 1,
+   "role": "",
+   "voice": {
+    "made": "library",
+    "model": "eleven_v4",
+    "voice_id": "AbCdEfGh1234",
+    "voice_name": "Warm"
+   }
+  }
+ ]
+}

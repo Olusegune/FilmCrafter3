@@ -1,0 +1,235 @@
+{
+ "consistency": [],
+ "items": [
+  {
+   "findings": [],
+   "loudness": {
+    "lufs": -19.9,
+    "range_lu": 0.6,
+    "true_peak_db": -3.6
+   },
+   "metrics": {
+    "active_ratio": 0.75,
+    "channels": 2,
+    "click_count": 0,
+    "clicks_at": [],
+    "clip_at": [],
+    "clip_runs": 0,
+    "dc": 0.0169,
+    "dropout_count": 0,
+    "dropouts": [],
+    "mono_loss_db": 0.0,
+    "noise_floor_db": -55.7,
+    "peak_db": -3.6,
+    "rms_db": -20.0,
+    "seconds": 3.4,
+    "silences": [],
+    "speech_level_db": -18.4
+   },
+   "ok": true,
+   "role": "mix",
+   "where": "The finished film: cut.wav"
+  },
+  {
+   "file": "voice/S01-02/mama.wav",
+   "findings": [
+    {
+     "code": "longer_than_shot",
+     "limit": 3.2,
+     "measured": 3.4,
+     "severity": "look",
+     "what": "The recording is 3.4 s and the shot is 3.2 s, so the end is cut off unless the shot is lengthened.",
+     "where": "Mama in S01-02"
+    }
+   ],
+   "loudness": null,
+   "metrics": {
+    "active_ratio": 0.75,
+    "channels": 2,
+    "click_count": 0,
+    "clicks_at": [],
+    "clip_at": [],
+    "clip_runs": 0,
+    "dc": 0.0144,
+    "dropout_count": 0,
+    "dropouts": [],
+    "mono_loss_db": 0.0,
+    "noise_floor_db": -76.0,
+    "peak_db": -0.2,
+    "rms_db": -19.8,
+    "seconds": 3.4,
+    "silences": [],
+    "speech_level_db": -18.4
+   },
+   "ok": true,
+   "person": "mama",
+   "role": "voice",
+   "shot": "S01-02",
+   "where": "Mama in S01-02"
+  },
+  {
+   "asset": "a-sfx-d91fc36f",
+   "findings": [],
+   "loudness": null,
+   "metrics": {
+    "active_ratio": 1.0,
+    "channels": 2,
+    "click_count": 0,
+    "clicks_at": [],
+    "clip_at": [],
+    "clip_runs": 0,
+    "dc": 0.0,
+    "dropout_count": 0,
+    "dropouts": [],
+    "mono_loss_db": 0.0,
+    "noise_floor_db": null,
+    "peak_db": -20.0,
+    "rms_db": -23.0,
+    "seconds": 2.0,
+    "silences": [],
+    "speech_level_db": -23.0
+   },
+   "ok": true,
+   "role": "ambience",
+   "where": "rain (ambience)"
+  },
+  {
+   "asset": "a-sfx-b6ac2027",
+   "findings": [],
+   "loudness": null,
+   "metrics": {
+    "active_ratio": 1.0,
+    "channels": 2,
+    "click_count": 0,
+    "clicks_at": [],
+    "clip_at": [],
+    "clip_runs": 0,
+    "dc": 0.0,
+    "dropout_count": 0,
+    "dropouts": [],
+    "mono_loss_db": 0.0,
+    "noise_floor_db": null,
+    "peak_db": -10.3,
+    "rms_db": -13.5,
+    "seconds": 0.5,
+    "silences": [],
+    "speech_level_db": -13.5
+   },
+   "ok": true,
+   "role": "sfx",
+   "where": "hit (sfx)"
+  },
+  {
+   "asset": "a-music-285cb0c0",
+   "findings": [],
+   "loudness": null,
+   "metrics": {
+    "active_ratio": 1.0,
+    "channels": 2,
+    "click_count": 0,
+    "clicks_at": [],
+    "clip_at": [],
+    "clip_runs": 0,
+    "dc": 0.0,
+    "dropout_count": 0,
+    "dropouts": [],
+    "mono_loss_db": 0.0,
+    "noise_floor_db": null,
+    "peak_db": -14.0,
+    "rms_db": -17.0,
+    "seconds": 3.0,
+    "silences": [],
+    "speech_level_db": -17.0
+   },
+   "ok": true,
+   "role": "music",
+   "where": "theme (music)"
+  },
+  {
+   "asset": "a-sfx-b6ac2027",
+   "cue": "q-1d44c9b1",
+   "findings": [
+    {
+     "code": "abrupt_edit",
+     "limit": 0.05,
+     "measured": [
+      0.304,
+      0.3
+     ],
+     "severity": "look",
+     "what": "This sound starts and stops at full level with no fade, which can click. A short fade on the cue usually fixes it.",
+     "where": "hit in scene 1"
+    }
+   ],
+   "metrics": {},
+   "ok": true,
+   "role": "edit",
+   "where": "hit in scene 1"
+  },
+  {
+   "asset": "a-music-285cb0c0",
+   "cue": "q-7256010f",
+   "findings": [
+    {
+     "code": "abrupt_edit",
+     "limit": 0.05,
+     "measured": [
+      0.2,
+      0.2
+     ],
+     "severity": "look",
+     "what": "This sound starts and stops at full level with no fade, which can click. A short fade on the cue usually fixes it.",
+     "where": "theme in scene 1"
+    }
+   ],
+   "metrics": {},
+   "ok": true,
+   "role": "edit",
+   "where": "theme in scene 1"
+  }
+ ],
+ "limits": {
+  "click_jump": 0.15,
+  "click_peak_ratio": 0.6,
+  "click_times_median": 8.0,
+  "clip_fix_runs": 20,
+  "clip_level": 0.999,
+  "clip_look_runs": 1,
+  "clip_min_run": 3,
+  "dc": 0.02,
+  "dropout_fix_count": 3,
+  "dropout_ms": [
+   5,
+   300
+  ],
+  "dropout_neighbour_db": -45.0,
+  "edge_level": 0.05,
+  "edge_ms": 5,
+  "long_silence_s": 2.0,
+  "loudness_target_tolerance_lu": 1.5,
+  "mono_loss_db": -6.0,
+  "noise_voice_db": -45.0,
+  "peak_note_db": -0.1,
+  "silence_db": -70.0,
+  "silent_peak_db": -80.0,
+  "true_peak_look_db": -1.0,
+  "voice_level_min_takes": 3,
+  "voice_level_outlier_db": 6.0
+ },
+ "not_measured": [
+  "How clear the speech is.",
+  "How good anything sounds.",
+  "Whether an accent or a voice is authentic.",
+  "Whether the mouth matches the words.",
+  "How loud the stems are against each other."
+ ],
+ "notes": [],
+ "says": "0 to fix and 3 worth a listen. These are measurements, not a quality score.",
+ "summary": {
+  "files": 7,
+  "fix": 0,
+  "look": 3,
+  "note": 0
+ },
+ "target_lufs": null
+}

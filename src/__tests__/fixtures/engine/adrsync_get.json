@@ -1,0 +1,35 @@
+{
+ "adr": {
+  "needs": true,
+  "reason": "a dog barks"
+ },
+ "ends": "00:00:03:13",
+ "fit": {
+  "class": "audible",
+  "fits": false,
+  "recording": 3.4,
+  "target": 2.975,
+  "tempo": 1.1429,
+  "words": "Speeding it up 14.3% would fit it, but listeners may notice. Listen before you keep it."
+ },
+ "fps": [
+  24,
+  1
+ ],
+ "fps_label": "24",
+ "key": "mama",
+ "offset_frames": 3,
+ "offset_seconds": 0.125,
+ "person": "Mama",
+ "recording": {
+  "file": "voice/S01-02/mama.wav",
+  "seconds": 3.4,
+  "source": "recording"
+ },
+ "runs_past_shot": true,
+ "shot": "S01-02",
+ "shot_ends": "00:00:03:05",
+ "shot_seconds": 3.2,
+ "starts": "00:00:00:03",
+ "starts_before_shot": false
+}
