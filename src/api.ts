@@ -337,6 +337,8 @@ export const api = {
   castVoice: <T = CastStatus>(action: "status" | "library" | "set" | "clear" | "design" | "design_save" | "clone" | "estimate" | "speak" | "preview" | "takes" | "use_take" | "sample" | "ledger" | "ledger_resolve" | "set_limit", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_cast_voice", { action, target, data }),
   /** Perform a line yourself and hear it in a character's voice (filmcrafter_engine.revoice): local, free. `install` needs `confirmed: true`; a real person's reference voice needs `consent: true`. */
   revoice: <T = RevoiceStatus>(action: "status" | "reference" | "revoke" | "convert" | "install", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_revoice", { action, target, data }),
+  /** A vocal performance plan for a line (filmcrafter_engine.performplan). Free; `apply` only sets the spoken version, it speaks and pays for nothing. */
+  performPlan: <T = PerformPlanView>(action: "get" | "set" | "apply" | "clear", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_performplan", { action, target, data }),
   /** A character's voice identity (filmcrafter_engine.voiceid): lock, listening ratings, casting comparison, cast library. Free; sends and pays for nothing. */
   voiceId: <T = VoiceIdOverview>(action: "overview" | "lock" | "unlock" | "rate" | "compare" | "cast_library" | "library_save" | "library_use", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_voiceid", { action, target, data }),
   /** A take recorded in the app (a 16-bit WAV): saved under ~/.filmcrafter/incoming, the path comes back for `voice("import")`. */
@@ -581,7 +583,15 @@ export type BibleMedia = { path: string; kind: string; label: string };
 export type BibleState = { id: string; label: string; notes: string; wardrobe?: string; age?: string };
 export type VoiceProfile = { description: string; age_range: string; accent: string; timbre: string; pace: string; emotional_range: string; delivery: string; notes: string; approved: boolean;
   language?: string; pitch_range?: string; vocal_weight?: string; texture?: string; breathiness?: string; rhythm?: string; articulation?: string; mannerisms?: string; pronunciation?: string };
-export type AccentStatus = { status: "untested" | "accepted" | "mixed" | "not_convincing"; words: string };
+export type PlanArc = { at: number; emotion: string; intensity: number };
+export type PlanEvent = { kind: string; after_word: number; intensity: number };
+export type PlanPause = { after_word: number; ms: number };
+export type PlanPhysical = { activity: string; effort: number; fatigue: number; pain: number; breathlessness: number; note: string };
+export type PerformPlan = { objective: string; subtext: string; outward: string; concealed: string; direction: string; arc: PlanArc[]; events: PlanEvent[]; pauses: PlanPause[]; emphasis: number[]; physical: PlanPhysical; pace: number; approved: boolean };
+export type PlanCompiled = { model: string; tagged: boolean; text: string; tags: string[]; unverified: string[]; not_carried: { what: string; why: string }[]; speed: number; words: string[]; stripped_tags: number };
+export type PerformPlanView = { shot: string; person: string; text: string; words: string[]; plan: PerformPlan; saved: boolean; stale: boolean; compiled: PlanCompiled; applied: boolean; voice_model: string | null;
+  events: Record<string, { tag: string; verified: boolean; group: string }>; emotions: Record<string, { tag: string; verified: boolean }>; activities: string[]; spoken_version?: string };
+export type AccentStatus ={ status: "untested" | "accepted" | "mixed" | "not_convincing"; words: string };
 export type VoiceLock = { voice_id: string; voice_name: string; model: string; made: string; reference_sha256: string | null; at: number };
 export type VoiceIdPerson = { id: string; name: string; key: string; role: string; approved: boolean; voice: { voice_id: string; voice_name: string; model: string; made: string } | null; lock: VoiceLock | null;
   consistency: { state: "ok" | "unlocked" | "changed" | "missing"; problems: string[]; words: string }; accent: AccentStatus; natural: number | null; ratings: number; history: unknown[] };

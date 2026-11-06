@@ -1,4 +1,12 @@
-# QA report: FilmCrafter 0.38.0 (2026-11-06)
+# QA report: FilmCrafter 0.39.0 (2026-11-06)
+
+## 0.39.0: vocal performance plans
+
+TypeScript clean; **765 Vitest tests in 99 files** (7 new in `performanceplanner.dom.test.tsx`); **15 Rust tests**; **2,596 engine tests passed, 8 skipped** (20 new in `tests/test_performplan.py`, run with the network switched off; `tests/test_security.py` confirms the new `film_performplan` command's actions match the engine's). Bandit on `performplan.py`: no findings. Manual review: every value comes from the screen and is cleaned (known sounds only, positions that do not exist are dropped rather than moved, numbers clamped, lists and text capped, a feeling written by the person has everything but letters, digits, space, apostrophe and hyphen removed so it cannot break out of a `[tag]`); no file path or subprocess; records written atomically with the app's safe writer; applying a plan needs a saved, approved plan made for the line's current words and only sets the spoken version, so nothing is spoken or paid for, and Speak this keeps its own price and yes. The installers built (0.39.0 setup and MSI). `rafter run` could not be used (quota).
+
+**Not tested:** any spoken result (no ElevenLabs call was made): whether `[tags]` such as grunts, winces or a named feeling do what they say, how a feeling change inside a line sounds, whether capitals stress a word; the planner on a real film; Windows scaling or screen-reader use of the new panel.
+
+## 0.38.0: voice identity
 
 ## 0.38.0: voice identity
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.39.0 (2026-11-06)
+
+- **Vocal performance plans (free).** In Line Studio, **Direct the performance** plans one line: what the person wants, what is under the words, the feeling shown and hidden, how the feeling changes inside the line, where breaths, laughs, groans and efforts fall, pauses, stressed words, and how the body (running, lifting, injured, tired) affects the voice. The plan is compiled for the line's own model: Eleven v4/v3 get `[tags]`, capitals and pauses; other models get only pauses, and what they cannot carry is listed with the reason instead of being faked. Tags that have not been confirmed on a real run are marked "not checked". **Use as the spoken version** needs an approved plan made for the line's current words; it speaks and spends nothing, and Speak this still shows its price first. Tested without speaking anything; nobody has heard a compiled line yet. See `docs/VOCAL_PERFORMANCE.md`.
+
 ## 0.38.0 (2026-11-06)
 
 - **Voice identity (free, local).** On Sound & Music > Voices, each character now has a **Voice identity** panel: nine more profile fields (language, pitch range, vocal weight, texture, breathiness, rhythm, articulation, vocal habits, pronunciation notes); a **lock** that records the approved voice, speech model and reference voice and says in plain words if any of them changes; **listening ratings** for accent and naturalness (the accent status is your judgement, never a measurement); a **casting comparison** of voices from your library with why they fit, a free sample, an audition cost estimate, a licence reminder and your earlier ratings; and a **cast library** to keep a character on this computer and use it in another film (a cloned voice asks for the owner's agreement again; an approved voice is replaced only after a yes). Nothing chooses, changes or pays for a voice by itself. Tested with the network switched off; no real ElevenLabs call was made. See `docs/VOICE_IDENTITY.md`.

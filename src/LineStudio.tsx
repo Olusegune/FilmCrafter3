@@ -6,6 +6,7 @@ import { ask } from "./ask";
 import { priceWords, VoiceMaker } from "./CastVoices";
 import { VoiceRecorder } from "./VoiceRecorder";
 import { Revoice } from "./Revoice";
+import { PerformancePlanner } from "./PerformancePlanner";
 import { Waveform } from "./Waveform";
 import { notifyVoice, useCast, useVoiceStatus } from "./voiceHooks";
 import { aiAskWords } from "./soundWords";
@@ -192,6 +193,7 @@ export function LineEditor({ dir, shotId, who }: { dir: string; shotId: string; 
               </div>))}
           </div>}
         </section>
+        <PerformancePlanner dir={dir} shotId={shotId} who={who} onChanged={() => { void loadSpoken().then((m) => { if (m) setText(m.text); }); }} />
         <Revoice dir={dir} shotId={shotId} who={who} takes={takes} onChanged={loadTakes} />
         {err && <p className="error-text" role="alert">{err}</p>}
         <p className="dim vr-hint">Nothing is deleted: a take or recording you replace is kept in the film's voice/_removed folder.</p>
