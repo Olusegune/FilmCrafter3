@@ -1,4 +1,10 @@
-# QA report: FilmCrafter 0.39.0 (2026-11-06)
+# QA report: FilmCrafter 0.40.0 (2026-11-06)
+
+## 0.40.0: sound design (soundscapes and Foley)
+
+TypeScript clean; **774 Vitest tests in 100 files** (9 new in `sounddesign.dom.test.tsx`); **15 Rust tests**; **2,619 engine tests passed, 8 skipped** (23 new in `tests/test_sounddesign.py`; `tests/test_security.py` confirms the new `film_sounddesign` command's actions match the engine's; the existing 52 cue and mix tests still pass with the new `pan`). The new tests run the real mixer on real audio: a sound panned left or right is louder on that side, a far sound is 14 dB quieter than a near one, cues made before `pan` existed still mix in the centre. Bandit on `sounddesign.py`: no findings. Manual review: every value comes from the screen and is cleaned (known distances and sides only, numbers clamped, lists and text capped, a named library sound must exist in the film's library), no subprocess, no file path from the screen, records written atomically with the app's safe writer, nothing is deleted (a removed event moves aside and its cue is removed from the plan; the sound file stays), the suggestion rules read text with fixed patterns (no model, no network). One bug found and fixed while testing: a regular expression written through a shell heredoc lost its `` and silently never matched, so who performed a sound was wrong; the test for attribution now covers it. The installers built (0.40.0 setup and MSI). `rafter run` could not be used (quota).
+
+**Not tested:** anything by ear (timing guesses; the 0 / -6 / -14 dB distance steps; the balance); suggestions on real screenplays beyond the test scripts; the panel on a real film; Windows scaling or screen-reader use of the new panel.
 
 ## 0.39.0: vocal performance plans
 

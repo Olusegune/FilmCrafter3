@@ -337,6 +337,8 @@ export const api = {
   castVoice: <T = CastStatus>(action: "status" | "library" | "set" | "clear" | "design" | "design_save" | "clone" | "estimate" | "speak" | "preview" | "takes" | "use_take" | "sample" | "ledger" | "ledger_resolve" | "set_limit", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_cast_voice", { action, target, data }),
   /** Perform a line yourself and hear it in a character's voice (filmcrafter_engine.revoice): local, free. `install` needs `confirmed: true`; a real person's reference voice needs `consent: true`. */
   revoice: <T = RevoiceStatus>(action: "status" | "reference" | "revoke" | "convert" | "install", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_revoice", { action, target, data }),
+  /** Sound design for a scene (filmcrafter_engine.sounddesign): soundscape profiles and Foley events, put into the film as ordinary cues. Free and local. */
+  soundDesign: <T = SoundDesignScene>(action: "scene" | "profile_set" | "suggest" | "event_add" | "event_update" | "event_remove" | "candidates" | "to_cues", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_sounddesign", { action, target, data }),
   /** A vocal performance plan for a line (filmcrafter_engine.performplan). Free; `apply` only sets the spoken version, it speaks and pays for nothing. */
   performPlan: <T = PerformPlanView>(action: "get" | "set" | "apply" | "clear", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_performplan", { action, target, data }),
   /** A character's voice identity (filmcrafter_engine.voiceid): lock, listening ratings, casting comparison, cast library. Free; sends and pays for nothing. */
@@ -583,6 +585,13 @@ export type BibleMedia = { path: string; kind: string; label: string };
 export type BibleState = { id: string; label: string; notes: string; wardrobe?: string; age?: string };
 export type VoiceProfile = { description: string; age_range: string; accent: string; timbre: string; pace: string; emotional_range: string; delivery: string; notes: string; approved: boolean;
   language?: string; pitch_range?: string; vocal_weight?: string; texture?: string; breathiness?: string; rhythm?: string; articulation?: string; mannerisms?: string; pronunciation?: string };
+export type AmbienceLayer = { id: string; name: string; distance: "near" | "mid" | "far"; level_db: number; asset_id: string | null; loop: boolean; description: string; cue_id: string | null; placement: { gain_db: number; pan: number }; cue: { approval: string } | null };
+export type SoundProfile = { interior: boolean | null; weather: string; time_of_day: string; room_size: string; materials: string[]; surfaces: string[]; reverb: string; layers: Omit<AmbienceLayer, "placement" | "cue">[]; recurring: string; notes: string };
+export type FoleyEvent = { id: string; scene: number; shot: string; action: string; source_object: string; by: string; material: string; surface: string; distance: "near" | "mid" | "far"; side: "left" | "centre" | "right"; perspective: string;
+  intensity: number; start: number; duration: number | null; asset_id: string | null; variations: string[]; approval: "suggested" | "approved" | "rejected"; note: string; motivated_by: string; source: string; cue_id: string | null; placement: { gain_db: number; pan: number }; cue: { approval: string } | null };
+export type FoleyProposal = Pick<FoleyEvent, "action" | "source_object" | "by" | "material" | "surface" | "intensity" | "distance" | "side" | "start" | "motivated_by">;
+export type SoundDesignScene = { scene: number; environment: { id: string; name: string } | null; profile: SoundProfile | null; layers: AmbienceLayer[]; events: FoleyEvent[]; shots: { id: string; duration: number }[];
+  coverage: { events: number; approved: number; without_sound: string[]; layers: number; layers_without_sound: string[]; has_profile: boolean; environment: string | null }; made?: string[]; updated?: string[]; waiting?: { kind: string; id: string; name: string }[] };
 export type PlanArc = { at: number; emotion: string; intensity: number };
 export type PlanEvent = { kind: string; after_word: number; intensity: number };
 export type PlanPause = { after_word: number; ms: number };

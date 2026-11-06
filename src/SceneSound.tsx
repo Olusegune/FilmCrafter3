@@ -1,3 +1,4 @@
+import { SoundDesign } from "./SoundDesign";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, errorText, type AiPrice, type AudioLibrary, type CueList, type MixPreview, type MixSettings, type RightsReport, type SoundIdea, type SoundIdeas, type Cue } from "./api";
 import { notifyCues } from "./CueLanes";
@@ -76,6 +77,8 @@ export function SceneSound({ dir }: { dir: string }) {
 
       {dialogue.length > 0 && <section><h3>Dialogue <span className="dim">your voice files, shown here so you see the whole scene</span></h3>
         <ul className="ss-cues dlg">{dialogue.map((x) => <li key={x.id}><b>{x.speaker}</b> <span className="dim">{x.shot} · {x.source === "elevenlabs" ? "spoken by ElevenLabs" : "your recording"}</span> <q>{x.text}</q></li>)}</ul></section>}
+
+      <SoundDesign dir={dir} scene={scene} assets={assets} onChanged={() => void reload()} />
 
       <section>
         <h3>How it is mixed <span className="dim">for the whole film</span></h3>

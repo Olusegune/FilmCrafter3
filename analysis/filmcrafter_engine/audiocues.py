@@ -198,6 +198,8 @@ def _clean_fields(c: dict, data: dict, shots: dict) -> None:
         c["duration"] = None if data["duration"] in (None, "", 0) else round(_num(data["duration"], 0.1, 36000, 1.0, "The length"), 2)
     if "gain_db" in data:
         c["gain_db"] = round(_num(data["gain_db"], GAIN[0], GAIN[1], 0.0, "The level"), 1)
+    if "pan" in data:
+        c["pan"] = round(_num(data["pan"], -1.0, 1.0, 0.0, "The pan"), 2)          # -1 all left, 0 centre, 1 all right (a balance, not a 3D position)
     for k in ("fade_in", "fade_out"):
         if k in data:
             c[k] = round(_num(data[k], 0, FADE_MAX, 0.0, "The fade"), 2)
@@ -250,7 +252,7 @@ def add(d: str, data: dict) -> dict:
         while cid in taken:
             cid = f"q-{uuid.uuid4().hex[:8]}"
         now = int(time.time())
-        c = {"id": cid, "kind": kind, "asset_id": asset["id"] if asset else None, "scene": 0, "shot": None, "start": 0.0, "duration": None, "gain_db": 0.0, "fade_in": 0.0, "fade_out": 0.0,
+        c = {"id": cid, "kind": kind, "asset_id": asset["id"] if asset else None, "scene": 0, "shot": None, "start": 0.0, "duration": None, "gain_db": 0.0, "pan": 0.0, "fade_in": 0.0, "fade_out": 0.0,
              "loop": bool(asset and asset.get("category") == "ambience"), "ducking": "auto", "muted": False, "approval": approval, "note": "", "source": src, "created": now, "updated": now}
         if "scene" not in data and "shot" not in data:
             raise SystemExit("Choose the scene or the shot this belongs to.")

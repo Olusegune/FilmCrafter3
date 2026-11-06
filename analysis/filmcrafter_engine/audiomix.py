@@ -150,8 +150,16 @@ def placements(d: str, shot_times: dict, duration: float, st: dict | None = None
             continue
         duck = c.get("ducking") == "on" or (c.get("ducking", "auto") == "auto" and lane in ("music", "ambience"))
         out.append({"cue": cid, "path": path, "start": start, "end": end, "gain": 10 ** (float(c.get("gain_db") or 0) / 20), "fade_in": float(c.get("fade_in") or 0), "fade_out": float(c.get("fade_out") or 0),
-                    "loop": bool(c.get("loop")), "duck": duck, "asset_seconds": float(a["seconds"]), "lane": lane})
+                    "loop": bool(c.get("loop")), "duck": duck, "asset_seconds": float(a["seconds"]), "lane": lane, "pan": max(-1.0, min(1.0, float(c.get("pan") or 0)))})
     return out, skipped
+
+
+def pan_gains(pan: float):
+    """Left and right gains for a balance from -1 (all left) to 1 (all right): the centre is untouched, and the far side fades out smoothly (a cosine law), so a sound never gets louder by moving.
+    This is a stereo balance, not a 3D position and not a spatial-audio format."""
+    import numpy as np
+    p = max(-1.0, min(1.0, float(pan)))
+    return np.array([1.0 if p <= 0 else np.cos(p * np.pi / 2), 1.0 if p >= 0 else np.cos(-p * np.pi / 2)], dtype=np.float32)
 
 
 def film_of(d: str) -> str | None:
@@ -308,6 +316,8 @@ def mix_cues(d: str, base_path: str | None, shot_times: dict, duration: float, o
                         continue
                     seg = sources[p["path"]].get((a - s0) / RATE, b - a, p["loop"])
                     seg = seg * _fade_gain(a, b - a, s0, s1, int(p["fade_in"] * RATE), int(p["fade_out"] * RATE))[:, None] * np.float32(p["gain"])
+                    if p.get("pan"):
+                        seg = seg * pan_gains(p["pan"])[None, :]
                     (ducked if p["duck"] else plain)[a - i0:b - i0] += seg
                 env = duck_envelope(spans, i0 / RATE, n, st)
                 mix += plain + ducked * env[:, None]
