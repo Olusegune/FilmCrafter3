@@ -1,4 +1,10 @@
-# QA report: FilmCrafter 0.40.1 (2026-11-06)
+# QA report: FilmCrafter 0.41.0 (2026-11-06)
+
+## 0.41.0: audio quality inspector
+
+TypeScript clean; **790 Vitest tests in 102 files** (7 new in `audiocheck.dom.test.tsx`); **15 Rust tests**; **2,642 engine tests passed, 8 skipped** (23 new in `tests/test_audioqa.py`; `tests/test_security.py` confirms the new `film_audioqa` command's actions match the engine's). The new tests measure synthetic sound with known faults (clipped, dropouts, a step discontinuity, cancelling channels, a long silence, steady noise under a voice-like signal) and clean sound that must report nothing, use the real ffmpeg loudness meter on real files, and hash the whole film before and after to show the inspector changes nothing. Bandit on `audioqa.py`: no findings. Manual review: read-only (it opens files only for reading and writes none), a file named by the screen must be inside the film or a full path (a relative path is checked with `inside`, `..` refused) and is passed to ffmpeg as an argument, never through a shell; recordings and cue sounds are capped at 60 each and a file over an hour is refused; a damaged or unreadable file is reported as a finding, never raised. Found while testing and fixed: the noise-floor rule first used an absolute loudness cut-off that counted a noisy voice's pauses as speech, so the noise was never reported; it now compares with the loud parts of the same recording. `rafter run` could not be used (quota).
+
+**Not tested:** real recordings, music or ambience (all limits are rules of thumb chosen for this tool and may over- or under-report on real material); a long film; the panel on a real film; Windows scaling or screen-reader use of the new panel.
 
 ## 0.40.1: scrubbing updates the picture
 

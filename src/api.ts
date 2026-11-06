@@ -337,6 +337,8 @@ export const api = {
   castVoice: <T = CastStatus>(action: "status" | "library" | "set" | "clear" | "design" | "design_save" | "clone" | "estimate" | "speak" | "preview" | "takes" | "use_take" | "sample" | "ledger" | "ledger_resolve" | "set_limit", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_cast_voice", { action, target, data }),
   /** Perform a line yourself and hear it in a character's voice (filmcrafter_engine.revoice): local, free. `install` needs `confirmed: true`; a real person's reference voice needs `consent: true`. */
   revoice: <T = RevoiceStatus>(action: "status" | "reference" | "revoke" | "convert" | "install", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_revoice", { action, target, data }),
+  /** The audio quality inspector (filmcrafter_engine.audioqa): objective measurements of the film's sound, as things to listen to. Free, local, read-only. */
+  audioQa: <T = AudioQaReport>(action: "film" | "inspect", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_audioqa", { action, target, data }),
   /** Sound design for a scene (filmcrafter_engine.sounddesign): soundscape profiles and Foley events, put into the film as ordinary cues. Free and local. */
   soundDesign: <T = SoundDesignScene>(action: "scene" | "profile_set" | "suggest" | "event_add" | "event_update" | "event_remove" | "candidates" | "to_cues", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_sounddesign", { action, target, data }),
   /** A vocal performance plan for a line (filmcrafter_engine.performplan). Free; `apply` only sets the spoken version, it speaks and pays for nothing. */
@@ -585,6 +587,9 @@ export type BibleMedia = { path: string; kind: string; label: string };
 export type BibleState = { id: string; label: string; notes: string; wardrobe?: string; age?: string };
 export type VoiceProfile = { description: string; age_range: string; accent: string; timbre: string; pace: string; emotional_range: string; delivery: string; notes: string; approved: boolean;
   language?: string; pitch_range?: string; vocal_weight?: string; texture?: string; breathiness?: string; rhythm?: string; articulation?: string; mannerisms?: string; pronunciation?: string };
+export type QaFinding = { severity: "fix" | "look" | "note"; code: string; where: string; what: string; measured: unknown; limit: unknown; person?: string; confidence?: "low" | "high" };
+export type QaItem = { where: string; role: string; ok: boolean; why?: string; findings: QaFinding[]; loudness?: { lufs: number; range_lu: number | null; true_peak_db: number | null } | null; metrics?: { seconds?: number; peak_db?: number } };
+export type AudioQaReport = { summary: { fix: number; look: number; note: number; files: number }; items: QaItem[]; consistency: QaFinding[]; target_lufs: number | null; not_measured: string[]; notes: string[]; says: string };
 export type AmbienceLayer = { id: string; name: string; distance: "near" | "mid" | "far"; level_db: number; asset_id: string | null; loop: boolean; description: string; cue_id: string | null; placement: { gain_db: number; pan: number }; cue: { approval: string } | null };
 export type SoundProfile = { interior: boolean | null; weather: string; time_of_day: string; room_size: string; materials: string[]; surfaces: string[]; reverb: string; layers: Omit<AmbienceLayer, "placement" | "cue">[]; recurring: string; notes: string };
 export type FoleyEvent = { id: string; scene: number; shot: string; action: string; source_object: string; by: string; material: string; surface: string; distance: "near" | "mid" | "far"; side: "left" | "centre" | "right"; perspective: string;
