@@ -1,6 +1,4 @@
-import { FilmRail } from "./FilmRail";
-import * as I from "./icons";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { api, errorText, type AgentImpact, type AgentStudioState, type DirectorStyle, type LoadedProject } from "./api";
 import { DirectorChat } from "./DirectorChat";
@@ -16,7 +14,7 @@ const VISUAL_STYLES = [
 type MediaModel = { label: string; provider: string; model: string; price_usd?: number | null };
 type AudioProvider = { id: string; label: string; kind: "sfx" | "music"; cost_words: string };
 
-export function AgentStudio({ project, onManual, onHome, onSettings }: { project: LoadedProject; onManual: () => void; onHome: () => void; onSettings?: () => void }) {
+export function AgentStudio({ project, onManual, onHome, rail }: { project: LoadedProject; onManual: () => void; onHome: () => void; onSettings?: () => void; rail?: ReactNode }) {
   const [state, setState] = useState<AgentStudioState | null>(null);
   const [draft, setDraft] = useState<AgentStudioState["brief"] | null>(null);
   const [editing, setEditing] = useState(false);
@@ -70,7 +68,7 @@ export function AgentStudio({ project, onManual, onHome, onSettings }: { project
     if (typeof f === "string") setError("The script is attached to the project in Manual Studio. Paste its story text here so Agent Studio can plan from it.");
   };
   return <div className="agent-shell">
-    <FilmRail onHome={onHome} onSettings={onSettings} items={[{ id: "studio", label: "Studio", icon: <I.Studio />, onClick: onManual, title: "Manual Studio: the timeline and every tool" }, { id: "agent", label: "AI Agent", icon: <I.Wand />, active: true, title: "AI Agent: you are here" }]} />
+    {rail}
     <header className="agent-header">
       <button className="agent-brand" onClick={onHome}>FilmCrafter</button><span className="agent-divider" />
       <span className="agent-project">Project: <b>{project.project.title}</b></span>

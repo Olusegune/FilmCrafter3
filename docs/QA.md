@@ -1,4 +1,8 @@
-# QA report: FilmCrafter 0.45.0 (2026-11-06)
+# QA report: FilmCrafter 0.46.0 (2026-11-06)
+
+## 0.46.0: one menu rail, dialogs that do not clip
+
+Front-end only: TypeScript clean; all Vitest tests pass (the rail has 10 component tests, including that every tool is handled by the Studio and that no screen builds its own rail); two older source-level tests were updated because the rail moved into one file. No engine or shell change, so the engine suite was not re-run for this release (last run, 0.45.0: 2,743 collected, 7 skipped, none failed). **Not seen on screen by me:** the browser preview does not cover film screens, so the rail layout, the hand-off from a film screen to a Studio tool, and the dialog fix (a CSS change for the clipping in your screenshot) are checked by tests and by reading the styles, not by looking at the installed app.
 
 ## 0.45.0: music director
 

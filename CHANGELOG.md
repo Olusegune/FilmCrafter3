@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.46.0 (2026-11-06)
+
+- **One menu rail on every screen of a film.** The left rail is now a single component used by the Story, Cast, Shots, Studio and Export steps, the timeline Studio and Agent Studio, so it no longer changes as you move around. Top to bottom: Home, the steps of the golden path in order (a tick on finished steps, a dot on the next one), the tools (Project, Library, Looks, Review, AI Agent, and under More: Supervisor, Acting, Continuity, Layers, Lighting, Presets, Color, Colour match, Clean up), then Settings. A tool that cannot act yet (it needs a shot plan) is greyed with the reason, never hidden. Pressing a tool on any screen takes you to the timeline Studio with that tool already open. Home is the only screen without the rail.
+- **Dialogs no longer clip in a small window.** Line Studio and the other scrolling dialogs (first-film guide, costs, materials, action, pacing, shot plan, readiness) kept their sections at full height but shrank them when the window was short, cutting text off. They now scroll, and Line Studio's title and close button stay in view.
+
 ## 0.45.0 (2026-11-06)
 
 - **Music director (free, local).** Sound & Music > Scenes > **Music director**: motifs (musical ideas tied to a character, place or theme), spotting per scene (music, music in the world, or silence on purpose, from which shot to which, with an energy arc), a free **suggest from the scene** that names the words it acted on (and proposes silence when nothing calls for music), the words to ask a music maker with (nothing is sent), a search of your library, and **records** of who approved or revoked which music, for which scenes, with a licence note and history. **Put into the film** turns approved spots that have music into ordinary music cues; music whose licence says commercial use is not allowed is never put in. A report lists scenes with no decision, unused motifs, big energy jumps and music with no recorded decision. Nothing is generated or paid for. Details and limits: `docs/MUSIC_DIRECTOR.md`.

@@ -1,7 +1,7 @@
 /** "Your first film": the order a film is made in, worked out from what the film already has. No screen code, nothing here spends or changes anything. */
 import type { FilmProgress } from "./api";
 
-export type StudioSheet = "presets" | "smart" | "color" | "motion" | "polish";           // "polish" is the three finishing sheets one after another
+export type StudioSheet = "presets" | "smart" | "color" | "motion" | "polish" | import("./FilmRail").ToolId;           // "polish" is the three finishing sheets one after another
 export type StepId = "story" | "materials" | "cast" | "look" | "voices" | "cut" | "grade" | "titles" | "shots" | "pictures" | "video" | "sound" | "export";
 export type StepStatus = "done" | "next" | "later";
 export type Step = {

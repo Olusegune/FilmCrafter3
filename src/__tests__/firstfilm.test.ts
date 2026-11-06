@@ -34,7 +34,7 @@ describe("first-film guide steps", () => {
     const all = buildSteps(facts({ pro: true, progress: prog({ story: { locked: true, as_is: false }, cast: { characters: 1, places: 1, style: true }, shots: { count: 3 }, make: { shots: 3, keyframe: 3, video: 3 } }), voices: { people: 0, recorded: 0 }, exported: true }));
     expect(nextStep(all)).toBeNull();                                                      // a finished film is not held up by an optional tool
     const studio = readFileSync("src/Studio.tsx", "utf8");
-    for (const f of finish) expect(studio).toContain(`${f.go.slice(7)}: set`);               // the Studio opens each one on arrival
+    for (const f of finish) expect(studio.includes(`${f.go.slice(7)}: set`) || studio.includes(`case "${f.go.slice(7)}": set`)).toBe(true);               // the Studio opens each one on arrival
     const order = s.map((x) => x.id);
     expect(order.indexOf("look")).toBeLessThan(order.indexOf("pictures"));                  // a preset is offered before anything is made
     expect(order.indexOf("cut")).toBeGreaterThan(order.indexOf("video"));

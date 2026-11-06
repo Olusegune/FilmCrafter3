@@ -5,7 +5,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { toggleShotSound } from "./ShotSound";
 import { Palette, type Command } from "./Palette";
 import { PlayerOverlays } from "./PlayerOverlays";
-import { api, errorText, fmtTime, type BoardShot, type LoadedProject, type Plan, type Scene, type Shot, type SongMap } from "./api";
+import { api, errorText, fmtTime, type BoardShot, type FilmProgress, type LoadedProject, type Plan, type Scene, type Shot, type SongMap } from "./api";
 import * as I from "./icons";
 import { ACTIVE_STATES, ConfirmRender, defaultProvider, JobChip, latestJobs, RenderPanel } from "./Render";
 import { AUTO_MODEL, type Job, type KeyStatus, type Overlay, type ShotHistory, type StyleBibleRead } from "./api";
@@ -59,6 +59,7 @@ import { ScriptSheet } from "./ScriptSheet";
 import { DockCtx } from "./Dock";
 import { ASPECTS, aspectCss, PROJECT_EVENT, QUALITY, saveFrame } from "./frame";
 import { filmDirOfRender } from "./filmPaths";
+import { FilmRail, railSteps, type ToolId } from "./FilmRail";
 import { VoiceoverSheet } from "./VoiceoverSheet";
 import { speakers, VHEAD_H, VLANE_H, VOICE_ROWS, VOICE_ROWS_MAX, VoiceLanes } from "./VoiceLanes";
 import { CHEAD_H, CLANE_H, CueLanes, cueLaneKinds, useCues } from "./CueLanes";
@@ -191,7 +192,8 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
   useEffect(() => {
     if (!startSheet) return;
     if (startSheet === "polish") polishNext(["smart", "color", "motion"]);
-    else ({ presets: setPresetsOpen, smart: setSmartOpen, color: setColorOpen, motion: setMotionOpen })[startSheet](true);
+    else if (startSheet === "smart" || startSheet === "motion") ({ smart: setSmartOpen, motion: setMotionOpen })[startSheet](true);
+    else openTool(startSheet);
     onStartSheetShown?.();
   }, [startSheet]);                                                              // eslint-disable-line react-hooks/exhaustive-deps
   const closeThen = (set: (v: boolean) => void) => () => { set(false); if (polishLeft.length) polishNext(polishLeft); };
@@ -247,8 +249,6 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
   const [approvingKf, setApprovingKf] = useState(false);
   const styles = useStyles();
   // the rail shows the path (Studio, Review, Export) and keeps the other tools behind "More" until Director Mode, which always shows them; the choice is remembered
-  const [moreTools, setMoreTools] = useState(() => { try { return localStorage.getItem("pf-rail-more") === "1"; } catch { return false; } });
-  const toggleMoreTools = () => setMoreTools((v) => { try { localStorage.setItem("pf-rail-more", v ? "0" : "1"); } catch { /* remembering it is a convenience only */ } return !v; });
   // the shots and scenes that are played in a look of their own (stylebible.py); a read, never a render
   const [ownLooks, setOwnLooks] = useState<StyleBibleRead | null>(null);
   const [shotLookFor, setShotLookFor] = useState<string | null>(null);
@@ -513,44 +513,35 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
     catch (e) { setError(errorText(e)); }
   };
 
-  if (workspace === "agent") return <AgentStudio project={{ ...project, jobs }} onHome={onHome} onSettings={onSettings} onManual={() => chooseWorkspace("manual")} />;
+  const openTool = (id: ToolId) => {                                    // a tool of the rail, opened here; the same tools open from every other screen of the film by coming here with the tool already open
+    switch (id) {
+      case "project": setWorkspace("manual"); setSel(null); setInspector(true); break;
+      case "library": setLibraryOpen(true); break;
+      case "looks": setDlOpen(true); break;
+      case "review": setReviewing(true); break;
+      case "agent": chooseWorkspace("agent"); break;
+      case "supervisor": setSupOpen(true); break;
+      case "acting": setPerfOpen(true); break;
+      case "continuity": setContOpen(true); break;
+      case "layers": setLayersOpen((v) => !v); break;
+      case "lighting": setLightOpen(true); break;
+      case "presets": setPresetsOpen(true); break;
+      case "color": setColorOpen(true); break;
+      case "colourmatch": setColourOpen(true); break;
+      case "clean": setCleanOpen(true); break;
+    }
+  };
+  const railProgress = useRailProgress(isFilm ? filmDirOfRender(project.dir) : null);
+  const rail = <FilmRail hasShots={!!plan} onHome={onHome} onSettings={onSettings} onTool={openTool} alwaysMore={director || layersOpen} activeTool={layersOpen ? "layers" : workspace === "agent" ? "agent" : null}
+                         badges={{ review: shots.filter((s) => needsAttention(takes.get(s.id))).length }}
+                         steps={railSteps({ pro: director, progress: railProgress, active: "make", disabled: plan ? undefined : { export: "Needs a shot plan first: press Direct My Video." },
+                                            go: (id) => { if (id === "export") setExporting(true); else if (id === "make") { if (workspace === "agent") chooseWorkspace("manual"); } else if (onFilm) onFilm(id); } })} />;
+  if (workspace === "agent") return <AgentStudio project={{ ...project, jobs }} onHome={onHome} onSettings={onSettings} rail={rail} onManual={() => chooseWorkspace("manual")} />;
 
   return (
     <div className={`studio ${focus ? "focus" : ""}`}>
       {focus && <button className="btn ghost focus-exit" onClick={() => setFocusMode(false)}>Exit full screen (Esc)</button>}
-      <nav className="rail" aria-label="Main">
-        <div className="logo"><I.Mark size={26} /></div>
-        <RailBtn icon={<I.Home />} label="Home" onClick={onHome} />
-        {isFilm && onFilm && <>
-          <RailBtn icon={<I.Folder />} label="Story" onClick={() => onFilm("story")} why="Back to the story step" />
-          <RailBtn icon={<I.User />} label="Cast" onClick={() => onFilm("cast")} why="Back to cast and world" />
-          {director && <RailBtn icon={<I.Film />} label="Shots" onClick={() => onFilm("shots")} why="Back to the shot list" />}
-        </>}
-        <RailBtn icon={<I.Folder />} label="Project" onClick={() => { setSel(null); setInspector(true); }} />
-        <RailBtn icon={<I.Assets />} label="Library" onClick={() => setLibraryOpen(true)} />
-        <RailBtn icon={<I.Studio />} label="Studio" active />
-        <RailBtn icon={<I.Wand />} label="AI Agent" onClick={() => chooseWorkspace("agent")} why="Give FilmCrafter an instruction, review its plan and approve production milestones." />
-        <RailBtn icon={<I.Mountain />} label={isFilm ? "Looks" : "Directions"} onClick={() => setDlOpen(true)} />
-        <RailBtn icon={<I.Review />} label="Review" onClick={() => setReviewing(true)} disabled={!plan}
-                 badge={shots.filter((s) => needsAttention(takes.get(s.id))).length} />
-        <RailBtn icon={<I.Export />} label="Export" onClick={() => setExporting(true)} disabled={!plan} why="Needs a shot plan first: press Direct My Video." />
-        {!director && <RailBtn icon={<I.Sliders />} label={moreTools ? "Fewer" : "More"} onClick={toggleMoreTools} expanded={moreTools} className="rail-more"
-                               why="The tools a first film does not need: Supervisor, Acting, Continuity, Layers, Lighting, Colour match and Clean up. Director Mode always shows them." />}
-        {(director || moreTools || layersOpen) && <>
-          <div className="rail-sep" role="separator" />
-          <RailBtn icon={<I.Wand />} label="Supervisor" onClick={() => setSupOpen(true)} disabled={!plan} why="Needs a shot plan first: press Direct My Video." />
-          <RailBtn icon={<I.User />} label="Acting" onClick={() => setPerfOpen(true)} disabled={!plan} why="Needs a shot plan first: press Direct My Video." />
-          <RailBtn icon={<I.Film />} label="Continuity" onClick={() => setContOpen(true)} disabled={!plan} why="Needs a shot plan first: press Direct My Video." />
-          <RailBtn icon={<I.Layers />} label="Layers" onClick={() => setLayersOpen((v) => !v)} active={layersOpen} disabled={!plan} why="Needs a shot plan first: press Direct My Video." />
-          <RailBtn icon={<I.Light />} label="Lighting" onClick={() => setLightOpen(true)} disabled={!plan} why="Needs a shot plan first: press Direct My Video." />
-          <RailBtn icon={<I.Wand />} label="Presets" onClick={() => setPresetsOpen(true)} disabled={!plan} why="Needs a shot plan first." />
-          <RailBtn icon={<I.Sliders />} label="Color" onClick={() => setColorOpen(true)} disabled={!plan} why="Needs a shot plan first." />
-          <RailBtn icon={<I.Lens />} label="Colour match" onClick={() => setColourOpen(true)} disabled={!plan} why="Needs a shot plan first: press Direct My Video." />
-          <RailBtn icon={<I.Trash />} label="Clean up" onClick={() => setCleanOpen(true)} disabled={!plan} why="Needs a shot plan first: press Direct My Video." />
-        </>}
-        <div className="spacer" />
-        <RailBtn icon={<I.Gear />} label="Settings" onClick={onSettings} />
-      </nav>
+      {rail}
 
       <main className="center">
         <header className="topbar" ref={barRef}>
@@ -873,13 +864,6 @@ const aspectNum = (r?: string) => {
   return m ? String(Number(m[1]) / Number(m[2])) : String(16 / 9);
 };
 
-function RailBtn({ icon, label, active, disabled, onClick, badge, why, expanded, className }: {
-  icon: React.ReactNode; label: string; active?: boolean; disabled?: boolean; onClick?: () => void; badge?: number; why?: string; expanded?: boolean; className?: string;
-}) {
-  return <button className={[active ? "active" : "", className ?? ""].filter(Boolean).join(" ")} data-k={label.toLowerCase()} disabled={disabled} onClick={onClick}
-                 title={(disabled || expanded !== undefined) && why ? `${label}: ${why}` : label} aria-current={active ? "page" : undefined} aria-expanded={expanded}>
-    {icon}<span>{label}</span>{badge ? <i className="rail-badge" aria-label={`${badge} need attention`}>{badge}</i> : null}</button>;
-}
 
 export function StateChip({ shot }: { shot: Shot }) {
   if (shot.flags?.length) return <span className="chip review"><I.Alert size={12} /> Needs review</span>;
@@ -1377,4 +1361,11 @@ function ProjectSettingsRow({ project }: { project: LoadedProject }) {
       {err && <div className="error-text">{err}</div>}
     </div>
   );
+}
+
+/** How far the film is (what the rail's ticks and dot are drawn from). Missing or failing quietly: the rail then shows no ticks. */
+function useRailProgress(filmDir: string | null): FilmProgress | null {
+  const [p, setP] = useState<FilmProgress | null>(null);
+  useEffect(() => { if (filmDir) api.make<FilmProgress>("progress", filmDir).then(setP).catch(() => {}); }, [filmDir]);
+  return p;
 }

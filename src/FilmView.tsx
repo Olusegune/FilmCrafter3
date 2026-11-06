@@ -9,7 +9,7 @@ import { CastWorld } from "./CastWorld";
 import { ShotLab } from "./ShotLab";
 import { MakeFilm, type MakeTab } from "./MakeFilm";
 import { FirstFilm } from "./FirstFilm";
-import { FilmRail, type RailItem } from "./FilmRail";
+import { FilmRail, railSteps } from "./FilmRail";
 import type { StudioSheet } from "./guideSteps";
 import { NextStep } from "./NextStep";
 import { SpendingSheet } from "./SpendingSheet";
@@ -96,15 +96,11 @@ export function FilmView({ dir, onHome, onSettings, onStudio, initialStage }: { 
     await run("lock", () => api.film<FilmStatus>("lock", dir, { version: f.version }));
   };
 
-  const railIcon: Record<string, import("react").ReactNode> = { story: <I.Folder />, cast: <I.User />, shots: <I.Film />, make: <I.Studio />, export: <I.Export /> };
-  const doneIds = STAGES.filter((s) => stageDone(s.id, progress)).map((s) => s.id);
-  const firstTodo = STAGES.filter((s) => studio || s.id !== "shots").find((s) => !doneIds.includes(s.id) && s.id !== "export")?.id;
-  const railItems: RailItem[] = STAGES.filter((s) => s.ready && (studio || s.id !== "shots")).map((s, i) => ({ id: s.id, label: s.id === "cast" ? "Cast" : s.label, icon: railIcon[s.id], active: s.id === activeId, done: doneIds.includes(s.id), next: s.id === firstTodo && s.id !== activeId,
-    title: `Step ${i + 1}: ${s.label}${doneIds.includes(s.id) ? " (done)" : s.id === firstTodo ? " (next)" : ""}`, onClick: () => goStage(s.id) }));
+  const hasShots = !!progress && progress.shots.count > 0;
 
   return (
     <div className="film-shell">
-    <FilmRail items={railItems} onHome={onHome} onSettings={onSettings} />
+    <FilmRail steps={railSteps({ pro: studio, progress, active: activeId, go: goStage })} onHome={onHome} onSettings={onSettings} hasShots={hasShots} onTool={(id) => { if (onStudio) void toStudio(id); }} />
     <div className="film">
       <header className="film-top">
         <button className="btn ghost sm" onClick={onHome}>‹ Home</button>

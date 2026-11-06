@@ -58,7 +58,7 @@ describe("layout regressions", () => {
   });
 
   it("the AI agent is always visible in the main rail", () => {
-    expect(studio).toContain('label="AI Agent"');
+    expect(readFileSync("src/FilmRail.tsx", "utf8")).toContain('label: "AI Agent"');          // the one rail, shown on every screen of a film
     expect(studio).toContain('chooseWorkspace("agent")');
   });
 });
