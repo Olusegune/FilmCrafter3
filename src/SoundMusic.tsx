@@ -5,6 +5,7 @@ import { ask } from "./ask";
 import { SceneSound } from "./SceneSound";
 import { MakeSound } from "./MakeSound";
 import { SamplePlayer, VoiceMaker } from "./CastVoices";
+import { VoiceIdentity } from "./VoiceIdentity";
 import { notifyVoice, useCast } from "./voiceHooks";
 import { aiAskWords, audioFacts, commaList, PROFILE_FIELDS, SOUND_FIELDS, MUSIC_FIELDS, voiceKey } from "./soundWords";
 
@@ -125,6 +126,7 @@ function VoiceEditor({ dir, c, voice, hasKey, run, onChoose, onChanged }: { dir:
         <div className="cw-save"><button className="btn" disabled={!dirty} onClick={() => void run(() => api.bible("set_voice_profile", dir, { id: c.id, ...p }))}>Save</button></div>
       </section>
       <SuggestVoices dir={dir} c={c} hasKey={hasKey} onUse={(s) => setP({ ...p, ...s })} onChanged={onChanged} />
+      <VoiceIdentity dir={dir} c={c} hasKey={hasKey} run={run} onChanged={onChanged} />
     </div>
   );
 }

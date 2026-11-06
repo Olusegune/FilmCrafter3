@@ -47,6 +47,8 @@ PHILOSOPHY_FIELDS = ("visual", "cinematography", "lighting", "acting", "colour",
 SOUND_STYLE_FIELDS = {"sound": ("philosophy", "realism", "ambience", "dialogue", "silence"),
                       "music": ("genre", "instrumentation", "mood", "tempo", "influences", "palette", "motifs", "intensity", "silence")}
 VOICE_PROFILE_FIELDS = ("description", "age_range", "accent", "timbre", "pace", "emotional_range", "delivery", "notes")
+# the rest of a character's voice identity (voiceid.py): kept in the same profile, read by nothing that asks a model for a profile (the AI proposes only VOICE_PROFILE_FIELDS)
+IDENTITY_FIELDS = ("language", "pitch_range", "vocal_weight", "texture", "breathiness", "rhythm", "articulation", "mannerisms", "pronunciation")
 CHARACTER_FIELDS = ("name", "role", "age", "physical", "relationships", "arc", "voice", "notes")
 SPATIAL_FIELDS = ("entrances", "exits", "doors", "windows", "landmarks", "furniture", "blocking", "camera_zones", "lighting", "day_night")
 ENV_FIELDS = ("name", "description", "notes")
@@ -256,7 +258,7 @@ def set_voice_profile(d: str, id_: str, data: dict) -> dict:
     before = json.loads(json.dumps(b))
     cur = _find(b, "character", check_id(id_, "character"))
     prof = dict(cur.get("voice_profile") or {})
-    for k in VOICE_PROFILE_FIELDS:
+    for k in VOICE_PROFILE_FIELDS + IDENTITY_FIELDS:
         if k in data:
             prof[k] = _text(data[k])
     if "approved" in data:

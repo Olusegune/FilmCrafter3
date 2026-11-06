@@ -423,6 +423,8 @@ mockIPC((cmd, a) => {
         { id: "f5", type: "note", title: "tone.md", rel: "notes/tone.md", on: true, blocked: "", notes: [], target: "tone", excerpt: "Warm, patient, handheld. The kitchen is always lit from the window.", length: 64 },
         { id: "f6", type: "unsorted", title: "mystery.png", rel: "boards/mystery.png", on: false, blocked: "Say what this picture is: a storyboard panel, or a picture of a character, a place or a prop.", notes: [] }] };
     case "film_voice": return voiceStatus;
+    case "film_voiceid": return x.action === "overview" ? { people: [], flagged: 0 } : x.action === "cast_library" ? { entries: [] } : {};
+    case "film_revoice": return { runtime: { model: { id: "chatterbox-vc", name: "Chatterbox voice conversion", licence: "MIT", by: "Resemble AI", packages: [], size_note: "Several gigabytes in total.", needs: "About 8 GB of memory.", status: "experimental" }, installed: false, since: null, versions: null, device: null, folder: "", how: "" }, people: [], conversions: 0 };
     case "film_cast_voice":
       if (x.action === "library") return { voices: [{ voice_id: "AbCdEfGh1234", name: "Warm Northern Woman", category: "premade", description: "Gentle, unhurried", labels: { accent: "british", age: "old" }, preview_url: "" }, { voice_id: "ZyXwVu987654", name: "Bright Girl", category: "premade", description: "", labels: { age: "young" }, preview_url: "" }], next: null };
       if (x.action === "ledger") return { limits: { elevenlabs_credits: 500 }, count: 3, by_unit: { elevenlabs_credits: { operations: 2, estimated: 58, reported: 0, unreported_operations: 2, estimated_unreported: 58 }, voice_slot: { operations: 1, estimated: 1, reported: 0, unreported_operations: 1, estimated_unreported: 1 } },

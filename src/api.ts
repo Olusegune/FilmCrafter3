@@ -337,6 +337,8 @@ export const api = {
   castVoice: <T = CastStatus>(action: "status" | "library" | "set" | "clear" | "design" | "design_save" | "clone" | "estimate" | "speak" | "preview" | "takes" | "use_take" | "sample" | "ledger" | "ledger_resolve" | "set_limit", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_cast_voice", { action, target, data }),
   /** Perform a line yourself and hear it in a character's voice (filmcrafter_engine.revoice): local, free. `install` needs `confirmed: true`; a real person's reference voice needs `consent: true`. */
   revoice: <T = RevoiceStatus>(action: "status" | "reference" | "revoke" | "convert" | "install", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_revoice", { action, target, data }),
+  /** A character's voice identity (filmcrafter_engine.voiceid): lock, listening ratings, casting comparison, cast library. Free; sends and pays for nothing. */
+  voiceId: <T = VoiceIdOverview>(action: "overview" | "lock" | "unlock" | "rate" | "compare" | "cast_library" | "library_save" | "library_use", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_voiceid", { action, target, data }),
   /** A take recorded in the app (a 16-bit WAV): saved under ~/.filmcrafter/incoming, the path comes back for `voice("import")`. */
   saveVoiceTake: (wav: Uint8Array) => invoke<string>("save_voice_take", wav),
   make: <T = MakeStatus>(action: "sync" | "status" | "tag" | "choose" | "lock" | "reference" | "import" | "soundtrack" | "progress", target: string, data: Record<string, unknown> = {}) =>
@@ -577,7 +579,17 @@ export type StoryPreview = { kind: StoryKind; words: number; scenes: number; cha
 // ---------------------------------------------------------------- the Production Bible, Cast and World
 export type BibleMedia = { path: string; kind: string; label: string };
 export type BibleState = { id: string; label: string; notes: string; wardrobe?: string; age?: string };
-export type VoiceProfile = { description: string; age_range: string; accent: string; timbre: string; pace: string; emotional_range: string; delivery: string; notes: string; approved: boolean };
+export type VoiceProfile = { description: string; age_range: string; accent: string; timbre: string; pace: string; emotional_range: string; delivery: string; notes: string; approved: boolean;
+  language?: string; pitch_range?: string; vocal_weight?: string; texture?: string; breathiness?: string; rhythm?: string; articulation?: string; mannerisms?: string; pronunciation?: string };
+export type AccentStatus = { status: "untested" | "accepted" | "mixed" | "not_convincing"; words: string };
+export type VoiceLock = { voice_id: string; voice_name: string; model: string; made: string; reference_sha256: string | null; at: number };
+export type VoiceIdPerson = { id: string; name: string; key: string; role: string; approved: boolean; voice: { voice_id: string; voice_name: string; model: string; made: string } | null; lock: VoiceLock | null;
+  consistency: { state: "ok" | "unlocked" | "changed" | "missing"; problems: string[]; words: string }; accent: AccentStatus; natural: number | null; ratings: number; history: unknown[] };
+export type VoiceIdOverview = { people: VoiceIdPerson[]; flagged: number };
+export type CastingRow = { voice: ElevenVoice; score: number; why: string[]; current: boolean; available: { where: string; local: boolean }; audition_credits: number; audition_basis: string; licence: string;
+  rated: { count: number; natural: number | null; accent: AccentStatus } };
+export type CastingCompare = { person: string; rows: CastingRow[]; searched: number; model: string; note: string };
+export type CastLibraryEntry = { id: string; name: string; voice: { voice_id: string; voice_name: string; model: string; made: string }; profile: Record<string, string>; film: string; saved: number; note: string; rights: string };
 export type BibleCharacter = { id: string; name: string; role: string; age: string; physical: string; relationships: string; arc: string; voice: string; notes: string; voice_profile?: VoiceProfile;
   wardrobe: { id: string; name: string; notes: string }[]; states: BibleState[]; media: BibleMedia[]; scenes: number[]; source: string };
 export type BibleEnvironment = { id: string; name: string; description: string; notes: string; spatial: Record<string, string>; states: BibleState[]; media: BibleMedia[]; scenes: number[]; source: string };

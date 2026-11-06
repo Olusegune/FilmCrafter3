@@ -1,4 +1,12 @@
-# QA report: FilmCrafter 0.37.0 (2026-11-06)
+# QA report: FilmCrafter 0.38.0 (2026-11-06)
+
+## 0.38.0: voice identity
+
+TypeScript clean; **758 Vitest tests in 98 files** (9 new in `voiceidentity.dom.test.tsx`); **15 Rust tests**; **2,576 engine tests passed, 8 skipped** (21 new in `tests/test_voiceid.py`, run with the network switched off; `tests/test_security.py` confirms the new `film_voiceid` command's actions match the engine's). Bandit on `voiceid.py`: no findings. Manual review: no subprocess, no file path taken from the screen (the cast library is keyed by a hash), records written atomically with the app's safe writer, candidate voices from the screen are validated and cut down, a sample link is checked by the existing ElevenLabs host rule before anything is fetched, an approved voice is still protected by the existing guard when a library character is applied, and a cloned voice needs the owner's agreement confirmed again. `rafter run` could not be used (quota). The installers built (0.38.0 setup and MSI).
+
+**Not tested:** any real ElevenLabs call (search, sample or voice set); the panel on a real film; whether the ranking suits real voice labels; Windows scaling or screen-reader use of the new panel.
+
+## 0.37.0: speech to speech
 
 ## 0.37.0: speech to speech ("Perform it yourself")
 
