@@ -1,0 +1,138 @@
+{
+ "compositions": [
+  {
+   "background": "vs-949e8674",
+   "colour": [
+    0.1,
+    0.1,
+    0.1
+   ],
+   "created": 1794004254.0120838,
+   "id": "cp-424bed31",
+   "last_render": "vp/renders/cp-424bed31-1794004254.png",
+   "layers": [
+    {
+     "anchor": "feet",
+     "cutout": "cu-be95ee7f",
+     "flip": false,
+     "match": 0.2,
+     "opacity": 1.0,
+     "rotation": 0,
+     "scale": 0.9,
+     "shadow": {
+      "blur": 8,
+      "spread": 1.0,
+      "squash": 0.25,
+      "strength": 0.3
+     },
+     "x": 0.5,
+     "y": 1.0
+    }
+   ],
+   "name": "Street scene",
+   "size": [
+    320,
+    400
+   ],
+   "updated": 1794004254.0120838
+  }
+ ],
+ "cutouts": [
+  {
+   "created": 1794004253.9994721,
+   "height": 400,
+   "id": "cu-be95ee7f",
+   "mask": "vp/cutouts/cu-be95ee7f/mask.png",
+   "name": "Sarah",
+   "params": {
+    "clip_black": 0.0,
+    "clip_white": 1.0,
+    "color": null,
+    "decontaminate": true,
+    "despill": 0.8,
+    "dilate": 0,
+    "erode": 0,
+    "feather": 0.0,
+    "fill_holes": false,
+    "screen": "green",
+    "similarity": 0.06,
+    "softness": null
+   },
+   "report": {
+    "edge_spill": 0.044,
+    "notes": [
+     "A clean, even screen: a key should work well.",
+     "There is still screen colour on the edge: raise despill, or erode the edge by one pixel."
+    ],
+    "plate": {
+     "border_on_screen": 0.988,
+     "color": [
+      0.0902,
+      0.6588,
+      0.1804
+     ],
+     "height": 400,
+     "notes": [
+      "A clean, even screen: a key should work well."
+     ],
+     "saturation": 0.478,
+     "screen": "green",
+     "spread": 0.018,
+     "usable": true,
+     "width": 320
+    },
+    "removed": 0.7212,
+    "soft_edge": 0.0777,
+    "subject": 0.2012
+   },
+   "rgba": "vp/cutouts/cu-be95ee7f/cutout.png",
+   "source": "vs-857ffc16",
+   "width": 320
+  }
+ ],
+ "defaults": {
+  "clip_black": 0.0,
+  "clip_white": 1.0,
+  "color": null,
+  "decontaminate": true,
+  "despill": 0.8,
+  "dilate": 0,
+  "erode": 0,
+  "feather": 0.0,
+  "fill_holes": false,
+  "screen": "green",
+  "similarity": 0.06,
+  "softness": null
+ },
+ "limits": {
+  "compositions": 100,
+  "cutouts": 300,
+  "layers": 24,
+  "side": 8192,
+  "sources": 300
+ },
+ "sources": [
+  {
+   "added": 1794004253.9067957,
+   "bytes": 199305,
+   "file": "vp/sources/vs-857ffc16.png",
+   "height": 400,
+   "id": "vs-857ffc16",
+   "kind": "plate",
+   "name": "Sarah on green",
+   "sha1": "d65c87cdcab35914148bab7495300b20304843a1",
+   "width": 320
+  },
+  {
+   "added": 1794004253.917114,
+   "bytes": 2891,
+   "file": "vp/sources/vs-949e8674.jpg",
+   "height": 400,
+   "id": "vs-949e8674",
+   "kind": "background",
+   "name": "Street",
+   "sha1": "a77fa7164bf132158e31bedcb83ca51c3c637aa3",
+   "width": 320
+  }
+ ]
+}

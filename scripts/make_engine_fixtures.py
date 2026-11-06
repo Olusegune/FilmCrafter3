@@ -19,7 +19,7 @@ import soundfile as sf
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "analysis"))
 from filmcrafter_engine import (adrsync as AD, audiolib as AL, audiocues as Q, audioqa as QA, bible, cast_voice as C, performplan as PP, proaudio as PA, revoice as RV,  # noqa: E402
-                                shots as S, sounddesign as SD, musicdirector as MD, story, voiceid as VI, voiceover as V)
+                                shots as S, sounddesign as SD, musicdirector as MD, vpstudio as VP, story, voiceid as VI, voiceover as V)
 
 OUT = os.path.join(ROOT, "src", "__tests__", "fixtures", "engine")
 DATA = os.path.join(ROOT, "analysis", "tests", "data")
@@ -93,6 +93,23 @@ def main():
         MD.record_set(d, theme["id"], {"by": "Ada", "scenes": [1], "licence_ref": "fixture"})
         dump("music_to_cues", MD.to_cues(d, 1))
         dump("music_get", MD.get(d))
+        # virtual production: a synthetic plate with a known answer, keyed, composed and rendered by the real engine
+        sys.path.insert(0, os.path.join(ROOT, "analysis", "tests"))
+        import test_keying as TK
+        from PIL import Image as PILImage
+        plate, _, _ = TK.make_plate(spill=1.0)
+        bgp = np.full((TK.H, TK.W, 3), [0.55, 0.5, 0.45], np.float32); bgp[: TK.H // 2] = [0.4, 0.55, 0.75]
+        ppath, bpath = os.path.join(src, "plate.png"), os.path.join(src, "street.jpg")
+        PILImage.fromarray((plate * 255 + 0.5).astype(np.uint8)).save(ppath); PILImage.fromarray((bgp * 255 + 0.5).astype(np.uint8)).save(bpath)
+        pid = VP.import_source(d, {"path": ppath, "kind": "plate", "name": "Sarah on green"})["id"]
+        bid = VP.import_source(d, {"path": bpath, "kind": "background", "name": "Street"})["id"]
+        dump("vp_plate_check", VP.plate_check(d, pid))
+        kr = VP.key(d, {"source": pid, "name": "Sarah", "params": {"similarity": 0.06}})
+        dump("vp_key", kr)
+        cp = VP.compose_set(d, {"name": "Street scene", "background": bid, "size": [TK.W, TK.H], "layers": [{"cutout": kr["id"], "x": 0.5, "y": 1.0, "scale": 0.9, "shadow": {"strength": 0.3}, "match": 0.2}]})["id"]
+        dump("vp_render", VP.render(d, cp))
+        dump("vp_export", VP.export(d, kr["id"]))
+        dump("vp_get", VP.get(d))
         # the audio inspector
         os.makedirs(os.path.join(d, "exports"), exist_ok=True)
         shutil.copyfile(os.path.join(DATA, "real_speech_zira.wav"), os.path.join(d, "exports", "cut.wav"))

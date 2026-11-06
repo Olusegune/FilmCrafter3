@@ -212,12 +212,17 @@ export function LayersPanel({ dir, selected, onSelect, onClose, time, onFocus, d
         <button className="btn small ghost" onClick={() => step("undo")} disabled={!hist.can_undo} title="Undo the last change to the layers (Ctrl+Z)" aria-label="Undo">Undo</button>
         <button className="btn small ghost" onClick={() => step("redo")} disabled={!hist.can_redo} title="Redo it (Ctrl+Shift+Z)" aria-label="Redo">Redo</button>
         <button className="icon-btn" onClick={onClose} aria-label="Close layers"><I.Close size={16} /></button></div>
-      <p className="ly-lead">Text, pictures and shapes over the film. Each one is a bar in the <b>Layers row</b> above the shots on the timeline. Free: drawn when you export.</p>
-      <div className="ly-add">
+      <p className="ly-lead">Things drawn over the film: titles, pictures, shapes. A new one starts at the <b>playhead</b> (now <b className="num" aria-label="Playhead time">{clock(time)}</b>) and lasts 4 seconds. Free: drawn when you export.</p>
+      {items && items.length > 0 && <div className="ly-add">
         <button className="btn small" onClick={addText} title="Adds a title at the playhead for 4 seconds">+ Text</button>
         <button className="btn small" onClick={addPicture} title="Adds a picture at the playhead for 4 seconds">+ Picture…</button>
         <button className="btn small" onClick={addClip} title="Adds a video clip at the playhead, for as long as it runs (10 seconds at most to start with): a picture-in-picture, or a green-screen subject">+ Video clip…</button>
-        <button className="btn small" onClick={() => setMenu((v) => !v)} aria-expanded={menu}>+ Shape or icon ▾</button></div>
+        <button className="btn small" onClick={() => setMenu((v) => !v)} aria-expanded={menu}>+ Shape or icon ▾</button></div>}
+      {items && !items.length && <div className="ly-cards" role="group" aria-label="What to add">
+        <button className="ly-card" onClick={addText}><b>Title or text</b><span>A title, a name, a caption.</span></button>
+        <button className="ly-card" onClick={addPicture}><b>Picture</b><span>A logo, a photo, a sign.</span></button>
+        <button className="ly-card" onClick={addClip}><b>Video clip</b><span>A small video in a corner, or a green-screen subject.</span></button>
+        <button className="ly-card" onClick={() => setMenu((v) => !v)} aria-expanded={menu}><b>Shape or icon</b><span>A box, a line, an arrow, a star.</span></button></div>}
       <details className="ly-more-add"><summary>More ways to add</summary>
         <div className="ly-add">
           <button className="btn small ghost" onClick={() => setCard(true)}>Intro card…</button></div></details>
@@ -237,7 +242,7 @@ export function LayersPanel({ dir, selected, onSelect, onClose, time, onFocus, d
           : <button className="btn small ghost" onClick={() => setTplNaming(true)} title="Keep the ticked layers together, with their timing relative to each other">Save {picked.size} ticked as a template…</button>)}
       </div>
       {err && <p className="error-text" role="alert">{err}</p>}
-      {items && !items.length && <HowLayersWork onAddText={addText} />}
+      {items && !items.length && <p className="ly-hint">Move the playhead to where it should appear, then choose what to add. It shows as a coloured bar in the <b>Layers</b> row above the shots, and on the player where you can drag it into place.</p>}
       {items && items.length > 0 && <details className="ly-help"><summary>How layers work</summary><HowLayersWork compact /></details>}
       <ul className="ly-list">
         {list.map((o, i) => (

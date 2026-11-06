@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.47.0 (2026-11-06)
+
+- **Cutout studio: first slice of virtual production (free, local).** Rail > More > **Cutouts**. Bring in a plate (a subject in front of a green or blue screen) and a background; **Check the screen** says in numbers whether a key is likely to work; **Cut out** keys it (chroma key in the colour plane only, with despill, edge colour clean-up, shrink, grow, feather, hole filling) into an RGBA PNG with transparency and a mask; **Export PNG** reads the file back to confirm the transparency; **Compose** places cutouts on a background (feet-anchored, size, turn, flip, contact shadow, colour match, linear-light compositing with no halos) and renders a PNG. **Words for a clean plate** writes the text to ask an image maker for an even screen (nothing is sent). Details, limits and the plan for the rest of the brief: `docs/VIRTUAL_PRODUCTION.md`.
+- **Layers panel: clearer first step.** With no layers yet, the panel now opens with four plain choices (Title or text, Picture, Video clip, Shape or icon), each with an example, instead of a numbered wall of text and a row of small buttons. It also says where the playhead is ("now 0:12.4") because that is where a new layer starts. Once there are layers, the compact buttons and a collapsed "How layers work" return.
+- **Limits, plainly:** no segmentation or matting model is included, so it cannot cut a subject out of a picture with no screen; stills only (no video, sequences or keyframes yet); tested on synthetic plates with known answers, not yet on a real photograph. WorldLock and DirectorCam are not started.
+
 ## 0.46.0 (2026-11-06)
 
 - **One menu rail on every screen of a film.** The left rail is now a single component used by the Story, Cast, Shots, Studio and Export steps, the timeline Studio and Agent Studio, so it no longer changes as you move around. Top to bottom: Home, the steps of the golden path in order (a tick on finished steps, a dot on the next one), the tools (Project, Library, Looks, Review, AI Agent, and under More: Supervisor, Acting, Continuity, Layers, Lighting, Presets, Color, Colour match, Clean up), then Settings. A tool that cannot act yet (it needs a shot plan) is greyed with the reason, never hidden. Pressing a tool on any screen takes you to the timeline Studio with that tool already open. Home is the only screen without the rail.

@@ -1,4 +1,12 @@
-# QA report: FilmCrafter 0.46.0 (2026-11-06)
+# QA report: FilmCrafter 0.47.0 (2026-11-06)
+
+## 0.47.0: cutout studio (virtual production, slice 1) and a clearer Layers panel
+
+Engine: **2,789 tests collected, 2,782 passed, 7 skipped, none failed** (46 new: 26 in `test_keying.py` on synthetic plates with known answers, 20 in `test_vpstudio.py` on real files in a real film folder). Bandit (medium and above): no findings. TypeScript clean; **864 Vitest tests in 110 files** (12 for the cutout screen, 2 for the Layers panel, 1 new real-engine contract test with five new fixtures); 15 Rust tests. Security review by hand (the scan service quota is used up): every action is on the fixed list the shell checks; pictures are copied into the film and the original is never touched; file type, size and pixel count are checked before a picture is opened; every setting is clamped; a record that points outside the film is never followed; no key is given to the engine, nothing is sent, nothing is generated; nothing is deleted. Problems found by the tests and fixed before release: the first key ramp lost the soft edge and left the weaker-coloured parts of the subject half transparent (now an auto-scaled straight ramp), the subject was placed by its picture edge instead of its feet (now feet-anchored by default).
+
+Layers panel: with no layers the panel opens with four plain choices and says where the playhead is. Checked by component tests; **not seen on screen by me**, and no other rail tool was clicked through in the installed app (each tool's handler and sheet were checked in the code, and the rail has component tests).
+
+**Still not tested:** a real photograph or real generated green-screen plate; hair on a real subject; video; speed on large plates; the screens in the installed app.
 
 ## 0.46.0: one menu rail, dialogs that do not clip
 

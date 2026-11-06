@@ -18,6 +18,11 @@ import muGet from "../fixtures/engine/music_get.json";
 import muSuggest from "../fixtures/engine/music_suggest.json";
 import muPrompt from "../fixtures/engine/music_prompt.json";
 import muToCues from "../fixtures/engine/music_to_cues.json";
+import vpGet from "../fixtures/engine/vp_get.json";
+import vpKey from "../fixtures/engine/vp_key.json";
+import vpCheck from "../fixtures/engine/vp_plate_check.json";
+import vpRender from "../fixtures/engine/vp_render.json";
+import vpExport from "../fixtures/engine/vp_export.json";
 import qaFilm from "../fixtures/engine/audioqa_film.json";
 import adGet from "../fixtures/engine/adrsync_get.json";
 import adAlign from "../fixtures/engine/adrsync_align.json";
@@ -39,6 +44,7 @@ import { VoiceIdentity } from "../../VoiceIdentity";
 import { PerformancePlanner } from "../../PerformancePlanner";
 import { SoundDesign } from "../../SoundDesign";
 import { MusicDirector } from "../../MusicDirector";
+import { CutoutStudio } from "../../CutoutStudio";
 import { AudioCheck } from "../../AudioCheck";
 import { TimingAdr } from "../../TimingAdr";
 import { ProAudio } from "../../ProAudio";
@@ -130,6 +136,25 @@ describe("the screens with the real engine's answers", () => {
     expect(await screen.findByText(/Instrumental film score cue, no vocals/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Put into the film" }));
     expect(await screen.findByRole("status")).toHaveTextContent(/made, \d+ updated/);
+    clean(container);
+  });
+
+  it("cutout studio: the real plate check, key, export and render", async () => {
+    invoke.mockImplementation(answers({ "film_vp:get": vpGet, "film_vp:plate_check": vpCheck, "film_vp:key": { ...vpGet, id: (vpKey as unknown as { id: string }).id, report: (vpKey as unknown as { report: unknown }).report }, "film_vp:export": vpExport, "film_vp:render": vpRender, "film_vp:compose_set": vpGet }));
+    const { container } = render(<CutoutStudio dir="film" onClose={() => {}} />);
+    await screen.findByRole("tablist");
+    fireEvent.click(screen.getByRole("tab", { name: /2 Cut out/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Check the screen" }));
+    expect(await screen.findByLabelText("Plate check")).toHaveTextContent(/Usable: green screen/);
+    fireEvent.click(screen.getByRole("button", { name: "Cut out" }));
+    expect(await screen.findByLabelText("Key result")).toHaveTextContent(/kept as subject/);
+    fireEvent.click(screen.getAllByRole("button", { name: /^Export / })[0]);
+    expect(await screen.findByText(/PNG with transparency/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: /3 Compose/ }));
+    fireEvent.change(screen.getByLabelText("Saved compositions"), { target: { value: (vpGet as unknown as { compositions: { id: string }[] }).compositions[0].id } });
+    expect(screen.getByLabelText("Layer 1")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Save and render" }));
+    expect(await screen.findByAltText("The rendered composition")).toBeInTheDocument();
     clean(container);
   });
 

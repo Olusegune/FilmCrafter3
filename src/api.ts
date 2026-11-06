@@ -345,6 +345,8 @@ export const api = {
   audioQa: <T = AudioQaReport>(action: "film" | "inspect", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_audioqa", { action, target, data }),
   /** Sound design for a scene (filmcrafter_engine.sounddesign): soundscape profiles and Foley events, put into the film as ordinary cues. Free and local. */
   soundDesign: <T = SoundDesignScene>(action: "scene" | "profile_set" | "suggest" | "event_add" | "event_update" | "event_remove" | "candidates" | "to_cues", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_sounddesign", { action, target, data }),
+  /** Virtual production, the cutout studio (filmcrafter_engine.vpstudio): pictures, green-screen keying into RGBA cutouts, compositions. Free and local; nothing is generated or sent. */
+  vp: <T = VpState>(action: "get" | "import" | "plate_check" | "key" | "cutout_remove" | "export" | "compose_set" | "compose_remove" | "render" | "plate_prompt", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_vp", { action, target, data }),
   /** The music director (filmcrafter_engine.musicdirector): motifs, spotting, the words to ask for music, records of approvals, cues from approved spots. Free and local; nothing is generated or sent. */
   music: <T = MusicPlan>(action: "get" | "suggest" | "motif_set" | "motif_remove" | "spot_set" | "spot_remove" | "prompt" | "candidates" | "record_set" | "to_cues" | "report", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_music", { action, target, data }),
   /** A vocal performance plan for a line (filmcrafter_engine.performplan). Free; `apply` only sets the spoken version, it speaks and pays for nothing. */
@@ -614,6 +616,17 @@ export type FoleyEvent = { id: string; scene: number; shot: string; action: stri
 export type FoleyProposal = Pick<FoleyEvent, "action" | "source_object" | "by" | "material" | "surface" | "intensity" | "distance" | "side" | "start" | "motivated_by">;
 export type SoundDesignScene = { scene: number; environment: { id: string; name: string } | null; profile: SoundProfile | null; layers: AmbienceLayer[]; events: FoleyEvent[]; shots: { id: string; duration: number }[];
   coverage: { events: number; approved: number; without_sound: string[]; layers: number; layers_without_sound: string[]; has_profile: boolean; environment: string | null }; made?: string[]; updated?: string[]; waiting?: { kind: string; id: string; name: string }[] };
+export type VpSource = { id: string; kind: "plate" | "background" | "foreground"; name: string; file: string; width: number; height: number; bytes: number };
+export type KeyParams = { screen: "green" | "blue"; color: number[] | null; similarity: number; softness: number | null; erode: number; dilate: number; feather: number; fill_holes: boolean; despill: number; decontaminate: boolean; clip_black: number; clip_white: number };
+export type PlateReport = { screen: string; color: number[]; saturation: number; border_on_screen: number; spread: number; usable: boolean; notes: string[]; width: number; height: number; source?: string };
+export type KeyReport = { subject: number; removed: number; soft_edge: number; edge_spill: number; plate: PlateReport; notes: string[]; params?: KeyParams };
+export type VpCutout = { id: string; name: string; source: string; params: KeyParams; report: KeyReport; rgba: string; mask: string; width: number; height: number };
+export type VpLayer = { cutout: string; x: number; y: number; scale: number; rotation: number; flip: boolean; anchor: "feet" | "bottom" | "centre"; opacity: number; match: number; shadow: { strength: number; blur: number; squash: number; spread: number } | null };
+export type VpComposition = { id: string; name: string; background: string | null; size: [number, number]; colour: number[]; layers: VpLayer[]; last_render?: string };
+export type VpState = { sources: VpSource[]; cutouts: VpCutout[]; compositions: VpComposition[]; limits: { sources: number; cutouts: number; compositions: number; layers: number; side: number }; defaults: KeyParams;
+  id?: string; already_there?: boolean; report?: KeyReport; file?: string; width?: number; height?: number; layers?: number; missing?: string[] };
+export type VpExport = { id: string; files: { rgba: string; mask: string }; folder: string; has_alpha: boolean; transparent_share: number; note: string };
+export type VpPlatePrompt = { prompt: string; screen: string; notes: string[]; sent: boolean };
 export type Motif = { id: string; name: string; kind: "character" | "place" | "theme"; subject: string; mood: string; tempo: string; key: string; description: string; note: string; instruments: string[] };
 export type MusicSpot = { id: string; scene: number; start_shot: string | null; end_shot: string | null; decision: "score" | "source" | "silence"; role: string; energy_in: number; energy_out: number; mood: string; tempo: string; intent: string;
   enters: string; exits: string; note: string; instruments: string[]; motif_ids: string[]; level_db: number; fade_in: number; fade_out: number; asset_id: string | null; approval: "suggested" | "approved" | "rejected"; source: string; cue_id: string | null; cue: { approval: string } | null };

@@ -1,0 +1,18 @@
+{
+ "border_on_screen": 0.988,
+ "color": [
+  0.0902,
+  0.6588,
+  0.1804
+ ],
+ "height": 400,
+ "notes": [
+  "A clean, even screen: a key should work well."
+ ],
+ "saturation": 0.478,
+ "screen": "green",
+ "source": "vs-857ffc16",
+ "spread": 0.018,
+ "usable": true,
+ "width": 320
+}
