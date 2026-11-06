@@ -4,12 +4,13 @@ import { loadFonts } from "./FontPicker";
 import { moveAt, reducedMotion, type Beat } from "./overlayMotion";
 import { evalKeys, upsertKey } from "./overlayKeys";
 import ICONS from "./shapeIcons.json";
+import { needsSeek } from "./playerMath";
 
 /** On-screen text, pictures and cards over the Studio player, as they will be drawn on the exported film (an approximation: the export draws the lettering
  *  itself, so edges and shadow differ slightly). They move in the way you chose. Follows Export > On-screen text and the Layers panel as you change them.
  *  The layer selected in the Layers panel is always shown (faintly when it is not on at this moment) and can be dragged to where you want it. */
 /** A video clip in the player: shown from its own start point and kept in step with the film's time. (The player shows the clip as it is: a cut-out colour is applied when the film is made.) */
-function ClipView({ o, src, at, on, cls, common, style }: { o: Overlay; src: string; at: number; on: boolean; cls: string; common: object; style: React.CSSProperties }) {
+function ClipView({ o, src, at, on, cls, common, style, playing }: { o: Overlay; src: string; at: number; on: boolean; cls: string; common: object; style: React.CSSProperties; playing: boolean }) {
   const ref = useRef<HTMLVideoElement>(null);
   const want = (o.in_s ?? 0) + Math.max(0, at - (o.start ?? 0));
   useEffect(() => {
@@ -17,12 +18,12 @@ function ClipView({ o, src, at, on, cls, common, style }: { o: Overlay; src: str
     if (!v || !on || !Number.isFinite(want)) return;
     const len = v.duration && Number.isFinite(v.duration) ? v.duration : o.src_dur ?? 0;
     const t = len ? (o.loop ? want % len : Math.min(want, Math.max(0, len - 0.05))) : want;
-    if (Math.abs(v.currentTime - t) > 0.2) v.currentTime = t;                  // only when it has drifted: setting it every frame would stutter
-  }, [want, on, o.loop, o.src_dur]);
+    if (needsSeek(v.currentTime, t, playing)) v.currentTime = t;               // playing: only when it has drifted (every frame would stutter); paused: every scrub step shows its own frame
+  }, [want, on, o.loop, o.src_dur, playing]);
   return <video ref={ref} className={cls} style={style} src={src} muted playsInline preload="auto" aria-hidden="true" {...common} />;
 }
 
-export function PlayerOverlays({ dir, time, selected, onSelect, beat, accents }: { dir: string; time: number; selected?: string | null; onSelect?: (id: string | null) => void; beat?: Beat | null; accents?: number[] | null }) {
+export function PlayerOverlays({ dir, time, playing = false, selected, onSelect, beat, accents }: { dir: string; time: number; playing?: boolean; selected?: string | null; onSelect?: (id: string | null) => void; beat?: Beat | null; accents?: number[] | null }) {
   const [items, setItems] = useState<Overlay[]>([]);
   const [drag, setDrag] = useState<{ id: string; x: number; y: number } | null>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -134,7 +135,7 @@ export function PlayerOverlays({ dir, time, selected, onSelect, beat, accents }:
           if (o.shadow === false) style.textShadow = "none";
           return <span key={o.id} className={`${cls} po-text`} style={style} {...common}>{o.text}</span>;
         }
-        if (o.kind === "clip") return <ClipView key={o.id} o={o} src={api.mediaUrl(`${dir}/${o.file}`)} at={time} on={on} cls={`${cls} po-img`} common={common}
+        if (o.kind === "clip") return <ClipView key={o.id} o={o} src={api.mediaUrl(`${dir}/${o.file}`)} at={time} on={on} playing={playing} cls={`${cls} po-img`} common={common}
                                              style={{ ...pos, opacity: fillOpacity, filter: "none", width: `${Math.min(2, o.width) * 100}%`, aspectRatio: o.src_w && o.src_h ? `${o.src_w} / ${o.src_h}` : undefined }} />;
         return <img key={o.id} className={`${cls} po-img`} alt="" draggable={false} {...common} src={api.mediaUrl(`${dir}/${o.file}`)}
                     style={{ ...pos, opacity: fillOpacity, width: `${Math.min(2, o.width * k) * 100}%`, ...(o.shadow === false ? { filter: "none" } : {}) }} />;

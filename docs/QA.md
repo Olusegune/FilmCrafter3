@@ -1,4 +1,10 @@
-# QA report: FilmCrafter 0.40.0 (2026-11-06)
+# QA report: FilmCrafter 0.40.1 (2026-11-06)
+
+## 0.40.1: scrubbing updates the picture
+
+Front end only. TypeScript clean; **783 Vitest tests in 101 files** (9 new in `player.dom.test.tsx`: which shot the player shows, when a video must be moved paused and playing, and the clip element with a mocked media element). The engine and Rust code were not touched, so their suites were not rerun for this release (last full runs: 2,619 engine tests, 15 Rust tests at 0.40.0). One test in the suite (`performancedirector.dom.test.tsx`) failed once while a dev server was running at the same time and passed on every rerun, with and without these changes (a timing flake under load). In a real browser (the screenshot test page, no selected shot), moving the scrub bar changed the displayed shot (S01-01 at the start, S01-03 in the middle, S02-02 near the end).
+
+**Not tested:** the installed app with a real rendered film and real video files; a selected shot followed by scrubbing in the browser (the test page does not let a shot be selected by clicking, so this case is covered by unit tests of `shotToShow`, `seekForSelection` and `needsSeek` only); very large files without a preview copy (a large video can still be slow to seek; "Make preview copies of big clips" in the cut lane exists for that); scrubbing while exporting.
 
 ## 0.40.0: sound design (soundscapes and Foley)
 

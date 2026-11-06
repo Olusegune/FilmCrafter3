@@ -74,7 +74,7 @@ export async function addMediaToTimeline(dir: string, start?: string) {
 export function StillPreview({ src, motion, duration, offset, drift, playing }: { src: string; motion?: string | null; duration: number; offset: number;
   drift?: { amp: number; period: number } | null; playing?: boolean }) {
   const img = <img className={`clip kb kb-${motion ?? "none"}`} alt="" src={src}
-                   style={{ animationDuration: `${Math.max(0.5, duration)}s`, animationDelay: `${-Math.min(duration, Math.max(0, offset))}s` }} />;
+                   style={{ animationDuration: `${Math.max(0.5, duration)}s`, animationDelay: `${-Math.min(duration, Math.max(0, offset))}s`, animationPlayState: playing ? "running" : "paused" }} />;       // paused: the move stands still on the frame at the playhead
   if (!drift) return img;
   return <div className="clip breathe" style={{ ["--amp" as string]: String(1 + drift.amp), ["--sway" as string]: `${(drift.amp / 3) * 100}%`,
     animationDuration: `${drift.period}s`, animationPlayState: playing ? "running" : "paused" }}>{img}</div>;

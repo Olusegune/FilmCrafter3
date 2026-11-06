@@ -67,6 +67,7 @@ import { useVoiceDrop } from "./VoiceDrop";
 import { useVoiceStatus } from "./voiceHooks";
 import { isRenderDir } from "./filmPaths";
 import { ask } from "./ask";
+import { needsSeek, seekForSelection, shotToShow } from "./playerMath";
 import { AgentStudio } from "./AgentStudio";
 
 type Selection = { kind: "shot"; id: string } | { kind: "section"; index: number } | null;
@@ -475,7 +476,13 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
   }, [toggle, seek, time, focus, setFocusMode, shots, map, plan, layersOpen, layerSel, cutLane]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   const current = shots.find((s) => time >= s.start && time < s.end) ?? null;
-  const shown = sel?.kind === "shot" ? shots.find((s) => s.id === sel.id) ?? current : current;
+  const shown = shotToShow(shots, sel?.kind === "shot" ? sel.id : null, time) ?? current;       // the shot under the playhead: a selection must never hold the picture while you scrub
+  const selShotId = sel?.kind === "shot" ? sel.id : null;
+  useEffect(() => {                                                    // choosing a shot elsewhere (the inspector, a list) puts the playhead on it, so the picture and the time agree
+    if (!selShotId) return;
+    const t = seekForSelection(shots, selShotId, timeRef.current);
+    if (t !== null) seek(t);
+  }, [selShotId]);   // eslint-disable-line react-hooks/exhaustive-deps
   // the player's caption follows your edits (Export > Lyric captions): changed wording, hidden lines
   const [capLines, setCapLines] = useState<{ text: string; start: number; end: number; hidden: boolean }[]>([]);
   useEffect(() => {
@@ -627,7 +634,7 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
             {shown ? <Storyboard shot={shown} scene={scenes.find((s) => s.number === shown.scene)} job={latest.get(shown.id)}
                                  hidden={!!boardShot.get(shown.id)?.preview || !!boardShot.get(shown.id)?.keyframe} /> :
               <div className="empty">{isFilm ? "Press play to preview the film" : plan ? "Press play to preview the song map" : "Add a script or press Direct My Video to plan shots"}</div>}
-            <PlayerOverlays dir={project.dir} time={time} beat={beatGrid(map)} accents={map?.accents} selected={layersOpen ? layerSel : null} onSelect={layersOpen ? setLayerSel : undefined} />
+            <PlayerOverlays dir={project.dir} time={time} playing={playing} beat={beatGrid(map)} accents={map?.accents} selected={layersOpen ? layerSel : null} onSelect={layersOpen ? setLayerSel : undefined} />
             <div className="subtitle" style={{ opacity: lyric ? 1 : 0 }}>{lyric?.text ?? ""}</div>
           </div>
           </div>
@@ -879,16 +886,20 @@ export function StateChip({ shot }: { shot: Shot }) {
 }
 
 /** A rendered take, kept in step with the master audio (the song is the clock). */
-function Clip({ src, offset, playing }: { src: string; offset: number; playing: boolean }) {
+export function Clip({ src, offset, playing }: { src: string; offset: number; playing: boolean }) {
   const v = useRef<HTMLVideoElement>(null);
+  const want = useRef(offset);
+  want.current = offset;
   useEffect(() => {
     const el = v.current;
     if (!el) return;
-    if (Math.abs(el.currentTime - offset) > 0.15) el.currentTime = Math.max(0, offset);
+    if (needsSeek(el.currentTime, offset, playing)) el.currentTime = Math.max(0, offset);       // paused: every scrub step shows its own frame; playing: only when it has drifted
     if (playing && el.paused) el.play().catch(() => {});
     if (!playing && !el.paused) el.pause();
   }, [offset, playing, src]);
-  return <video ref={v} className="clip" src={src} muted playsInline preload="auto" />;
+  // a new file loads at its start: once it knows its length, go to where the playhead is now (the position asked for while it was loading can be lost)
+  return <video ref={v} className="clip" src={src} muted playsInline preload="auto"
+                onLoadedMetadata={(e) => { const el = e.currentTarget; if (needsSeek(el.currentTime, want.current, true)) el.currentTime = Math.max(0, want.current); }} />;
 }
 
 function Storyboard({ shot, scene, job, hidden }: { shot: Shot; scene?: Scene; job?: Job; hidden?: boolean }) {
