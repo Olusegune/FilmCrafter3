@@ -13,7 +13,7 @@ First slice of the SonicStage plan. Act a line, have it changed into the charact
 
 ## Not done / next
 
-- **The real model has not been run in FilmCrafter.** Greenroom Local's repository references `runtime/chatterbox_vc_once.py` (`include_str!` in its `lib.rs`) but that file is not committed, so `vc_worker.py` was written against Chatterbox's public interface. First job: press Install on a real machine, convert a real line, listen, and fix whatever the model does differently. Install downloads several GB; do it only with the owner's go-ahead.
+- **The real model was run once through the engine (2026-11-06)**: Install worked (3.0 GB) and a real conversion took 34 s on a processor. **Nobody has listened to it**, and the screens have not driven the real model. Greenroom Local's repository references `runtime/chatterbox_vc_once.py` (`include_str!` in its `lib.rs`) but that file is not committed, so `vc_worker.py` was written against Chatterbox's public interface. Next: use the app's own Install button and Line Studio panel with human recordings, listen, and fix whatever sounds wrong. The owner's test files are on the Desktop (`listening test`).
 - Remaining SonicStage milestones (voice identity profile and casting director, performance plans and nonverbal events, Foley and soundscape, music director, ADR and sync, mixer automation and quality inspector, pro export) and the Virtual Production / WorldLock / DirectorCam brief are planned, not started.
 - `rafter run` could not be used: the account's fast-scan quota was used up (1 of 1). A manual review of the new surface is in `docs/QA.md`.
 - GitHub: the PC was not logged in (`gh auth login`), so pushing needs the owner.

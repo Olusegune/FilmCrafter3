@@ -8,7 +8,9 @@ After the change: TypeScript clean; **749 Vitest tests in 97 files** (9 new); **
 
 Security review (manual; `rafter run` could not be used because the account's scan quota was used up): command injection (none: list-form arguments), path traversal (relative paths checked with `inside`; names from hashes and validated keys), consent (refused without owner agreement, whose voice and use; revoked or changed references refused), output validation (silent, empty or wrong-length results refused), network (conversion runs with the model library offline; only Install may download), supply chain (pinned versions, but two package indexes and no hashes). Not addressed: a local user who can write to `~/.filmcrafter/voiceconv/site` can run code as themselves (they already could).
 
-**Not tested:** the real model's output quality (nobody has listened); the microphone recorder in this flow; the installed app walked through by a person; 125%/150% scaling and screen-reader use of the new panel; Install on a second, clean computer.
+Real run (no fakes, processor only, 2026-11-06): Install gave 3.0 GB (`torch 2.6.0+cpu`, `chatterbox-tts 0.1.7`); a Windows text-to-speech male line (8.0 s, 92 Hz) converted to a female reference (178 Hz) in 33.9 s, 8.0 s output, median pitch 157 Hz; the repeat call was a cache hit. Details in `docs/SPEECH_TO_SPEECH.md`.
+
+**Not tested:** how the converted voice sounds (nobody has listened; test audio was text-to-speech, not human recordings); the microphone recorder in this flow; the installed app walked through by a person; 125%/150% scaling and screen-reader use of the new panel; Install on a second, clean computer.
 
 ## Earlier: 0.36.2 (2026-11-04)
 

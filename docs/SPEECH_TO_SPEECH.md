@@ -1,6 +1,6 @@
 # Speech to speech: perform a line yourself (0.37.0)
 
-**Status: experimental.** The engine, the records, the safety checks and the screens are built and tested with a stand-in for the voice-conversion program. **The real model has not been run inside FilmCrafter yet.** Greenroom Local's notes report a real run of the same model (see "What was and was not tested"), but FilmCrafter's own worker has not been exercised against it. Nobody has listened to a converted take in FilmCrafter.
+**Status: experimental.** The engine, the records, the safety checks and the screens are built and tested with a stand-in for the voice-conversion program, and the real Install and a real conversion have been run once through the engine (2026-11-06, see "What was and was not tested"). Nobody has listened to a converted take yet, and the screens have not been used with the real model.
 
 ## What it does
 
@@ -49,9 +49,11 @@ Note: film backups skip `voice/_generated` (as they do for spoken takes), so a c
 
 Tested (automated, stand-in for the model): install gating, consent and revocation, tamper check, take creation and immutability, caching, take list and choosing, archive of the replaced recording, bad-output refusal, path safety, the command line, and the screens (install confirmation, consent form, convert, A/B compare, error display).
 
-**Not tested:** the real Chatterbox model in FilmCrafter; the Install step (pip and model download) on a real machine; how the converted voice sounds; the microphone recorder in this flow; Windows scaling and screen-reader use of the new panel.
+**Real run through the engine (2026-11-06, Windows 11, processor only, no fakes).** Install (pip into `~/.filmcrafter/voiceconv/site` plus the model files) worked: 3.0 GB on disk, `torch 2.6.0+cpu`, `torchaudio 2.6.0+cpu`, `chatterbox-tts 0.1.7`. Test audio was two Windows text-to-speech voices (not human recordings): a male voice saying a line (8.0 s, median pitch 92 Hz) converted to a female reference voice (8.7 s, 178 Hz). The conversion took 33.9 s including model load, produced an 8.0 s, 24 kHz file (peak 0.79) with median pitch 157 Hz, i.e. moved most of the way to the reference. Asking again was served from the cache in 0.08 s. The three files are on the owner's Desktop (`listening test`) for a listening check.
 
-Greenroom Local's own record (`docs/SPEECH_TO_SPEECH.md` there): a real run on a Windows 11 processor converted an 8.09 s male recording into a female reference voice in 36 s including model load; timing was kept to 0.01 s and the median pitch moved from 94.5 Hz towards the target (148.8 Hz against 180.5 Hz). That worker script is not in Greenroom's repository, so FilmCrafter's `vc_worker.py` was written against Chatterbox's public voice-conversion interface (`ChatterboxVC.from_pretrained` and `generate(audio, target_voice_path=...)`) and still needs a first real run.
+**Not tested:** how the converted voice sounds to a person (a pitch measurement is not a quality judgement); human recordings and real accents; the microphone recorder in this flow; the screens driving the real model; Install through the app's own Install button; Windows scaling and screen-reader use of the new panel.
+
+Greenroom Local's own record (`docs/SPEECH_TO_SPEECH.md` there): a real run on a Windows 11 processor converted an 8.09 s male recording into a female reference voice in 36 s including model load; timing was kept to 0.01 s and the median pitch moved from 94.5 Hz towards the target (148.8 Hz against 180.5 Hz). That worker script is not in Greenroom's repository, so FilmCrafter's `vc_worker.py` was written against Chatterbox's public voice-conversion interface (`ChatterboxVC.from_pretrained` and `generate(audio, target_voice_path=...)`); the real run above shows it works with chatterbox-tts 0.1.7.
 
 ## Known limits
 
