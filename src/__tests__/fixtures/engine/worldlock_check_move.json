@@ -1,0 +1,30 @@
+{
+ "ok": false,
+ "steps": [
+  {
+   "t": 0.0,
+   "uncovered": 0.2647
+  },
+  {
+   "t": 0.25,
+   "uncovered": 0.2643
+  },
+  {
+   "t": 0.5,
+   "uncovered": 0.2643
+  },
+  {
+   "t": 0.75,
+   "uncovered": 0.2647
+  },
+  {
+   "t": 1.0,
+   "uncovered": 0.2643
+  }
+ ],
+ "warning": "This move shows a gap of 26% of the view at 0% of the way. The set does not cover where the camera goes: shorten the move or add a picture.",
+ "worst": {
+  "t": 0.0,
+  "uncovered": 0.2647
+ }
+}

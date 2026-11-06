@@ -1,11 +1,11 @@
 {
  "files": {
-  "mask": "exports/virtual-production/Sarah cu-5fc3eaeb mask.png",
-  "rgba": "exports/virtual-production/Sarah cu-5fc3eaeb rgba.png"
+  "mask": "exports/virtual-production/Sarah cu-962554a3 mask.png",
+  "rgba": "exports/virtual-production/Sarah cu-962554a3 rgba.png"
  },
- "folder": "C:\\Users\\eduni\\AppData\\Local\\Temp\\tmp60qog6jl\\films\\Fixture Film\\exports\\virtual-production",
+ "folder": "C:\\Users\\eduni\\AppData\\Local\\Temp\\tmpw8gh4qoz\\films\\Fixture Film\\exports\\virtual-production",
  "has_alpha": true,
- "id": "cu-5fc3eaeb",
+ "id": "cu-962554a3",
  "note": "An RGBA PNG keeps straight (unassociated) alpha: open it in an editor that reads PNG transparency. Transparent H.264 MP4 does not exist, so nothing here offers it.",
  "transparent_share": 0.721
 }

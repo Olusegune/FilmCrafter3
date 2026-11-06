@@ -3,7 +3,7 @@ import * as I from "./icons";
 import type { FilmProgress } from "./api";
 import { STAGES, stageDone } from "./storyView";
 
-export type ToolId = "project" | "library" | "looks" | "review" | "agent" | "supervisor" | "acting" | "continuity" | "layers" | "lighting" | "presets" | "color" | "colourmatch" | "clean" | "cutouts";
+export type ToolId = "project" | "library" | "looks" | "review" | "agent" | "supervisor" | "acting" | "continuity" | "layers" | "lighting" | "presets" | "color" | "colourmatch" | "clean" | "cutouts" | "worldlock";
 export type RailStep = { id: string; label: string; icon: ReactNode; active?: boolean; done?: boolean; next?: boolean; disabled?: boolean; title?: string; onClick?: () => void };
 
 const NEEDS = "Needs a shot plan first: make the shots in the Shots or Studio step.";
@@ -24,6 +24,7 @@ export const TOOLS: { id: ToolId; label: string; icon: ReactNode; more?: boolean
   { id: "color", label: "Color", icon: <I.Sliders />, more: true, needsShots: true, why: NEEDS },
   { id: "colourmatch", label: "Colour match", icon: <I.Lens />, more: true, needsShots: true, why: NEEDS },
   { id: "clean", label: "Clean up", icon: <I.Trash />, more: true, needsShots: true, why: NEEDS },
+  { id: "worldlock", label: "Sets", icon: <I.Cube />, more: true, why: "Build a place once (flat pictures at fixed positions in metres), save cameras, and see it from each camera." },
   { id: "cutouts", label: "Cutouts", icon: <I.Mask />, more: true, why: "Cut a subject out of a green or blue screen and put it on another picture." },
 ];
 
@@ -60,7 +61,7 @@ export function FilmRail({ steps, onHome, onSettings, onTool, hasShots, activeTo
         </button>))}
       <div className="rail-sep" role="separator" />
       {TOOLS.filter((t) => !t.more).map(tool)}
-      <button data-k="more" className="rail-more" aria-expanded={shownMore} onClick={toggle} title="The tools a first film does not need: Supervisor, Acting, Continuity, Layers, Lighting, Presets, Color, Colour match, Clean up and Cutouts."><I.Sliders /><span>{shownMore ? "Fewer" : "More"}</span></button>
+      <button data-k="more" className="rail-more" aria-expanded={shownMore} onClick={toggle} title="The tools a first film does not need: Supervisor, Acting, Continuity, Layers, Lighting, Presets, Color, Colour match, Clean up, Sets and Cutouts."><I.Sliders /><span>{shownMore ? "Fewer" : "More"}</span></button>
       {shownMore && <><div className="rail-sep" role="separator" />{TOOLS.filter((t) => t.more).map(tool)}</>}
       <div className="spacer" />
       {onSettings && <button data-k="settings" onClick={onSettings} title="Settings"><I.Gear /><span>Settings</span></button>}

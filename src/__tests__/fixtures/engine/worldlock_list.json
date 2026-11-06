@@ -1,0 +1,19 @@
+{
+ "limits": {
+  "assets": 200,
+  "cameras": 30,
+  "events": 200,
+  "sets": 40
+ },
+ "sets": [
+  {
+   "assets": 3,
+   "cameras": 2,
+   "id": "ws-6a720c31",
+   "locked": false,
+   "name": "Market",
+   "updated": 1794007888.0871725,
+   "version": 6
+  }
+ ]
+}

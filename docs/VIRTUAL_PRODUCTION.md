@@ -16,8 +16,8 @@ The brief has three systems: **Virtual Production Studio** (green screen, transp
 |---|---|---|
 | 1 (0.47.0) | Cutout studio: plate check, chroma key with despill and decontamination, edge refine, RGBA PNG and mask export, stills compositing with transform, contact shadow, colour match; plate prompt (words only) | **Done, tested on synthetic plates with known answers; not yet tried on a real photograph** |
 | 2 (0.48.0) | Production Mode on shots (Full scene, Green screen, Transparent); video: clip keying with temporal smoothing, PNG sequences and alpha video (ProRes 4444, VP9), keyframed compositions over a still or a clip, MP4 render with cancel | **Done, tested on real encoded video made for the tests; not yet tried on camera footage.** Layered scene is not built and is shown greyed |
-| 3 | WorldLock package (versioned set, stable ids, undo/redo) and 2.5D set builder (layers at depths, parallax, saved cameras) | Not started |
-| 4 | Continuity inspector on the set (object and prop state over shots, screen direction) | Not started |
+| 3 (0.49.0) | WorldLock package (versioned set, stable ids, undo/redo, lock, saved versions) and 2.5D set builder (flat layers at fixed world positions, parallax, saved cameras, gap warnings, events over the shots, basic continuity checks) | **Done, tested on real rendered views; layers are flat and nothing is inferred** |
+| 4 | Continuity inspector on the set (object and prop state over shots, screen direction) | Partly done in slice 3 (the line-crossing check, orphan events, bounds, missing pictures); a fuller inspector is not started |
 | 5 | True 3D set (glTF import, hierarchy, lights, cameras, render of several views); Blender as an optional backend | Not started |
 | 6 | DirectorCam: shot plan from a story beat on a set, blocking, eyeline and screen-direction checks, conditioning assets for providers | Not started |
 | 7 | AI-assisted reconstruction from reference images (inventory, draft layout, optional image-to-3D adapters), approval and set locking | Not started |
@@ -60,7 +60,33 @@ Rail > More > **Cutouts** (any screen of a film; it opens in the timeline Studio
 - Depth-aware occlusion, hair-specific refinement and manual mask painting are not built.
 - The keyframe screen edits numbers, not a draggable path.
 
-### Tested, and not (slice 2)
+#
+## Slice 3: WorldLock, a persistent 2.5D set (0.49.0)
+
+Rail > More > **Sets**. A **set** lives in the film (`worldlock/<id>/`): a world in metres (X right, Y up, Z forward into the set; bounds; an origin), **pictures** (flat layers, props, landmarks) standing at fixed positions with a width and height in metres, **characters** on the floor with a facing, saved **cameras** (position, turn, tilt, field of view), lights and environment words, and **events** that change the set over the shots of the film. The set is the source of truth, not a prompt.
+
+**How a view is made.** Not generated: computed. Each picture is placed by a pinhole projection (`worldmath.py`), far to near, premultiplied so edges have no halo. So the same camera always gives the same picture, and moving a camera never moves an object: objects keep their world coordinates and only their screen positions change, with parallax (near things move further than far things). **What the pictures do not cover is a gap**: it is measured (`uncovered`), warned about in plain words, and shown as the plain base colour. Nothing is hallucinated behind a layer. **Check the move** walks a camera between two saved cameras and reports where a move goes past what the set covers.
+
+**The set over time.** The set as built is never changed by an event. An event says that a picture or a character moves, is left in a state ("on the floor"), leaves or appears, at a shot. A view *as at shot N* replays the events of the shots before N on top of the set. So a basket that falls in shot 12 is where it fell in shot 13 and the set still says where it was put.
+
+**Separating a picture into layers (`cut_layer`).** There is no depth estimation and no inpainting. You cut a region out of a picture into its own layer at another depth; the new layer is scaled and placed so that, from the camera, it covers exactly the same part of the view; the original is left whole (what was behind the region is not known). Moving the camera then separates the cut layer from the backdrop.
+
+**Safety of the work.** Every change goes through one path: a **locked** set refuses changes (it is the approved environment; looking is always allowed), the state before every change is kept for **undo and redo** (50 deep), every change counts a version, and a **saved version** is kept for good and can be restored (restoring is itself undoable). Nothing is deleted: a removed picture moves to `removed` (its file stays), a removed set moves to `worldlock/_removed/`. Pictures are copied in; the originals are never touched. A set file of the wrong shape is refused and left exactly as it is.
+
+**Checks.** Pictures whose file is missing or that stand outside the world; cameras outside the world or inside a picture; events about things no longer in the set or at shots that no longer exist; and, for two characters chosen as the line, a camera that crosses that line between two consecutive shots (the 180-degree rule).
+
+### Limits of slice 3
+
+- **2.5D only.** A picture is flat: no sides, nothing behind it, no 3D mesh. A camera that goes far from where the pictures were made shows their flatness. Moving the camera shows exactly what the pictures cover, no more.
+- Lights and environment are stored for the planner and for prompts; they are **not** painted into the views. Characters appear on the plan and are drawn only if given one of the set's pictures.
+- No depth estimation, no segmentation, no reconstruction from a reference image, no 3D import, no Blender: those are later slices. No camera is steered by dragging; positions are typed in metres (the plan is clickable to select).
+- Generated shots are **not** guaranteed to match the set: the set is the ground truth the shots will be checked against (DirectorCam, later).
+
+### Tested, and not (slice 3)
+
+Tested on a real film folder with real pictures: the projection against hand-worked numbers (a point ahead, to the side, above, behind, yawed and pitched); a market set saved and reopened with identical ids and coordinates; where each picture lands in a real rendered view; parallax measured between two real renders (the near cart moves twice as far as the stall at twice the depth); determinism; gaps reported and not filled; a camera move past the set's edge caught; the basket event (before, during and after the shot) with the set unchanged; undo and redo, 50-deep limit, named versions restored, locking, removal that keeps files, damaged files refused; a cut layer that looks identical from the camera and separates when it moves; every kind of check, including the line crossing. **Not tested:** real photographs of a set; a large set with many layers (speed); the screens in the installed app.
+
+## Tested, and not (slice 2)
 
 Tested on a real encoded video: a subject moving across a noisy green screen with a known transparency in every frame, encoded to H.264 with the usual chroma subsampling (so the codec really blurs the edges), then keyed (alpha within 0.02 of the truth on average, more than 93% of the solid subject kept, more than 97% of the screen removed), smoothed (jitter cut to under 60%, subject position within one pixel of the truth), exported (PNG sequence, ProRes 4444 and VP9 decoded back with their transparency within 0.04 of the mask), composed with keyframes over a moving background clip and rendered to MP4 whose size, frame rate and length were read back, with real cancel checks on both jobs. The shot's production mode is tested on the prompt it changes. **Not tested:** camera footage; compression other than the one test clip; very long or very large clips; an editor opening the exported ProRes or WebM files.
 

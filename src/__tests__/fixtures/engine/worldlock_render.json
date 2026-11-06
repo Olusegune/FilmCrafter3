@@ -1,0 +1,27 @@
+{
+ "camera": {
+  "fov": 50.0,
+  "pitch": 0.0,
+  "x": 0.25,
+  "y": 1.6,
+  "yaw": 0.0,
+  "z": 0.0
+ },
+ "coverage": 0.7357,
+ "drawn": [
+  "wa-25a0204c",
+  "wa-cdac0459",
+  "wa-67c402de"
+ ],
+ "file": "worldlock/ws-6a720c31/views/Right-1794007888168.png",
+ "height": 180,
+ "id": "ws-6a720c31",
+ "set_version": 6,
+ "shot": null,
+ "skipped": [],
+ "uncovered": 0.2643,
+ "warnings": [
+  "26% of this view shows nothing the set has. The set is made of flat pictures: from here the camera sees past their edges. Move the camera back, or add a picture that covers it."
+ ],
+ "width": 320
+}

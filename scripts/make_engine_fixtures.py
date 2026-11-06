@@ -19,7 +19,7 @@ import soundfile as sf
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "analysis"))
 from filmcrafter_engine import (adrsync as AD, audiolib as AL, audiocues as Q, audioqa as QA, bible, cast_voice as C, performplan as PP, proaudio as PA, revoice as RV,  # noqa: E402
-                                shots as S, sounddesign as SD, musicdirector as MD, vpstudio as VP, vpvideo as VV, story, voiceid as VI, voiceover as V)
+                                shots as S, sounddesign as SD, musicdirector as MD, vpstudio as VP, vpvideo as VV, worldlock as WL, story, voiceid as VI, voiceover as V)
 
 OUT = os.path.join(ROOT, "src", "__tests__", "fixtures", "engine")
 DATA = os.path.join(ROOT, "analysis", "tests", "data")
@@ -125,6 +125,24 @@ def main():
         cp2 = VP.compose_set(d, {"name": "Walk", "background": bid, "size": [TV.W, TV.H], "layers": [{"cutout": ck["id"], "x": 0.3, "y": 1.0, "scale": 0.8, "anchor": "bottom", "keys": [{"t": 0, "x": 0.2}, {"t": 1.0, "x": 0.8}]}]})["id"]
         dump("vpvideo_render_video", VV.render_video(d, {"id": cp2, "fps": 12, "seconds": 1}))
         dump("vp_get", VP.get(d))
+        # WorldLock: a small market set built from real pictures, seen from two cameras, with an event over the shots
+        from PIL import ImageDraw
+        def wl_pic(name, w, h, col):
+            im = PILImage.new("RGBA", (w, h), col + (255,)); ImageDraw.Draw(im).rectangle((0, 0, w - 1, h - 1), outline=(0, 0, 0, 255), width=2)
+            pth = os.path.join(src, name + ".png"); im.save(pth); return pth
+        wsid = WL.create(d, {"name": "Market"})["id"]
+        wback = WL.asset_add(d, wsid, {"path": wl_pic("wback", 1200, 300, (40, 80, 230)), "name": "Backdrop", "z": 20, "width": 40, "height": 10})["id"]
+        WL.asset_add(d, wsid, {"path": wl_pic("wstall", 200, 200, (30, 200, 60)), "name": "Fruit stall", "kind": "landmark", "x": -2.2, "z": 8, "width": 2.4, "height": 3})
+        wbasket = WL.asset_add(d, wsid, {"path": wl_pic("wbasket", 60, 60, (230, 30, 30)), "name": "Basket", "kind": "prop", "x": -0.4, "z": 5, "width": 0.5, "height": 0.5})["id"]
+        wcam2 = WL.camera_set(d, wsid, {"name": "Right", "x": 0.25, "y": 1.6, "z": 0})["id"]
+        wshots = [s["id"] for s in sorted(S.view(d)["shots"], key=lambda x: (int(x["scene"]), x["index"]))]
+        WL.event_set(d, wsid, {"shot": wshots[1], "asset": wbasket, "kind": "move", "to": {"x": -1.0, "z": 6.0}, "state": "on the floor"})
+        WL.version_save(d, wsid, "Opening layout")
+        dump("worldlock_render", WL.render(d, wsid, {"camera": wcam2, "size": [320, 180]}))
+        dump("worldlock_check", WL.check(d, wsid))
+        dump("worldlock_check_move", WL.check_move(d, wsid, {"from": WL.get(d, wsid)["cameras"][0]["id"], "to": wcam2, "steps": 4}))
+        dump("worldlock_list", WL.list_sets(d))
+        dump("worldlock_get", WL.get(d, wsid))
         # the audio inspector
         os.makedirs(os.path.join(d, "exports"), exist_ok=True)
         shutil.copyfile(os.path.join(DATA, "real_speech_zira.wav"), os.path.join(d, "exports", "cut.wav"))

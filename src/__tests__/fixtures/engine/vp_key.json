@@ -2,10 +2,10 @@
  "compositions": [],
  "cutouts": [
   {
-   "created": 1794006018.2276552,
+   "created": 1794007886.0223415,
    "height": 400,
-   "id": "cu-5fc3eaeb",
-   "mask": "vp/cutouts/cu-5fc3eaeb/mask.png",
+   "id": "cu-962554a3",
+   "mask": "vp/cutouts/cu-962554a3/mask.png",
    "name": "Sarah",
    "params": {
     "clip_black": 0.0,
@@ -48,8 +48,8 @@
     "soft_edge": 0.0777,
     "subject": 0.2012
    },
-   "rgba": "vp/cutouts/cu-5fc3eaeb/cutout.png",
-   "source": "vs-abbc9ed2",
+   "rgba": "vp/cutouts/cu-962554a3/cutout.png",
+   "source": "vs-17d984e5",
    "width": 320
   }
  ],
@@ -67,7 +67,7 @@
   "similarity": 0.06,
   "softness": null
  },
- "id": "cu-5fc3eaeb",
+ "id": "cu-962554a3",
  "limits": {
   "compositions": 100,
   "cutouts": 300,
@@ -118,22 +118,22 @@
  },
  "sources": [
   {
-   "added": 1794006018.1094143,
+   "added": 1794007885.9142566,
    "bytes": 199305,
-   "file": "vp/sources/vs-abbc9ed2.png",
+   "file": "vp/sources/vs-17d984e5.png",
    "height": 400,
-   "id": "vs-abbc9ed2",
+   "id": "vs-17d984e5",
    "kind": "plate",
    "name": "Sarah on green",
    "sha1": "d65c87cdcab35914148bab7495300b20304843a1",
    "width": 320
   },
   {
-   "added": 1794006018.1211698,
+   "added": 1794007885.9318135,
    "bytes": 2891,
-   "file": "vp/sources/vs-bb3a2c6f.jpg",
+   "file": "vp/sources/vs-8e7486e7.jpg",
    "height": 400,
-   "id": "vs-bb3a2c6f",
+   "id": "vs-8e7486e7",
    "kind": "background",
    "name": "Street",
    "sha1": "a77fa7164bf132158e31bedcb83ca51c3c637aa3",

@@ -345,6 +345,8 @@ export const api = {
   audioQa: <T = AudioQaReport>(action: "film" | "inspect", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_audioqa", { action, target, data }),
   /** Sound design for a scene (filmcrafter_engine.sounddesign): soundscape profiles and Foley events, put into the film as ordinary cues. Free and local. */
   soundDesign: <T = SoundDesignScene>(action: "scene" | "profile_set" | "suggest" | "event_add" | "event_update" | "event_remove" | "candidates" | "to_cues", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_sounddesign", { action, target, data }),
+  /** WorldLock (filmcrafter_engine.worldlock): persistent 2.5D sets, saved cameras, events over the shots, views by projection, continuity checks. Free and local; nothing is generated or sent. */
+  worldlock: <T = WlSet>(action: "list" | "create" | "get" | "meta_set" | "asset_add" | "asset_set" | "asset_remove" | "cut_layer" | "character_set" | "character_remove" | "camera_set" | "camera_remove" | "light_set" | "light_remove" | "event_set" | "event_remove" | "shot_camera" | "render" | "check" | "check_move" | "lock" | "unlock" | "undo" | "redo" | "version_save" | "versions" | "version_restore" | "set_remove", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_worldlock", { action, target, data }),
   /** Virtual production, video (filmcrafter_engine.vpvideo): clips keyed into transparent frames, alpha export, composition over time. Free and local; nothing is sent. */
   vpVideo: <T = VpState>(action: "capabilities" | "import_clip" | "key_clip" | "export_clip" | "render_video" | "cancel", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_vpvideo", { action, target, data }),
   /** Virtual production, the cutout studio (filmcrafter_engine.vpstudio): pictures, green-screen keying into RGBA cutouts, compositions. Free and local; nothing is generated or sent. */
@@ -618,6 +620,19 @@ export type FoleyEvent = { id: string; scene: number; shot: string; action: stri
 export type FoleyProposal = Pick<FoleyEvent, "action" | "source_object" | "by" | "material" | "surface" | "intensity" | "distance" | "side" | "start" | "motivated_by">;
 export type SoundDesignScene = { scene: number; environment: { id: string; name: string } | null; profile: SoundProfile | null; layers: AmbienceLayer[]; events: FoleyEvent[]; shots: { id: string; duration: number }[];
   coverage: { events: number; approved: number; without_sound: string[]; layers: number; layers_without_sound: string[]; has_profile: boolean; environment: string | null }; made?: string[]; updated?: string[]; waiting?: { kind: string; id: string; name: string }[] };
+export type WlAsset = { id: string; name: string; kind: "layer" | "prop" | "landmark"; x: number; y: number; z: number; width: number; height: number; file: string; pixels: [number, number]; tags: string[]; note: string; cut_from?: string };
+export type WlCamera = { id: string; name: string; x: number; y: number; z: number; yaw: number; pitch: number; fov: number; note: string };
+export type WlCharacter = { id: string; name: string; x: number; z: number; facing: number; asset: string | null };
+export type WlEvent = { id: string; shot: string; asset?: string | null; character?: string | null; kind: "move" | "state" | "remove" | "appear"; to: { x?: number; y?: number; z?: number; facing?: number }; state: string; note: string };
+export type WlLight = { id: string; name: string; azimuth: number; elevation: number; colour: string; intensity: number };
+export type WlSet = { id: string; name: string; version: number; locked: boolean; world: { units: string; up: string; bounds: { x: [number, number]; y: [number, number]; z: [number, number] } }; assets: WlAsset[]; characters: WlCharacter[]; cameras: WlCamera[];
+  lights: WlLight[]; events: WlEvent[]; removed: WlAsset[]; shots: { shot: string; camera: string }[]; environment: { time: string; weather: string; atmosphere: string }; axis: string[]; can_undo: boolean; can_redo: boolean;
+  undo_label: string; redo_label: string; saved_versions: { number: number; name: string; at: number; set_version: number; assets: number }[]; id_?: string };
+export type WlSummary = { id: string; name: string; version: number; locked: boolean; assets: number; cameras: number; updated: number; damaged?: boolean };
+export type WlList = { sets: WlSummary[]; limits: { sets: number; assets: number; cameras: number; events: number } };
+export type WlView = { id: string; file: string; width: number; height: number; camera: Record<string, number>; drawn: string[]; skipped: { id: string; why: string }[]; uncovered: number; coverage: number; warnings: string[]; shot: string | null; set_version: number };
+export type WlCheck = { issues: { kind: string; id: string; text: string }[]; ok: boolean; checked: { pictures: number; cameras: number; events: number } };
+export type WlMove = { steps: { t: number; uncovered: number }[]; worst: { t: number; uncovered: number }; ok: boolean; warning: string };
 export type VpSource = { id: string; kind: "plate" | "background" | "foreground"; name: string; file: string; width: number; height: number; bytes: number; clip?: boolean; fps?: number; seconds?: number; frames?: number };
 export type KeyParams = { screen: "green" | "blue"; color: number[] | null; similarity: number; softness: number | null; erode: number; dilate: number; feather: number; fill_holes: boolean; despill: number; decontaminate: boolean; clip_black: number; clip_white: number };
 export type PlateReport = { screen: string; color: number[]; saturation: number; border_on_screen: number; spread: number; usable: boolean; notes: string[]; width: number; height: number; source?: string };

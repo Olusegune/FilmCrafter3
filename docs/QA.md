@@ -1,4 +1,10 @@
-# QA report: FilmCrafter 0.48.0 (2026-11-06)
+# QA report: FilmCrafter 0.49.0 (2026-11-06)
+
+## 0.49.0: WorldLock, a persistent 2.5D set (virtual production slice 3)
+
+Engine: **2,858 tests collected, 2,851 passed, 7 skipped, none failed** (43 new: 15 in `test_worldmath.py` against hand-worked numbers, 28 in `test_worldlock.py` on a real film folder with real pictures and measured renders). Bandit (medium and above): **no findings; the output was read** (the first full run of this release had one failing test, the shell/engine action check, because the new command line listed its actions in a variable the check could not read; fixed and the whole suite re-run). TypeScript clean; **896 Vitest tests in 113 files** (14 for the set builder, 1 more real-engine contract test with five new fixtures); 15 Rust tests. Security review by hand (the scan service quota is used up): every action is on the fixed list the shell checks; set ids are checked to be `ws-` plus letters and digits before they become a path, so no id can reach outside the film; every number is clamped, every name trimmed and limited; pictures are checked for type, size and pixel count and copied in (the original is never touched); a record that points outside the film is never followed; a locked set refuses every change; nothing is sent, nothing is generated, nothing is deleted (removed pictures and sets are moved aside); a set file of the wrong shape is refused and left as it is. Test mistakes found and corrected while building (not product faults): test pictures placed where the camera could not see them (a floor object 3.5 m from a camera at head height is below the frame).
+
+**Still not tested:** a set made from real photographs; many layers (speed); the screens in the installed app.
 
 ## 0.48.0: virtual production slice 2 (video, keyframes, production mode) and an Agent Studio fix
 

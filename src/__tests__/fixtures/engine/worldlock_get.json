@@ -1,0 +1,150 @@
+{
+ "assets": [
+  {
+   "added": 1794007888.0002906,
+   "file": "worldlock/ws-6a720c31/assets/wa-25a0204c.png",
+   "height": 10.0,
+   "id": "wa-25a0204c",
+   "kind": "layer",
+   "name": "Backdrop",
+   "note": "",
+   "pixels": [
+    1200,
+    300
+   ],
+   "tags": [],
+   "width": 40.0,
+   "x": 0.0,
+   "y": 0.0,
+   "z": 20.0
+  },
+  {
+   "added": 1794007888.0220568,
+   "file": "worldlock/ws-6a720c31/assets/wa-cdac0459.png",
+   "height": 3.0,
+   "id": "wa-cdac0459",
+   "kind": "landmark",
+   "name": "Fruit stall",
+   "note": "",
+   "pixels": [
+    200,
+    200
+   ],
+   "tags": [],
+   "width": 2.4,
+   "x": -2.2,
+   "y": 0.0,
+   "z": 8.0
+  },
+  {
+   "added": 1794007888.0491285,
+   "file": "worldlock/ws-6a720c31/assets/wa-67c402de.png",
+   "height": 0.5,
+   "id": "wa-67c402de",
+   "kind": "prop",
+   "name": "Basket",
+   "note": "",
+   "pixels": [
+    60,
+    60
+   ],
+   "tags": [],
+   "width": 0.5,
+   "x": -0.4,
+   "y": 0.0,
+   "z": 5.0
+  }
+ ],
+ "axis": [],
+ "cameras": [
+  {
+   "fov": 50.0,
+   "id": "wk-cd6570ae",
+   "name": "Main camera",
+   "note": "",
+   "pitch": 0.0,
+   "x": 0.0,
+   "y": 1.6,
+   "yaw": 0.0,
+   "z": 0.0
+  },
+  {
+   "fov": 50.0,
+   "id": "wk-aeaca514",
+   "name": "Right",
+   "note": "",
+   "pitch": 0.0,
+   "x": 0.25,
+   "y": 1.6,
+   "yaw": 0.0,
+   "z": 0.0
+  }
+ ],
+ "can_redo": false,
+ "can_undo": true,
+ "characters": [],
+ "created": 1794007887.9778132,
+ "environment": {
+  "atmosphere": "",
+  "time": "",
+  "weather": ""
+ },
+ "events": [
+  {
+   "asset": "wa-67c402de",
+   "id": "we-2b83dbbe",
+   "kind": "move",
+   "note": "",
+   "order": 0,
+   "shot": "S01-02",
+   "state": "on the floor",
+   "to": {
+    "x": -1.0,
+    "z": 6.0
+   }
+  }
+ ],
+ "id": "ws-6a720c31",
+ "lights": [],
+ "locked": false,
+ "name": "Market",
+ "redo_label": "",
+ "removed": [],
+ "saved_versions": [
+  {
+   "assets": 3,
+   "at": 1794007888.1066434,
+   "name": "Opening layout",
+   "number": 1,
+   "set_version": 6
+  }
+ ],
+ "schema": 1,
+ "shots": [],
+ "undo_label": "Record an event",
+ "updated": 1794007888.0871725,
+ "version": 6,
+ "world": {
+  "bounds": {
+   "x": [
+    -10.0,
+    10.0
+   ],
+   "y": [
+    0.0,
+    10.0
+   ],
+   "z": [
+    0.0,
+    30.0
+   ]
+  },
+  "origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "units": "m",
+  "up": "y"
+ }
+}
