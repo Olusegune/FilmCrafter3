@@ -1,8 +1,10 @@
 # Changelog
 
-## 0.51.0 (2026-11-06)
+## 0.51.1 (2026-11-06)
 
-- **Post-release fixes (unreleased build):** the Blender script now works on Blender 5.x (tried for real: 5.2.2); the four-views framing ignores a few far objects (a skyline) so the set is not a speck; the 3D tab folds each model's position boxes away and the intro line mentions 3D models.
+- **Fixes:** the Blender script now works on Blender 5.x (tried for real in Blender 5.2.2, which found it; ground, sky and light settings are still not carried over); the four-views framing ignores a few far objects (a skyline) so the set is not a speck; the 3D tab folds each model's position boxes away and the intro line mentions 3D models.
+
+## 0.51.0 (2026-11-06)
 
 - **WorldLock in 3D (free, local).** Sets can now hold real **3D models** (glTF 2.0: .glb, or .gltf with embedded data) as well as flat pictures. Rail > More > Sets > **3D** tab: stand a model in the set, move, turn and scale it by typing, hide it, group models (a group moves its members), turn on a **ground** with a metre checker, set the **sky** colours and **fog**, see the set from **four sides** (front, side, reverse, elevated), and **check for collisions** (overlaps, below the ground, outside the set, a camera inside a model). Views are drawn by a built-in software renderer (depth buffer, textures, flat lighting from the set's lights); 3D and 2.5D layers sort together by depth.
 - **Animation (free, local).** A set can be animated: camera, model, light and sky keys (linear, smooth or hold), shake bursts and an ambient level, rendered frame by frame to an H.264 MP4 with progress and a Stop file (`worldanim.py`).

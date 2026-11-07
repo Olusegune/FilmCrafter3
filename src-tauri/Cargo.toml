@@ -1,6 +1,6 @@
 [package]
 name = "filmcrafter"
-version = "0.51.0"
+version = "0.51.1"
 description = "FilmCrafter: direct music into motion"
 authors = ["FilmCrafter"]
 license-file = "../LICENSE.txt"
