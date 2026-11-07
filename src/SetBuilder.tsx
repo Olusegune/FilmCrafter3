@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { Sheet } from "./Sheet";
-import { api, errorText, type WlCamera, type WlCheck, type WlEvent, type WlList, type WlMove, type WlSet, type WlView } from "./api";
+import { api, errorText, type WlCamera, type WlCheck, type WlEvent, type BlenderStatus, type WlCollisions, type WlList, type WlMove, type WlSet, type WlView, type WlViews3d } from "./api";
 
 /** Where a world point goes on the floor plan: x across, z up the plan (further into the set is higher). */
 export function planPoint(x: number, z: number, b: WlSet["world"]["bounds"], w: number, h: number, pad = 14): [number, number] {
@@ -29,7 +29,7 @@ const N = ({ label, value, step = 0.1, onChange, w = 70 }: { label: string; valu
 export function SetBuilder({ dir, onClose }: { dir: string; onClose: () => void }) {
   const [list, setList] = useState<WlList | null>(null);
   const [set, setSet] = useState<WlSet | null>(null);
-  const [tab, setTab] = useState<"layout" | "cameras" | "shots" | "checks">("layout");
+  const [tab, setTab] = useState<"layout" | "d3" | "cameras" | "shots" | "checks">("layout");
   const [sel, setSel] = useState<{ kind: "asset" | "camera" | "character"; id: string } | null>(null);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
@@ -43,6 +43,10 @@ export function SetBuilder({ dir, onClose }: { dir: string; onClose: () => void 
   const [mfrom, setMfrom] = useState("");
   const [mto, setMto] = useState("");
   const [vname, setVname] = useState("");
+  const [fours, setFours] = useState<WlViews3d | null>(null);
+  const [hits, setHits] = useState<WlCollisions | null>(null);
+  const [bl, setBl] = useState<BlenderStatus | null>(null);
+  const [gname, setGname] = useState("");
   const [ev, setEv] = useState({ shot: "", thing: "", kind: "move" as WlEvent["kind"], x: "", z: "", state: "" });
 
   const loadList = useCallback(() => api.worldlock<WlList>("list", dir).then(setList).catch((e) => setErr(errorText(e))), [dir]);
@@ -86,7 +90,7 @@ export function SetBuilder({ dir, onClose }: { dir: string; onClose: () => void 
           <button className="btn sm ghost" disabled={!!busy || !set.can_redo || lock} onClick={() => void go("redo", async () => setSet(await api.worldlock<WlSet>("redo", dir, { set: set.id })))} title={set.redo_label}>Redo</button>
           <button className="btn sm ghost" disabled={!!busy} onClick={() => void call("lock", lock ? "unlock" : "lock")}>{lock ? "Unlock this set" : "Lock this set"}</button></div>
         {lock && <p className="dim">This set is locked: it is the approved place. You can look at it from any camera, but nothing can change it until it is unlocked.</p>}
-        <div className="cw-tabs" role="tablist">{([["layout", "Layout"], ["cameras", "Cameras"], ["shots", "Over the shots"], ["checks", "Checks and versions"]] as const).map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}</div>
+        <div className="cw-tabs" role="tablist">{([["layout", "Layout"], ["d3", "3D"], ["cameras", "Cameras"], ["shots", "Over the shots"], ["checks", "Checks and versions"]] as const).map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}</div>
 
         {tab === "layout" && <section aria-label="Layout">
           <p className="dim">Seen from above: across is left to right, up the plan is further into the set. Click something to select it.</p>
@@ -115,6 +119,41 @@ export function SetBuilder({ dir, onClose }: { dir: string; onClose: () => void 
             <div className="sm-row"><N label="Person across (m)" value={selChar.x} onChange={(v) => void call("move", "character_set", { id: selChar.id, x: v })} /><N label="Person depth (m)" value={selChar.z} onChange={(v) => void call("move", "character_set", { id: selChar.id, z: v })} />
               <N label="Facing (°)" value={selChar.facing} step={15} onChange={(v) => void call("move", "character_set", { id: selChar.id, facing: v })} /></div>
             <button className="btn sm ghost" disabled={!!busy || lock} onClick={() => void call("remove", "character_remove", { id: selChar.id }).then(() => setSel(null))}>Remove this person</button></div>}
+        </section>}
+
+        {tab === "d3" && <section aria-label="3D">
+          <p className="dim">Stand real 3D models (glTF: .glb, or .gltf with embedded data) in the set. They are drawn by FilmCrafter's own renderer: flat shading under the set's lights, no shadows, no animation. A model's front faces the camera until you turn it.</p>
+          <div className="sm-row"><button className="btn sm" disabled={!!busy || lock} onClick={() => void go("model", async () => {
+            const f = await openDialog({ multiple: false, filters: [{ name: "3D models", extensions: ["glb", "gltf"] }] });
+            if (typeof f !== "string") return;
+            const r = await api.worldlock<WlSet & { id: string }>("model_add", dir, { set: set.id, path: f, y: 0, z: 6 });
+            setSet(r); setSaid(`Added. ${r.models?.find((m) => m.id === r.id)?.summary.warnings.join(" ") ?? ""}`);
+          })}>Stand a 3D model in the set…</button>
+            <label className="ov-check"><input type="checkbox" checked={!!set.ground?.visible} disabled={lock} onChange={(e) => void call("ground", "ground_set", { visible: e.target.checked })} /> Show the ground (a metre-checker)</label></div>
+          <div className="sm-row"><label>Sky overhead <input type="color" aria-label="Sky overhead" value={set.sky?.top ?? "#1a2236"} disabled={lock} onChange={(e) => void call("sky", "sky_set", { top: e.target.value })} /></label>
+            <label>Sky at the horizon <input type="color" aria-label="Sky at the horizon" value={set.sky?.horizon ?? "#d9a066"} disabled={lock} onChange={(e) => void call("sky", "sky_set", { horizon: e.target.value })} /></label>
+            <N label="Fog (0 to 1)" value={set.sky?.fog ?? 0} step={0.01} onChange={(v) => void call("sky", "sky_set", { fog: v })} /></div>
+          {(set.models ?? []).length === 0 ? <p className="dim">No 3D models yet.</p> : <ul className="ss-cues">{(set.models ?? []).map((m) => <li key={m.id} aria-label={`Model ${m.name}`}>
+            <div className="sm-row"><b>{m.name}</b> <span className="dim">{m.summary.triangles.toLocaleString()} triangles · {m.summary.size.join(" × ")} m</span>
+              <label className="ov-check"><input type="checkbox" checked={m.visible} disabled={lock} onChange={(e) => void call("model", "model_set", { id: m.id, visible: e.target.checked })} /> Shown</label>
+              <label className="ov-check"><input type="checkbox" checked={m.solid} disabled={lock} onChange={(e) => void call("model", "model_set", { id: m.id, solid: e.target.checked })} /> Solid</label>
+              {(set.groups ?? []).length > 0 && <select className="text-input" aria-label={`Group of ${m.name}`} value={m.parent ?? ""} disabled={lock} onChange={(e) => void call("model", "model_set", { id: m.id, parent: e.target.value || null })}><option value="">No group</option>{(set.groups ?? []).map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select>}
+              <button className="btn sm ghost" disabled={!!busy || lock} aria-label={`Remove ${m.name}`} onClick={() => void call("model", "model_remove", { id: m.id })}>Take it out</button></div>
+            <div className="sm-row"><N label={`${m.name} across (m)`} value={m.x} onChange={(v) => void call("model", "model_set", { id: m.id, x: v })} /><N label={`${m.name} up (m)`} value={m.y} onChange={(v) => void call("model", "model_set", { id: m.id, y: v })} />
+              <N label={`${m.name} depth (m)`} value={m.z} onChange={(v) => void call("model", "model_set", { id: m.id, z: v })} /><N label={`${m.name} turn (°)`} value={m.yaw} step={15} onChange={(v) => void call("model", "model_set", { id: m.id, yaw: v })} />
+              <N label={`${m.name} size (×)`} value={m.scale} step={0.1} onChange={(v) => void call("model", "model_set", { id: m.id, scale: v })} /></div>
+            {m.summary.warnings.map((w) => <p key={w} className="ss-warn">{w}</p>)}</li>)}</ul>}
+          <div className="sm-row"><input className="text-input" placeholder="Name a group of models" aria-label="New group name" value={gname} maxLength={60} onChange={(e) => setGname(e.target.value)} />
+            <button className="btn sm" disabled={!!busy || lock || !gname.trim()} onClick={() => void call("group", "group_set", { name: gname }).then(() => setGname(""))}>Make a group</button>
+            {(set.groups ?? []).map((g) => <span key={g.id} className="dim">{g.name}: <N label={`${g.name} across (m)`} value={g.x} onChange={(v) => void call("group", "group_set", { id: g.id, x: v })} /></span>)}</div>
+          <div className="sm-row"><button className="btn" disabled={!!busy} onClick={() => void go("fours", async () => setFours(await api.worldlock<WlViews3d>("views3d", dir, { set: set.id, size: [480, 270] })))}>See it from four sides</button>
+            <button className="btn sm ghost" disabled={!!busy} onClick={() => void go("hits", async () => setHits(await api.worldlock<WlCollisions>("collisions", dir, { set: set.id })))}>Check for collisions</button></div>
+          {hits && (hits.ok ? <p className="dim" role="status" aria-label="Collision result">No collisions found among {hits.checked.models} models (measured on their boxes).</p> : <ul className="ss-cues" aria-label="Collision result">{hits.issues.map((i, n) => <li key={n} className="ss-warn">{i.text}</li>)}</ul>)}
+          {fours && <div className="sm-row" aria-label="Four views">{fours.views.map((v) => <figure key={v.name} style={{ margin: 0 }}><img alt={`${v.name} view`} src={`${api.mediaUrl(`${dir}/${v.file}`)}?v=${v.file}`} style={{ width: 230, borderRadius: 6 }} /><figcaption className="dim">{v.name}{v.uncovered > 0.02 ? ` · ${Math.round(v.uncovered * 100)}% empty` : ""}</figcaption></figure>)}</div>}
+          <h4>Blender <span className="dim">optional; the set does not need it</span></h4>
+          <div className="sm-row"><button className="btn sm ghost" disabled={!!busy} onClick={() => void go("bl", async () => setBl(await api.blender<BlenderStatus>("status", dir)))}>Look for Blender</button>
+            <button className="btn sm ghost" disabled={!!busy} onClick={() => void go("blx", async () => { const r = await api.blender<BlenderStatus>("export", dir, { set: set.id }); setBl({ ...(bl ?? { found: false, path: "", version: "", note: "" }), ...r, note: `The script is written in ${r.relative}. Run it with: blender -b -P build_scene.py (experimental: not yet run in a real Blender).` }); })}>Write the Blender script</button></div>
+          {bl && <p className="dim" role="status" aria-label="Blender">{bl.found ? `Blender ${bl.version} found. ` : ""}{bl.note}</p>}
         </section>}
 
         {tab === "cameras" && <section aria-label="Cameras">

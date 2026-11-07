@@ -1473,6 +1473,32 @@ async fn film_vp(app: AppHandle, action: String, target: String, data: Value) ->
     tauri::async_runtime::spawn_blocking(move || run_engine_result(&app, "vpstudio", &args, &[])).await.map_err(err)?
 }
 
+/// Animating a WorldLock set (filmcrafter_engine.worldanim): keyframes for the camera, models, lights and sky, rendered frame by frame into an MP4 with the set's own 3D renderer; `cancel` stops it at the next
+/// frame. Free and local: nothing is sent anywhere and no key is given to the engine. Progress is reported as it goes.
+#[tauri::command]
+async fn film_worldanim(app: AppHandle, action: String, target: String, data: Value) -> Result<Value, String> {
+    const ACTIONS: [&str; 2] = ["render", "cancel"];
+    if !ACTIONS.contains(&action.as_str()) {
+        return Err("Unknown action.".into());
+    }
+    let dir = film_dir(&target)?;
+    let args: Vec<String> = vec!["-m".into(), "filmcrafter_engine.worldanim".into(), action, dir.to_string_lossy().into(), "--data".into(), data.to_string()];
+    tauri::async_runtime::spawn_blocking(move || run_engine_result(&app, "worldanim", &args, &[])).await.map_err(err)?
+}
+
+/// The optional Blender bridge (filmcrafter_engine.blenderbridge): `status` looks for Blender (nothing is installed or downloaded) and `export` writes a script that builds the set in Blender; with `run` it runs
+/// that script in Blender in the background. Experimental: it has not been run in a real Blender by its authors. Free and local; no key is given to the engine.
+#[tauri::command]
+async fn film_blender(app: AppHandle, action: String, target: String, data: Value) -> Result<Value, String> {
+    const ACTIONS: [&str; 2] = ["status", "export"];
+    if !ACTIONS.contains(&action.as_str()) {
+        return Err("Unknown action.".into());
+    }
+    let dir = film_dir(&target)?;
+    let args: Vec<String> = vec!["-m".into(), "filmcrafter_engine.blenderbridge".into(), action, dir.to_string_lossy().into(), "--data".into(), data.to_string()];
+    tauri::async_runtime::spawn_blocking(move || run_engine_result(&app, "blender", &args, &[])).await.map_err(err)?
+}
+
 /// DirectorCam (filmcrafter_engine.directorcam): plan shots on a WorldLock set from a story beat (plain word rules, no model), place cameras by shot size, move them along real paths, get advice a director
 /// can overrule (the line, the 30-degree guideline, eyelines, screen direction, objects in the way), and build shot packages (first and last frame, path strip, depth and object maps, motion in words) with an
 /// honest list of what a chosen model can take. Free and local: nothing is sent anywhere, no key is given to the engine, nothing is generated, and nothing is deleted.
@@ -1492,7 +1518,7 @@ async fn film_directorcam(app: AppHandle, action: String, target: String, data: 
 /// film's own `worldlock` folder and never altered, and nothing is deleted.
 #[tauri::command]
 async fn film_worldlock(app: AppHandle, action: String, target: String, data: Value) -> Result<Value, String> {
-    const ACTIONS: [&str; 28] = ["list", "create", "get", "meta_set", "asset_add", "asset_set", "asset_remove", "cut_layer", "character_set", "character_remove", "camera_set", "camera_remove", "light_set", "light_remove", "event_set", "event_remove", "shot_camera", "render", "check", "check_move", "lock", "unlock", "undo", "redo", "version_save", "versions", "version_restore", "set_remove"];
+    const ACTIONS: [&str; 38] = ["list", "create", "get", "meta_set", "asset_add", "asset_set", "asset_remove", "cut_layer", "character_set", "character_remove", "camera_set", "camera_remove", "light_set", "light_remove", "event_set", "event_remove", "shot_camera", "render", "check", "check_move", "lock", "unlock", "undo", "redo", "version_save", "versions", "version_restore", "set_remove", "model_add", "model_set", "model_remove", "group_set", "group_remove", "ground_set", "collisions", "occupancy", "views3d", "sky_set"];
     if !ACTIONS.contains(&action.as_str()) {
         return Err("Unknown action.".into());
     }
@@ -2692,7 +2718,7 @@ pub fn run() {
             key_status, set_key, delete_key, splash_close, list_projects, load_project,
             ensure_renderer, render_catalog, render_preview,
             queue_render, confirm_spend, resolve_job, export_project, list_styles, set_look, app_ready, render_estimate,
-            save_project, save_project_as, pack_film, backups, film_backup, frames, film, film_bible, film_shots, film_make, film_voice, film_cast_voice, film_revoice, film_voiceid, film_performplan, film_sounddesign, film_music, film_vp, film_vpvideo, film_worldlock, film_directorcam, film_audioqa, film_adrsync, film_proaudio, film_voice_direct, film_audio, film_cues, film_audiogen, film_mix, film_materials, film_choreography, film_placecare, film_audioplan, film_readiness, film_pacing, film_composition, film_spending, film_outdated, model_registry, prepare_update, save_voice_take, film_check, film_assist, film_interchange, is_film, launch_path, engine_status, setup_engine, engine_setup_size, set_project_settings, import_reference, set_keyframe, director_command, undo_command, library, parse_action, providers,
+            save_project, save_project_as, pack_film, backups, film_backup, frames, film, film_bible, film_shots, film_make, film_voice, film_cast_voice, film_revoice, film_voiceid, film_performplan, film_sounddesign, film_music, film_vp, film_vpvideo, film_worldlock, film_worldanim, film_blender, film_directorcam, film_audioqa, film_adrsync, film_proaudio, film_voice_direct, film_audio, film_cues, film_audiogen, film_mix, film_materials, film_choreography, film_placecare, film_audioplan, film_readiness, film_pacing, film_composition, film_spending, film_outdated, model_registry, prepare_update, save_voice_take, film_check, film_assist, film_interchange, is_film, launch_path, engine_status, setup_engine, engine_setup_size, set_project_settings, import_reference, set_keyframe, director_command, undo_command, library, parse_action, providers,
             set_onboarding, adopt_script, lighting, ai_brain, director_chat, budget, diagnostics, media, continuity, performance, routing, local_models, supervisor, direction_library, director_style, recents, hidden_count, pack_project, open_pulse, golden, lipsync_check, review_backlog, comfy_setup, comfy_install, compose, overnight, refgen, agent_studio, fidelity, video_finish, overlays, captions, director_audit, fonts, editor_export, camera, check_update, stylebible, performance_director, title_card, cleanup, custom_frame, layer_kit, colour_match, grading, editing, proxies, smart_editor, presets, series, shot_sound, acting, track, upscale, proof, shot_history, retry_cheaper, keyframe_set, hand_fix
         ])
         .run(tauri::generate_context!())

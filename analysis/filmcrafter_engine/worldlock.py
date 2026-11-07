@@ -40,6 +40,7 @@ from PIL import Image
 from . import keying as K
 from . import safeio
 from . import vpstudio as V
+from . import world3d as W3
 from . import worldmath as WM
 
 KINDS = ("layer", "prop", "landmark")
@@ -84,10 +85,14 @@ def _load(d: str, sid: str) -> dict:
     s = safeio.read_json(p, None, check=_ok)
     if s is None:
         raise SystemExit("That set isn't in the film.")
-    for k in ("assets", "cameras", "characters", "events", "lights", "removed", "shots"):
+    for k in ("assets", "cameras", "characters", "events", "lights", "removed", "shots", "models", "groups"):
         if not isinstance(s.get(k), list):
             s[k] = []
         s[k] = [x for x in s[k] if isinstance(x, dict)]
+    sk = s.get("sky") if isinstance(s.get("sky"), dict) else {}
+    s["sky"] = {"top": sk.get("top"), "horizon": sk.get("horizon"), "fog": sk.get("fog", 0.0)}
+    g = s.get("ground") if isinstance(s.get("ground"), dict) else {}
+    s["ground"] = {"visible": bool(g.get("visible", False)), "y": g.get("y", 0.0), "colours": g.get("colours", ["#c9c4b8", "#8d887c"]), "extent": g.get("extent", 60.0)}
     return s
 
 
@@ -246,7 +251,7 @@ def create(d: str, data: dict) -> dict:
     now = time.time()
     s = {"schema": 1, "id": sid, "name": _t(data.get("name"), 60) or "New set", "version": 1, "locked": False, "world": _clean_world(data.get("world"), {}), "assets": [], "characters": [],
          "cameras": [{"id": _id("wk"), "name": "Main camera", "x": 0.0, "y": 1.6, "z": 0.0, "yaw": 0.0, "pitch": 0.0, "fov": 50.0, "note": ""}], "lights": [], "events": [], "removed": [], "shots": [],
-         "environment": {"time": "", "weather": "", "atmosphere": ""}, "axis": [], "created": now, "updated": now}
+         "environment": {"time": "", "weather": "", "atmosphere": ""}, "axis": [], "sky": {"top": None, "horizon": None, "fog": 0.0}, "models": [], "groups": [], "ground": {"visible": False, "y": 0.0, "colours": ["#c9c4b8", "#8d887c"], "extent": 60.0}, "created": now, "updated": now}
     _write(d, sid, s, {"undo": [], "redo": []})
     return get(d, sid)
 
@@ -549,6 +554,305 @@ def shot_camera(d: str, sid: str, data: dict) -> dict:
     return get(d, sid)
 
 
+# ---------------------------------------------------------------- 3D models, groups, ground
+
+MAX_MODELS, MAX_GROUPS = 60, 40
+
+
+def _lights_for(s: dict) -> tuple[list[dict], float]:
+    """The set's lights for the 3D renderer, and how much ambient light fills the shadows (more in the day, less at night, from the environment's time of day)."""
+    t = (s.get("environment", {}).get("time") or "").lower()
+    amb = 0.12 if any(w in t for w in ("night", "dusk", "dark")) else 0.45 if any(w in t for w in ("day", "noon", "morning")) else 0.3
+    return [{k: l[k] for k in ("azimuth", "elevation", "colour", "intensity")} for l in s["lights"]], amb
+
+
+_MODEL_CACHE: dict = {}
+
+
+def _model_of(d: str, m: dict) -> dict:
+    full = V._inside(d, m["file"])
+    key = (full, os.path.getmtime(full))
+    if key not in _MODEL_CACHE:
+        if len(_MODEL_CACHE) > 8:
+            _MODEL_CACHE.pop(next(iter(_MODEL_CACHE)))
+        _MODEL_CACHE[key] = W3.load_model(full)
+    return _MODEL_CACHE[key]
+
+
+def _instances(d: str, s: dict) -> tuple[list[dict], list[dict]]:
+    groups = {g["id"]: g for g in s["groups"]}
+    out, bad = [], []
+    for m in s["models"]:
+        if not m.get("visible", True):
+            continue
+        try:
+            out.append({"id": m["id"], "model": _model_of(d, m), "matrix": W3.world_matrix(m, groups)})
+        except (SystemExit, OSError) as e:
+            bad.append({"id": m["id"], "why": "its model could not be read" if isinstance(e, OSError) else str(e)})
+    return out, bad
+
+
+def _clean_transform(x: dict, old: dict | None, default_scale: float = 1.0) -> dict:
+    t = dict(old or {})
+    for k, lo, hi, dflt in (("x", -SPAN, SPAN, 0.0), ("y", -SPAN, SPAN, 0.0), ("z", -SPAN, SPAN, 5.0), ("yaw", -360, 360, 0.0), ("pitch", -360, 360, 0.0), ("roll", -360, 360, 0.0)):
+        if k in x or k not in t:
+            t[k] = _pos(x, k, lo, hi, t.get(k, dflt))
+    if "scale" in x or "scale" not in t:
+        t["scale"] = round(_n(x.get("scale"), 0.001, 1000.0, t.get("scale", default_scale)), 4)
+    return t
+
+
+def _world_boxes(s: dict) -> dict[str, list]:
+    groups = {g["id"]: g for g in s["groups"]}
+    out = {}
+    for m in s["models"]:
+        if m.get("visible", True) and m.get("summary"):
+            try:
+                out[m["id"]] = W3.world_bbox(m["summary"]["bbox"], W3.world_matrix(m, groups))
+            except SystemExit:
+                pass
+    return out
+
+
+def model_add(d: str, sid: str, data: dict) -> dict:
+    """Stand a glTF model (.glb, or .gltf with embedded buffers) in the set. The file is copied in (the original is never touched), read once to check it and to measure it, and placed with a position, a
+    turn and a scale. What the reader ignores (animations, rigging, extensions) is listed in the model's warnings. The model's front faces the camera at rest; turn it 180 degrees to face away."""
+    V._film(d)
+    _load(d, sid)
+    src = str(data.get("path") or "")
+    if not src or not os.path.isfile(src):
+        raise SystemExit("Choose a .glb or .gltf model file.")
+    if os.path.splitext(src)[1].lower() not in (".glb", ".gltf"):
+        raise SystemExit("Choose a .glb or .gltf model file.")
+    model = W3.load_model(src)
+    info = W3.summary(model)
+    holder: dict = {}
+
+    def fn(s):
+        if len(s["models"]) >= MAX_MODELS:
+            raise SystemExit(f"At most {MAX_MODELS} models in a set.")
+        mid = _id("wm")
+        rel = f"worldlock/{sid}/models/{mid}{os.path.splitext(src)[1].lower()}"
+        full = V._inside(d, rel)
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        shutil.copyfile(src, full)
+        g = _clean_transform(data, None)
+        if "z" not in data:
+            g["z"] = 5.0
+        nm = _t(data.get("name") or os.path.splitext(os.path.basename(src))[0], 60) or "Model"
+        parent = data.get("parent") if any(x["id"] == data.get("parent") for x in s["groups"]) else None
+        s["models"].append({"id": mid, "name": nm, "file": rel, **g, "parent": parent, "visible": True, "solid": bool(data.get("solid", True)), "summary": info, "added": time.time()})
+        holder["id"] = mid
+    _mutate(d, sid, "Add a model", fn)
+    return {**get(d, sid), "id": holder["id"]}
+
+
+def model_set(d: str, sid: str, data: dict) -> dict:
+    """Move, turn, scale, rename, hide or regroup a model. Only the fields given change; the file and the id never do."""
+    def fn(s):
+        m = next((m for m in s["models"] if m["id"] == data.get("id")), None)
+        if not m:
+            raise SystemExit("That model isn't in the set.")
+        m.update(_clean_transform(data, m))
+        if "name" in data:
+            m["name"] = _t(data["name"], 60) or m["name"]
+        for k in ("visible", "solid"):
+            if k in data:
+                m[k] = bool(data[k])
+        if "parent" in data:
+            p = data["parent"] or None
+            if p and not any(g["id"] == p for g in s["groups"]):
+                raise SystemExit("That group isn't in the set.")
+            m["parent"] = p
+    _mutate(d, sid, "Change a model", fn)
+    return get(d, sid)
+
+
+def model_remove(d: str, sid: str, mid: str) -> dict:
+    """Take a model out of the set. It moves to `removed` (the file stays)."""
+    def fn(s):
+        m = next((m for m in s["models"] if m["id"] == mid), None)
+        if not m:
+            raise SystemExit("That model isn't in the set.")
+        s["models"].remove(m)
+        s["removed"].append({**m, "removed_at": time.time(), "model": True})
+        s["removed"] = s["removed"][-200:]
+    _mutate(d, sid, "Remove a model", fn)
+    return get(d, sid)
+
+
+def group_set(d: str, sid: str, data: dict) -> dict:
+    """A group is a transform that models (and other groups) can sit inside: move a group and everything in it moves. A group cannot sit inside itself."""
+    holder: dict = {}
+
+    def fn(s):
+        gid = data.get("id")
+        old = next((g for g in s["groups"] if g["id"] == gid), None) if gid else None
+        if gid and not old:
+            raise SystemExit("That group isn't in the set.")
+        if not old and len(s["groups"]) >= MAX_GROUPS:
+            raise SystemExit(f"At most {MAX_GROUPS} groups in a set.")
+        g = _clean_transform(data, old)
+        g["z"] = g.get("z", 0.0) if ("z" in data or old) else 0.0
+        g["name"] = _t(data.get("name", (old or {}).get("name", "")), 60) or "Group"
+        p = data.get("parent", (old or {}).get("parent")) or None
+        if p and not any(x["id"] == p for x in s["groups"]):
+            raise SystemExit("That group isn't in the set.")
+        g["parent"] = p
+        if old:
+            old.update(g)
+            g = old
+        else:
+            g["id"] = _id("wg")
+            s["groups"].append(g)
+        holder["id"] = g["id"]
+        W3.world_matrix(g, {x["id"]: x for x in s["groups"]})                      # refuses a loop before anything is written
+    _mutate(d, sid, "Change a group", fn)
+    return {**get(d, sid), "id": holder["id"]}
+
+
+def group_remove(d: str, sid: str, gid: str) -> dict:
+    """Remove a group. What was inside it keeps its place in the world (its position is carried out of the group) and is no longer in a group."""
+    def fn(s):
+        g = next((g for g in s["groups"] if g["id"] == gid), None)
+        if not g:
+            raise SystemExit("That group isn't in the set.")
+        groups = {x["id"]: x for x in s["groups"]}
+        for m in s["models"]:
+            if m.get("parent") == gid:
+                w = W3.world_matrix(m, groups)
+                m.update({"x": round(float(w[0, 3]), 3), "y": round(float(w[1, 3]), 3), "z": round(float(w[2, 3]), 3), "parent": None})        # position is kept; a turned group's turn is not carried (see the docs)
+        for x in s["groups"]:
+            if x.get("parent") == gid:
+                x["parent"] = g.get("parent")
+        s["groups"].remove(g)
+    _mutate(d, sid, "Remove a group", fn)
+    return get(d, sid)
+
+
+def ground_set(d: str, sid: str, data: dict) -> dict:
+    """The ground plane: shown or hidden, its height, its two checker colours and how far it reaches. Drawn exactly by the 3D renderer."""
+    def fn(s):
+        g = dict(s["ground"])
+        if "visible" in data:
+            g["visible"] = bool(data["visible"])
+        if "y" in data:
+            g["y"] = round(_n(data["y"], -SPAN, SPAN, g["y"]), 3)
+        if "extent" in data:
+            g["extent"] = round(_n(data["extent"], 1, SPAN, g["extent"]), 1)
+        if isinstance(data.get("colours"), list) and len(data["colours"]) == 2:
+            ok = lambda c: isinstance(c, str) and len(c) == 7 and c[0] == "#" and all(h in "0123456789abcdefABCDEF" for h in c[1:])
+            if all(ok(c) for c in data["colours"]):
+                g["colours"] = list(data["colours"])
+        s["ground"] = g
+    _mutate(d, sid, "Change the ground", fn)
+    return get(d, sid)
+
+
+def sky_set(d: str, sid: str, data: dict) -> dict:
+    """The sky behind the set: a colour at the horizon, a colour overhead, and how thick the distance fog is (0 for none). With no sky set the background is a plain dark colour."""
+    def fn(s):
+        k = dict(s["sky"])
+        ok = lambda c: isinstance(c, str) and len(c) == 7 and c[0] == "#" and all(h in "0123456789abcdefABCDEF" for h in c[1:])
+        for key in ("top", "horizon"):
+            if key in data:
+                if data[key] in (None, ""):
+                    k[key] = None
+                elif ok(data[key]):
+                    k[key] = data[key]
+        if "fog" in data:
+            k["fog"] = round(_n(data["fog"], 0.0, 1.0, k.get("fog", 0.0)), 4)
+        s["sky"] = k
+    _mutate(d, sid, "Change the sky", fn)
+    return get(d, sid)
+
+
+def collisions(d: str, sid: str) -> dict:
+    """Which solid models overlap each other (their world boxes, by more than 2 cm), which sink below the ground or stand outside the world, and whether a camera is inside a model. Boxes are the corners of a
+    turned model, boxed again, so a turned model can report a touch that is only its box: the report says what it measured. Free; changes nothing."""
+    V._film(d)
+    s = _load(d, sid)
+    boxes = _world_boxes(s)
+    names = {m["id"]: m["name"] for m in s["models"]}
+    issues = []
+    ids = [m["id"] for m in s["models"] if m.get("solid", True) and m["id"] in boxes]
+    for i, a in enumerate(ids):
+        for b in ids[i + 1:]:
+            lo = [max(boxes[a][0][k], boxes[b][0][k]) for k in range(3)]
+            hi = [min(boxes[a][1][k], boxes[b][1][k]) for k in range(3)]
+            depth = [hi[k] - lo[k] for k in range(3)]
+            if all(x > 0.02 for x in depth):
+                issues.append({"kind": "overlap", "ids": [a, b], "depth_m": round(min(depth), 3), "text": f"'{names[a]}' and '{names[b]}' overlap by {min(depth):.2f} m (their boxes)."})
+    bx, by, bz = s["world"]["bounds"]["x"], s["world"]["bounds"]["y"], s["world"]["bounds"]["z"]
+    for mid, bb in boxes.items():
+        if s["ground"]["visible"] and bb[0][1] < s["ground"]["y"] - 0.05:
+            issues.append({"kind": "below_ground", "ids": [mid], "depth_m": round(s["ground"]["y"] - bb[0][1], 3), "text": f"'{names[mid]}' sinks {s['ground']['y'] - bb[0][1]:.2f} m below the ground."})
+        if bb[1][0] < bx[0] or bb[0][0] > bx[1] or bb[1][2] < bz[0] or bb[0][2] > bz[1]:
+            issues.append({"kind": "outside", "ids": [mid], "depth_m": 0.0, "text": f"'{names[mid]}' stands outside the set's bounds."})
+    for c in s["cameras"]:
+        for mid, bb in boxes.items():
+            if all(bb[0][k] <= v <= bb[1][k] for k, v in enumerate((c["x"], c["y"], c["z"]))):
+                issues.append({"kind": "camera_inside", "ids": [mid, c["id"]], "depth_m": 0.0, "text": f"Camera '{c['name']}' is inside '{names[mid]}'."})
+    return {"issues": issues, "ok": not issues, "measured": "world boxes of the models", "checked": {"models": len(boxes), "cameras": len(s["cameras"])}}
+
+
+def occupancy(d: str, sid: str, data: dict) -> dict:
+    """A floor plan of what is taken: the floor is cut into squares (default 0.5 m) and a square is occupied when a solid model's box over it rises more than 0.1 m above the ground. Returns the grid
+    (1 = occupied), so a person or a camera can be placed where there is room."""
+    V._film(d)
+    s = _load(d, sid)
+    cell = _n(data.get("cell"), 0.1, 5.0, 0.5)
+    b = s["world"]["bounds"]
+    nx, nz = int(min(160, math.ceil((b["x"][1] - b["x"][0]) / cell))), int(min(160, math.ceil((b["z"][1] - b["z"][0]) / cell)))
+    grid = [[0] * nx for _ in range(nz)]
+    gy = s["ground"]["y"] if s["ground"]["visible"] else 0.0
+    for mid, bb in _world_boxes(s).items():
+        m = next(m for m in s["models"] if m["id"] == mid)
+        if not m.get("solid", True) or bb[1][1] - gy < 0.1:
+            continue
+        for iz in range(nz):
+            z0, z1 = b["z"][0] + iz * cell, b["z"][0] + (iz + 1) * cell
+            if z1 <= bb[0][2] or z0 >= bb[1][2]:
+                continue
+            for ix in range(nx):
+                x0, x1 = b["x"][0] + ix * cell, b["x"][0] + (ix + 1) * cell
+                if x1 > bb[0][0] and x0 < bb[1][0]:
+                    grid[iz][ix] = 1
+    return {"cell": cell, "origin": [b["x"][0], b["z"][0]], "grid": grid, "occupied": sum(map(sum, grid)), "free": nx * nz - sum(map(sum, grid))}
+
+
+def views3d(d: str, sid: str, data: dict) -> dict:
+    """The same scene from four sides: front, side, reverse and elevated, round a target point (default: the middle of the models, or of the set) at a distance (default: enough to hold everything). Each view is
+    a normal render; nothing about the set changes. This is the acceptance view of a 3D set."""
+    V._film(d)
+    s = _load(d, sid)
+    boxes = list(_world_boxes(s).values())
+    if boxes:
+        lo = [min(b[0][k] for b in boxes) for k in range(3)]
+        hi = [max(b[1][k] for b in boxes) for k in range(3)]
+        center = [(lo[k] + hi[k]) / 2 for k in range(3)]
+        radius = max(hi[k] - lo[k] for k in range(3)) / 2 or 1.0
+    else:
+        b = s["world"]["bounds"]
+        center = [(b["x"][0] + b["x"][1]) / 2, 1.0, (b["z"][0] + b["z"][1]) / 2]
+        radius = 4.0
+    if isinstance(data.get("target"), (list, tuple)) and len(data["target"]) == 3:
+        center = [float(_n(v, -SPAN, SPAN, c)) for v, c in zip(data["target"], center)]
+    fov = _n(data.get("fov"), 20, 100, 50.0)
+    dist = _n(data.get("distance"), 0.5, SPAN, radius * 1.35 / math.tan(math.radians(fov) / 2) * 1.1 + radius)
+    size = data.get("size") if isinstance(data.get("size"), (list, tuple)) and len(data["size"]) == 2 else [480, 270]
+    out = []
+    for name, yaw, elev in (("Front", 0.0, 8.0), ("Side", -90.0, 8.0), ("Reverse", 180.0, 8.0), ("Elevated", 0.0, 55.0)):
+        a, e = math.radians(yaw), math.radians(elev)
+        cam = {"x": center[0] - math.sin(a) * math.cos(e) * dist, "y": center[1] + math.sin(e) * dist, "z": center[2] - math.cos(a) * math.cos(e) * dist, "name": name, "fov": fov}
+        flat = math.hypot(center[0] - cam["x"], center[2] - cam["z"]) or 1.0
+        cam["yaw"] = math.degrees(math.atan2(center[0] - cam["x"], center[2] - cam["z"]))
+        cam["pitch"] = math.degrees(math.atan2(center[1] - cam["y"], flat))
+        r = render(d, sid, {"view": {k: round(v, 3) if isinstance(v, float) else v for k, v in cam.items()}, "size": list(size), "shot": data.get("shot")})
+        out.append({"name": name, **r})
+    return {"views": out, "target": [round(c, 3) for c in center], "distance": round(dist, 3)}
+
+
 # ---------------------------------------------------------------- history and versions
 
 def _swap(d: str, sid: str, direction: str) -> dict:
@@ -667,7 +971,34 @@ def _draw(d: str, s: dict, cam: dict, size: tuple[int, int], shot: str | None, o
     W, H = size
     out = np.zeros((H, W, 3), np.float32)
     out[...] = SKY
+    sky = s["sky"]
+    fogc = None
+    if sky.get("top") and sky.get("horizon"):                                       # a sky: a gradient from the horizon colour up to the top colour, by the direction each pixel looks
+        top, hor = (np.array([int(c[i:i + 2], 16) / 255.0 for i in (1, 3, 5)]) for c in (sky["top"], sky["horizon"]))
+        f_ = WM.focal_px(W, cam.get("fov", 50.0))
+        gx, gy = np.meshgrid(np.arange(W) + 0.5, np.arange(H) + 0.5)
+        ray = np.stack([(gx - W / 2) / f_, -(gy - H / 2) / f_, np.ones_like(gx)], axis=-1) @ W3._cam_to_world_dirs(cam)
+        el = ray[..., 1] / np.linalg.norm(ray, axis=-1)
+        t = np.clip(el * 2.2, 0.0, 1.0)[..., None]
+        out = (K.to_srgb(K.to_linear(hor) * (1 - t) + K.to_linear(top) * t)).astype(np.float32)
+        fogc = K.to_linear(hor)
     alphas, drawn, skipped = [], [], []
+    depth3 = None
+    if s["ground"]["visible"] or any(m.get("visible", True) for m in s["models"]):
+        color, depth3, hit3 = W3.new_buffers(size)
+        lights, ambient = _lights_for(s)
+        if s["ground"]["visible"]:
+            cols = tuple(tuple(int(c[i:i + 2], 16) / 255.0 for i in (1, 3, 5)) for c in s["ground"]["colours"][:2])
+            W3.render_ground(cam, size, float(s["ground"]["y"]), cols, float(s["ground"]["extent"]), lights, ambient, depth3, color, hit3)
+        insts, bad = _instances(d, s)
+        skipped += bad
+        n = W3.render_meshes(insts, cam, size, lights, ambient, depth3, color, hit3)
+        if fogc is not None and float(sky.get("fog", 0.0)) > 0:                        # distance fog toward the horizon colour: far things fade into the sky
+            k = (1.0 - np.exp(-float(sky["fog"]) * np.where(np.isfinite(depth3), depth3, 0.0)))[..., None]
+            color = color * (1 - k) + fogc * k
+        out = np.where(hit3[..., None], K.to_srgb(color).astype(np.float32), out)
+        alphas.append(hit3.astype(np.float32))
+        drawn += [i["id"] for i in insts] + (["ground"] if s["ground"]["visible"] else [])
     for a in sorted(layers, key=lambda a: -(a["z"] - cam["z"])):                      # far to near
         try:
             rgba = K.load_rgba(V._inside(d, a["file"]))
@@ -678,6 +1009,10 @@ def _draw(d: str, s: dict, cam: dict, size: tuple[int, int], shot: str | None, o
         if placed is None:
             skipped.append({"id": a["id"], "why": "it is behind the camera or outside the view"})
             continue
+        if depth3 is not None:                                                         # a layer stands where it stands in depth: a 3D thing nearer than it hides it
+            ld = WM.to_camera((a["x"], a["y"] + a["height"] / 2, a["z"]), cam)[2]
+            placed = placed.copy()
+            placed[..., 3] *= (depth3 >= ld).astype(np.float32)
         out = K.over(placed, out)
         alphas.append(placed[..., 3])
         drawn.append(a["id"])
@@ -787,7 +1122,8 @@ def check(d: str, sid: str) -> dict:
 
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("action", choices=["list", "create", "get", "meta_set", "asset_add", "asset_set", "asset_remove", "cut_layer", "character_set", "character_remove", "camera_set", "camera_remove", "light_set", "light_remove", "event_set", "event_remove", "shot_camera", "render", "check", "check_move", "lock", "unlock", "undo", "redo", "version_save", "versions", "version_restore", "set_remove"])
+    ap.add_argument("action", choices=["list", "create", "get", "meta_set", "asset_add", "asset_set", "asset_remove", "cut_layer", "character_set", "character_remove", "camera_set", "camera_remove", "light_set", "light_remove", "event_set", "event_remove", "shot_camera", "render", "check", "check_move", "lock", "unlock", "undo", "redo", "version_save", "versions", "version_restore", "set_remove",
+                                        "model_add", "model_set", "model_remove", "group_set", "group_remove", "ground_set", "collisions", "occupancy", "views3d", "sky_set"])
     ap.add_argument("target")
     ap.add_argument("--data", default="{}")
     a = ap.parse_args(argv)
@@ -804,7 +1140,9 @@ def main(argv: list[str]) -> int:
             "event_set": lambda: event_set(d, sid, x), "event_remove": lambda: event_remove(d, sid, x.get("id", "")), "shot_camera": lambda: shot_camera(d, sid, x), "render": lambda: render(d, sid, x),
             "check": lambda: check(d, sid), "check_move": lambda: check_move(d, sid, x), "lock": lambda: lock(d, sid, True), "unlock": lambda: lock(d, sid, False), "undo": lambda: undo(d, sid),
             "redo": lambda: redo(d, sid), "version_save": lambda: version_save(d, sid, x.get("name", "")), "versions": lambda: versions(d, sid), "version_restore": lambda: version_restore(d, sid, x.get("number")),
-            "set_remove": lambda: set_remove(d, sid),
+            "set_remove": lambda: set_remove(d, sid), "model_add": lambda: model_add(d, sid, x), "model_set": lambda: model_set(d, sid, x), "model_remove": lambda: model_remove(d, sid, x.get("id", "")),
+            "group_set": lambda: group_set(d, sid, x), "group_remove": lambda: group_remove(d, sid, x.get("id", "")), "ground_set": lambda: ground_set(d, sid, x), "collisions": lambda: collisions(d, sid),
+            "occupancy": lambda: occupancy(d, sid, x), "views3d": lambda: views3d(d, sid, x), "sky_set": lambda: sky_set(d, sid, x),
         }
         emit(event="result", data=table[act]())
         return 0
