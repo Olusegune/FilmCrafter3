@@ -130,6 +130,7 @@ if (process.env.PF_QA) await send("Runtime.enable");
 let bad = 0;
 let axeSource = null;
 const a11y = {};
+const audit2 = {};
 for (const name of names) {
   const spec = SCENES[name];
   if (!spec) { console.error(`unknown scene: ${name} (try: ${Object.keys(SCENES).join(", ")})`); continue; }
@@ -165,12 +166,19 @@ for (const name of names) {
       const o = JSON.parse(res.result?.result?.value ?? "{}");
       if (o.sideways || o.n) { bad++; console.log(`   !! overflow at ${o.W}px: ${o.sideways ? "page scrolls sideways; " : ""}${o.n} element(s) outside the window: ${(o.first ?? []).join(", ")}`); }
     }
+    if (process.env.PF_AUDIT2) {                                                  // PF_AUDIT2=1: contrast (WCAG AA), controls that show nothing on keyboard focus, and misc checks (scripts/ui-audit2.js)
+      if (!globalThis.__audit2) globalThis.__audit2 = readFileSync(join(ROOT, "scripts", "ui-audit2.js"), "utf8");
+      await evalJs(globalThis.__audit2);
+      const res = await send("Runtime.evaluate", { expression: "JSON.stringify({ contrast: window.__contrast(), focus: window.__focus(), misc: window.__misc() })", returnByValue: true });
+      try { const o = JSON.parse(res.result?.result?.value ?? "{}"); audit2[name] = o; const c = o.contrast?.groups ?? o.contrast; const nc = Array.isArray(c) ? c.length : Object.keys(c ?? {}).length; const nf = (o.focus?.silent ?? o.focus ?? []).length; console.log(`   audit2 ${name}: contrast ${nc} group(s), no-focus-ring ${nf}`); } catch { console.log(`   audit2 ${name}: no result`); }
+    }
     const shot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
     writeFileSync(join(OUT, file), Buffer.from(shot.result.data, "base64"));
     console.log(`${name.padEnd(11)} ${w}x${h}  ${file}`);
     if (process.env.PF_QA) { const mine = [...new Set(problems.splice(0))].filter((p) => !/createRoot\(\)/.test(p)); bad += mine.length; for (const p of mine) console.log("   !! " + p); }
   } catch (e) { console.error(`${name}: ${String(e.message ?? e).split("\n")[0]}`); }
 }
+if (process.env.PF_AUDIT2) writeFileSync(join(OUT, "audit2.json"), JSON.stringify(audit2, null, 1));
 if (process.env.PF_A11Y) {
   writeFileSync(join(OUT, "a11y.json"), JSON.stringify(a11y, null, 1));
   const all = Object.values(a11y).flat();

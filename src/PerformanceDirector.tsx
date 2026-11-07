@@ -87,7 +87,7 @@ export function SceneNotes({ dir, onChanged }: { dir: string; onChanged?: () => 
       <nav className="pd-nav" aria-label="Scenes">
         {data.scenes.map((s) => (
           <button key={s.number} type="button" className={s.number === sc.number ? "on" : ""} aria-current={s.number === sc.number ? "true" : undefined} onClick={() => setSel(s.number)}>
-            <span className="num">{s.number}</span><span className="pd-nav-t">{s.heading}</span>
+            <span className="num">{s.number}</span><span className="pd-nav-t" title={s.heading}>{s.heading}</span>
             {check(s) > 0 && <span className="pd-flag" title={`${check(s)} line${check(s) === 1 ? "" : "s"} that may mean more than they say`}>{check(s)}</span>}
           </button>))}
       </nav>

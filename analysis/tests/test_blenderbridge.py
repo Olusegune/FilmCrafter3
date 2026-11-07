@@ -98,3 +98,51 @@ def test_the_command_line(film, capsys, monkeypatch, tmp_path):
     assert BB.main(["export", film, "--data", json.dumps({"set": "ws-00000000"})]) == 1
     lines = [json.loads(x) for x in capsys.readouterr().out.splitlines() if x.strip().startswith("{")]
     assert [x["event"] for x in lines] == ["result", "result", "error"]
+
+
+def test_the_script_carries_the_sky_ground_colour_and_ambient_level(film, tmp_path):
+    sid = WL.create(film, {"name": "Garden"})["id"]
+    WL.ground_set(film, sid, {"visible": True, "colours": ["#336633", "#224422"]})
+    WL.sky_set(film, sid, {"top": "#102050", "horizon": "#ffaa55"})
+    WL.meta_set(film, sid, {"environment": {"time": "night", "weather": "", "atmosphere": ""}})
+    r = BB.export(film, sid, {})
+    text = open(os.path.join(r["folder"], "build_scene.py"), encoding="utf-8").read()
+    tree = ast.parse(text)
+    data = json.loads(ast.literal_eval(next(n.value for n in ast.walk(tree) if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == "DATA").args[0]))
+    assert data["sky"] == {"top": "#102050", "horizon": "#ffaa55"} and data["ground"]["colours"][0] == "#336633" and data["ambient"] == pytest.approx(0.12)
+
+
+@pytest.mark.skipif(not BB.status()["found"], reason="Blender is not installed here")
+def test_in_a_real_blender_the_ground_and_the_sky_have_the_sets_colours(film, tmp_path):
+    from PIL import Image
+    sid = WL.create(film, {"name": "Field"})["id"]
+    WL.ground_set(film, sid, {"visible": True, "colours": ["#00aa00", "#00aa00"], "extent": 200})
+    WL.sky_set(film, sid, {"top": "#6060ff", "horizon": "#6060ff"})
+    r = BB.export(film, sid, {"run": True})
+    im = Image.open(os.path.join(r["folder"], "renders", r["rendered"][0])).convert("RGB")
+    w, h = im.size
+    sky, ground = im.getpixel((w // 2, int(h * 0.15))), im.getpixel((w // 2, int(h * 0.9)))
+    assert sky[2] > 120 and sky[2] > sky[0] + 60 and sky[2] > sky[1] + 60          # blue overhead
+    assert ground[1] > 20 and ground[1] > ground[0] * 2 and ground[1] > ground[2]        # green underfoot (lit and shaded by Blender, so only the hue is compared)
+
+
+@pytest.mark.skipif(not BB.status()["found"], reason="Blender is not installed here")
+def test_an_animation_is_drawn_by_blender_frame_by_frame_and_joined(film, tmp_path):
+    sid = WL.create(film, {"name": "Field"})["id"]
+    WL.ground_set(film, sid, {"visible": True})
+    m = WL.model_add(film, sid, {"path": white_cube(tmp_path), "name": "Box", "x": 0, "y": 0, "z": 6})["id"]
+    spec = {"fps": 4, "seconds": 1.0, "size": [160, 90], "name": "t", "camera": [{"t": 0, "x": 0, "y": 1.6, "z": 0, "yaw": 0}, {"t": 1, "x": 0, "y": 1.6, "z": 0, "yaw": 40}],
+            "models": {m: [{"t": 0, "x": 0}, {"t": 1, "x": 0, "visible": False, "ease": "hold"}]}}
+    r = BB.render_animation(film, sid, spec, workers=2, samples=4)
+    assert r["frames"] == 4 and r["renderer"].startswith("Blender") and r["file"].endswith(".mp4") and os.path.getsize(r["path"]) > 1000
+    from filmcrafter_engine.export import ffmpeg
+    import subprocess
+    info = subprocess.run([ffmpeg(), "-i", r["path"], "-f", "null", "-"], capture_output=True, text=True).stderr
+    assert "frame=    4" in info or "frame=4" in info.replace(" ", "")
+
+
+def test_animation_without_blender_says_so(film, monkeypatch):
+    monkeypatch.setattr(BB, "status", lambda: {"found": False, "path": "", "version": "", "note": ""})
+    sid = WL.create(film, {"name": "Field"})["id"]
+    with pytest.raises(SystemExit, match="Blender was not found"):
+        BB.render_animation(film, sid, {"seconds": 1})

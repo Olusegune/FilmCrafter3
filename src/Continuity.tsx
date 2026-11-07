@@ -56,7 +56,7 @@ export function ContinuitySheet({ dir, onClose, onSelectShot }: { dir: string; o
         {!c ? <div className="dim">Loading…</div> : <div className="cont-body">
           <nav className="cont-scenes">{(c.scenes ?? []).map((s) => (
             <button key={s.number} className={s.number === scene ? "on" : ""} onClick={() => setScene(s.number)}>
-              <span className="num">{s.number}</span><span className="h">{s.heading}</span>
+              <span className="num">{s.number}</span><span className="h" title={s.heading}>{s.heading}</span>
               {count(s.number) > 0 && <span className="cont-badge">{count(s.number)}</span>}
             </button>))}</nav>
           {sc && <div className="cont-scene">

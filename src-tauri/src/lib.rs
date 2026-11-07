@@ -1490,7 +1490,7 @@ async fn film_worldanim(app: AppHandle, action: String, target: String, data: Va
 /// that script in Blender in the background. Experimental: it has not been run in a real Blender by its authors. Free and local; no key is given to the engine.
 #[tauri::command]
 async fn film_blender(app: AppHandle, action: String, target: String, data: Value) -> Result<Value, String> {
-    const ACTIONS: [&str; 2] = ["status", "export"];
+    const ACTIONS: [&str; 3] = ["status", "export", "render"];
     if !ACTIONS.contains(&action.as_str()) {
         return Err("Unknown action.".into());
     }

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.53.0 (2026-11-07)
+
+- **Blender now gets the set's look.** The Blender scene made from a set now carries the **ground colour**, the **sky** (a gradient from the horizon colour to the colour overhead, which also lights the scene at the set's ambient level) and the lights, with colours that match what the built-in renderer shows. Checked in a real Blender 5.2.2: a green ground under a blue sky renders green under blue. Fog is not carried over.
+- **Render an animation with Blender.** The animation tracks (camera, models, lights, sky, shake) can now be drawn frame by frame by Blender's own renderer (EEVEE, real shadows) in several background processes, and joined into an MP4 (`blender render`; engine and shell command, no screen for it yet). The test film's 1440 frames at 1280x720 took 111 s. Frames are worked out exactly as for the built-in renderer; Blender only draws them. Stoppable with the set's `cancel.flag`.
+- **UI audit:** `PF_AUDIT2=1` runs the contrast, keyboard-focus and misc checks from the screenshot tool; results in `docs/UI_AUDIT.md`.
+- **Limits, plainly:** no screen for the Blender animation yet; fog is not carried over; Blender's picture is darker and more silhouetted than the built-in one because it is lit by a sun and the sky only.
+
 ## 0.52.0 (2026-11-07)
 
 - **Sets now follow the golden path.** Open a place in **Cast > Places** and a new **Set** section sits under its pictures with two plain ways in: **From this place's pictures** (one press, no 3D) or **From a 3D model** (a .glb/.gltf, a Blender .blend, or **Build it in Blender**). After that: **Look from the camera**, **Plan the shots** (opens DirectorCam on that set), **Edit the set** (the full builder), and **Bring it back from Blender** after changes there. Tried against a real Blender 5.2.2. Blender stays optional: without it the Blender ways are greyed with the reason.

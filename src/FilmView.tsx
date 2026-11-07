@@ -137,7 +137,7 @@ export function FilmView({ dir, onHome, onSettings, onStudio, initialStage }: { 
               <li key={s.number}>
                 <button className={scene === s.number ? "on" : ""} onClick={() => goTo(s)} disabled={s.implied && f.found.scenes.length === 1}>
                   <span className="n num">{s.number}</span>
-                  <span className="h">{s.heading || "Scene"}</span>
+                  <span className="h" title={s.heading || "Scene"}>{s.heading || "Scene"}</span>
                   {s.seconds > 0 && <span className="dim t">{Math.round(s.seconds)}s</span>}
                 </button>
               </li>))}

@@ -1788,3 +1788,6 @@ select option, select optgroup { background: #12171e; color: var(--frost); }
 .inspector-head .insp-title { flex: 1 1 auto; }
 .inspector-head .look-chip { min-width: 0; flex: 0 1 auto; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .inspector-head .icon-btn { flex: 0 0 auto; }
+
+/* Keyboard focus: the shot blocks of the film strip and the scrolling story text were focusable but showed nothing when focused. */
+.fs-block:focus-visible, .film-script:focus-visible { outline: 2px solid #ffb52e; outline-offset: 2px; }

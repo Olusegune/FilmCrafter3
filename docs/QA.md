@@ -1,6 +1,13 @@
-# QA report: FilmCrafter 0.52.0 (2026-11-07)
+# QA report: FilmCrafter 0.53.0 (2026-11-07)
 
-## 0.52.0: a set for a place (the golden-path way into WorldLock) and UI audit fixes
+## 0.53.0: Blender look, Blender animation, UI audit second pass
+
+Engine: **2,960 tests collected, 2,953 passed, 7 skipped, none failed** (4 new in `test_blenderbridge.py`: sky/ground/ambient in the script; a **real Blender 5.2.2** rendering a green ground under a blue sky and checking the colours; a real 4-frame animation drawn by Blender in 2 processes and joined, with ffmpeg confirming 4 frames; the no-Blender message). Bandit (medium and above): **no findings; the output was read** (empty). TypeScript clean; Vitest 932 tests (one test, in `performancedirector.dom.test.tsx`, failed once while the machine was busy with a render and passed in isolation and on the full re-run: a timing flake, cause not found). Rust: the new `render` action is in the shell's list and the engine's literal choices (`test_security.py` passes). `rafter run` not run (quota). Real runs: the 60 s film drawn by Blender (1440 frames, 111 s) and checked frame by frame.
+
+**Still not tested:** a screen for the Blender animation (there is none); Blender fog; Blender on macOS/Linux; large real-world scenes.
+
+## 0.52.0: a set for a place (golden path)
+
 
 Engine: **2,956 tests collected, 2,949 passed, 7 skipped, none failed** (11 new in `test_placeset.py`, on a real film folder; two of them run a **real Blender 5.2.2**: a blank file made in Blender, brought back twice with the set's placement kept, and a user's own .blend read without touching the original). Bandit (medium and above): **no findings; the output was read** (empty). TypeScript clean; **932 Vitest tests in 116 files** (9 new for the place's set section, one test text updated because the Blender note was no longer true); 15 Rust tests (the new command's action list matches the engine's literal choices: `test_security.py` passes). `rafter run` not run (quota); hand review: paths are list items to Blender (no shell), fixed scripts, a time limit, the original .blend is copied and never touched, nothing is sent. Problems found by the tests/real runs and fixed: a picture backdrop stood too high (an asset's `y` is its base), a Blender place's ground fought the model's own floor, the first bring-back was not fitted ahead of the camera.
 
