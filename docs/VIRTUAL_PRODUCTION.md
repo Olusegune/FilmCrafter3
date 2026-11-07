@@ -91,6 +91,13 @@ Rail > More > **Sets**. A **set** lives in the film (`worldlock/<id>/`): a world
 - **Animation:** `worldanim.py` tracks for camera, models, lights, sky, ambient; shake; MP4 output; stop by flag file; multi-process.
 - **Blender bridge (experimental):** `blenderbridge.py` finds Blender and writes `build_scene.py`; not run in a real Blender.
 - **Test film:** `scripts/film/` builds "He Is Risen" (60 s).
+- **What it looks like** (real output of the renderer, frames from the test film at 480x270; the second sheet continues the film; the last image is graded final frames with the title):
+
+  ![He Is Risen, frames 1](img/he-is-risen-contact-sheet-1.png)
+  ![He Is Risen, frames 2](img/he-is-risen-contact-sheet-2.png)
+  ![He Is Risen, final frames](img/he-is-risen-final-frames.png)
+
+  The 3D tab itself has component tests but no screenshot yet: the documentation screenshot tool does not have a Sets scene.
 - **Not built:** AI-assisted reconstruction from reference images (no vision/segmentation model is installed; planned as an honest draft layout needing approval), the fuller continuity inspector (slice 4), Fidelity integration (slice 8).
 
 ## Slice 6: DirectorCam (0.50.0)
