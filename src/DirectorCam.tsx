@@ -22,7 +22,7 @@ const N = ({ label, value, step = 0.1, onChange, w = 66 }: { label: string; valu
  * you can move, a move along a real path, who goes where, and advice (the line, eyelines, screen direction, objects in the way) that you can overrule by marking a shot deliberate. A shot's package is the first and
  * last frame, a strip along the path, a depth map and an object map, made from the set. Nothing is generated; a picture or video made from a package is not guaranteed to match it.
  */
-export function DirectorCam({ dir, onClose }: { dir: string; onClose: () => void }) {
+export function DirectorCam({ dir, onClose, initialSet }: { dir: string; onClose: () => void; initialSet?: string }) {
   const [sets, setSets] = useState<WlList | null>(null);
   const [setId, setSetId] = useState("");
   const [set, setSet] = useState<WlSet | null>(null);
@@ -45,6 +45,7 @@ export function DirectorCam({ dir, onClose }: { dir: string; onClose: () => void
 
   const go = async (label: string, f: () => Promise<void>) => { setErr(""); setSaid(""); setBusy(label); try { await f(); } catch (e) { setErr(errorText(e)); } finally { setBusy(""); } };
   useEffect(() => { api.worldlock<WlList>("list", dir).then(setSets).catch((e) => setErr(errorText(e))); api.shots<{ shots: { id: string }[] }>("get", dir).then((r) => setFilmShots(r.shots.map((s) => s.id))).catch(() => {}); }, [dir]);
+  useEffect(() => { if (initialSet) void openSet(initialSet); }, [initialSet]); // eslint-disable-line react-hooks/exhaustive-deps
   const openSet = useCallback((id: string) => go("set", async () => {
     setSetId(id); setPlan(null); setDraft(null); setSel(null); setPrev(null); setPk(null); setPath(null);
     if (!id) { setSet(null); setPlans([]); return; }

@@ -1263,3 +1263,9 @@
 .film-rail .rail-tick { position: absolute; top: 4px; right: 8px; width: 14px; height: 14px; border-radius: 999px; background: var(--signal, #64b7ff); color: #06101a; display: grid; place-items: center; }
 .film-rail .rail-next { position: absolute; top: 6px; right: 12px; width: 8px; height: 8px; border-radius: 999px; background: var(--warning, #ffb52e); }
 @media (max-width: 700px) { .film-rail { display: none; } }
+
+/* The set for a place (Cast, Places) */
+.cw-set { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--line); }
+.cw-set-ways { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 8px; }
+.cw-set-way { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,0.02); }
+.cw-set-look { margin: 10px 0 0; }

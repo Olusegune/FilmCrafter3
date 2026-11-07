@@ -1,4 +1,13 @@
-# QA report: FilmCrafter 0.51.0 (2026-11-06)
+# QA report: FilmCrafter 0.52.0 (2026-11-07)
+
+## 0.52.0: a set for a place (the golden-path way into WorldLock) and UI audit fixes
+
+Engine: **2,956 tests collected, 2,949 passed, 7 skipped, none failed** (11 new in `test_placeset.py`, on a real film folder; two of them run a **real Blender 5.2.2**: a blank file made in Blender, brought back twice with the set's placement kept, and a user's own .blend read without touching the original). Bandit (medium and above): **no findings; the output was read** (empty). TypeScript clean; **932 Vitest tests in 116 files** (9 new for the place's set section, one test text updated because the Blender note was no longer true); 15 Rust tests (the new command's action list matches the engine's literal choices: `test_security.py` passes). `rafter run` not run (quota); hand review: paths are list items to Blender (no shell), fixed scripts, a time limit, the original .blend is copied and never touched, nothing is sent. Problems found by the tests/real runs and fixed: a picture backdrop stood too high (an asset's `y` is its base), a Blender place's ground fought the model's own floor, the first bring-back was not fitted ahead of the camera.
+
+**Still not tested:** the place's set section in the installed app (screenshots are from the harness with sample data); a large real-world .blend (materials, lights, hundreds of objects); Blender on macOS/Linux.
+
+## Earlier: 0.51.0
+
 
 ## 0.50.0: DirectorCam (virtual production slice 6)
 

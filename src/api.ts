@@ -348,6 +348,8 @@ export const api = {
   /** Animating a 3D set (filmcrafter_engine.worldanim): keyframed camera, models, lights and sky rendered to an MP4. Free and local. */
   worldAnim: <T = WlAnimResult>(action: "render" | "cancel", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_worldanim", { action, target, data }),
   /** The optional Blender bridge (filmcrafter_engine.blenderbridge). Experimental; Blender is never installed or downloaded. */
+  /** A set for a place (filmcrafter_engine.placeset): the guided way into WorldLock. From the place's pictures, a 3D model, a Blender file, or made in Blender. Free and local. */
+  placeSet: <T = PlaceSetStatus>(action: "status" | "from_pictures" | "from_model" | "from_blend" | "blender_new" | "open_blender" | "bring_back" | "preview" | "unlink", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_placeset", { action, target, data }),
   blender: <T = BlenderStatus>(action: "status" | "export", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_blender", { action, target, data }),
   /** DirectorCam (filmcrafter_engine.directorcam): shot plans on a set, camera placement and moves, advice, shot packages, provider support. Free and local; nothing is generated or sent. */
   directorCam: <T = DcPlan>(action: "presets" | "place_camera" | "path" | "plan_beat" | "plan_save" | "plans" | "plan_get" | "shot_set" | "shot_remove" | "checks" | "preview" | "package" | "capabilities" | "apply" | "plan_remove", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_directorcam", { action, target, data }),
@@ -648,6 +650,8 @@ export type Wl3dIssue = { kind: string; ids: string[]; depth_m: number; text: st
 export type WlCollisions = { issues: Wl3dIssue[]; ok: boolean; measured: string; checked: { models: number; cameras: number } };
 export type WlViews3d = { views: (WlView & { name: string })[]; target: number[]; distance: number };
 export type WlAnimResult = { file: string; path: string; frames: number; fps: number; seconds: number; size: number[]; took: number };
+export type PlaceSetStatus = { place: string; name: string; pictures: number; blender: { found: boolean; version: string }; next: string;
+  set: null | { id: string; name: string; version: number; locked: boolean; mode: "pictures" | "model" | "blender"; pictures: number; models: number; cameras: number; blend?: string; blend_saved?: boolean } };
 export type BlenderStatus = { found: boolean; path: string; version: string; note: string; folder?: string; relative?: string; script?: string; ran?: boolean; rendered?: string[] };
 export type WlAsset = { id: string; name: string; kind: "layer" | "prop" | "landmark"; x: number; y: number; z: number; width: number; height: number; file: string; pixels: [number, number]; tags: string[]; note: string; cut_from?: string };
 export type WlCamera = { id: string; name: string; x: number; y: number; z: number; yaw: number; pitch: number; fov: number; note: string; focal_mm?: number; sensor_mm?: number; aperture?: number; aspect?: string; focus?: string | null };

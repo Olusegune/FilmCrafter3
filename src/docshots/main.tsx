@@ -274,6 +274,13 @@ mockIPC((cmd, a) => {
         default: return set3d.set;
       }
     case "film_shots": return { shots: [] };
+    case "film_placeset": {
+      const made = q.get("placestate") === "made";
+      const base = { place: "e_kitchen", name: "Kitchen", pictures: 2, blender: { found: true, version: "5.2.2" } };
+      if (x.action === "preview") return { set: "ws-1", file: "s1.png", uncovered: 0.12, warnings: [] };
+      return made ? { ...base, next: "The set is ready: look from the camera, or plan the shots.", set: { id: "ws-1", name: "Kitchen", version: 3, locked: false, mode: "pictures", pictures: 2, models: 0, cameras: 1 } }
+        : { ...base, next: "Make a set from this place's pictures: one press, and you can change it later.", set: null };
+    }
     case "film_vp": return vpGet;
     case "film_vpvideo": return { ffmpeg: true, formats: ["png", "prores", "webm"] };
     case "film_directorcam":

@@ -24,7 +24,7 @@ export const TOOLS: { id: ToolId; label: string; icon: ReactNode; more?: boolean
   { id: "color", label: "Color", icon: <I.Sliders />, more: true, needsShots: true, why: NEEDS },
   { id: "colourmatch", label: "Colour match", icon: <I.Lens />, more: true, needsShots: true, why: NEEDS },
   { id: "clean", label: "Clean up", icon: <I.Trash />, more: true, needsShots: true, why: NEEDS },
-  { id: "worldlock", label: "Sets", icon: <I.Cube />, more: true, why: "Build a place once (flat pictures at fixed positions in metres), save cameras, and see it from each camera." },
+  { id: "worldlock", label: "Sets", icon: <I.Cube />, more: true, why: "All the sets of this film, for editing. To make one, open a place in Cast > Places and press Make a set." },
   { id: "directorcam", label: "DirectorCam", icon: <I.Camera />, more: true, why: "Plan the shots of a story beat on a set: cameras, moves, blocking, advice, and shot packages." },
   { id: "cutouts", label: "Cutouts", icon: <I.Mask />, more: true, why: "Cut a subject out of a green or blue screen and put it on another picture." },
 ];

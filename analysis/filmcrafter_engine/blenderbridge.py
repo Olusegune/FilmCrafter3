@@ -5,8 +5,8 @@ hand: turn a WorldLock set into a Blender scene (the models placed, the ground, 
   * `export` writes `worldlock/<set>/blender/build_scene.py` (a script made only from the set's numbers and file names) and `scene.json`. Run on its own, it needs nothing but Blender: `blender -b -P build_scene.py`.
   * `run` runs that script in Blender in the background (fixed arguments, a time limit, no user text in the command), which saves `scene.blend` and renders one reference frame per saved camera.
 
-Status of this bridge, stated plainly: the script and the detection are tested without Blender (the script is parsed and its numbers checked; detection is tested against a stand-in program). **It has not been
-run in a real Blender**, because none is installed on the machine it was built on. Treat `run` as experimental. Blender's licence (GPL) means nothing of it is bundled or redistributed here.
+Status: tried for real in Blender 5.2.2 (the set is rebuilt and rendered; ground, sky and lights are not yet carried over).
+Blender's licence (GPL) means nothing of it is bundled or redistributed here.
 
 Coordinates: WorldLock is left-handed (X right, Y up, Z into the set); Blender is right-handed with Z up. The script converts: a set point (x, y, z) becomes Blender (x, z, y), and a set yaw turns about Blender's
 Z axis the opposite way. glTF models are imported by Blender's own importer; the set mirrors glTF's Z on reading, so the script applies the same mirror (scale Z by -1 on the object) to keep the model the right way round.

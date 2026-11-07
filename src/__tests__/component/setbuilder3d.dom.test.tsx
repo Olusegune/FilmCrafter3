@@ -117,14 +117,14 @@ describe("the 3D tab of the set builder", () => {
     expect(await screen.findByLabelText("Collision result")).toHaveTextContent("'Tomb' and 'Stone' overlap by 0.50 m (their boxes).");
   });
 
-  it("looks for Blender without installing anything and writes the script, saying it is experimental", async () => {
+  it("looks for Blender without installing anything and writes the script, saying what comes across", async () => {
     invoke.mockImplementation(backend);
     await show();
     fireEvent.click(screen.getByRole("button", { name: "Look for Blender" }));
     expect(await screen.findByLabelText("Blender")).toHaveTextContent("It is optional");
     fireEvent.click(screen.getByRole("button", { name: "Write the Blender script" }));
     await waitFor(() => expect(sent("export")).toEqual([{ set: "ws-1" }]));
-    expect(await screen.findByText(/experimental: not yet run in a real Blender/)).toBeInTheDocument();
+    expect(await screen.findByText(/experimental: the models and cameras come across/)).toBeInTheDocument();
     expect(invoke.mock.calls.every(([cmd]) => ["film_worldlock", "film_blender", "film_shots"].includes(cmd))).toBe(true);
   });
 

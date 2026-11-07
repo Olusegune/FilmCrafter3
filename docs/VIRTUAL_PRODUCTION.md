@@ -108,6 +108,10 @@ Rail > More > **Sets**. A **set** lives in the film (`worldlock/<id>/`): a world
 
 - **Not built:** AI-assisted reconstruction from reference images (no vision/segmentation model is installed; planned as an honest draft layout needing approval), the fuller continuity inspector (slice 4), Fidelity integration (slice 8).
 
+## The guided way in: a set for a place (0.52.0)
+
+The set builder was a tool under More. The golden path now reaches it from where a film already describes its places: **Cast > Places > (a place) > Set**. Two ways, plainly worded: **From this place's pictures** (2D: the first picture becomes a backdrop 14 m away, the others layers in front, a ground and a camera) and **From a 3D model** (a .glb/.gltf, or a Blender .blend that Blender saves as a .glb in the background, or **Build it in Blender**: a blank .blend with a floor is made and opened, and **Bring it back from Blender** reads it again and swaps the model, keeping where it stood). After that: **Look from the camera**, **Plan the shots** (DirectorCam on this set) and **Edit the set** (the full builder). `placeset.py` keeps the place-to-set link in `worldlock/place_sets.json`; sets are the same sets as before. Tested against a real Blender 5.2.2 (blank file, bring back twice, a .blend of the user's own) and without Blender (the ways are greyed with the reason). Limits: one set per place; a model from Blender is stood 4 m ahead of the camera and may need moving; lights, sky and materials from Blender are not carried over (only geometry and colours the glTF exporter writes); a Blender place's ground is left off so it does not fight the model's own floor.
+
 ## Slice 6: DirectorCam (0.50.0)
 
 Rail > More > **DirectorCam** (needs a set from Sets). The order of the work is the brief's: read the set, find the people and things, propose shots, assign cameras, propose blocking, validate, preview, approve, make a package.

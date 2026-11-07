@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.52.0 (2026-11-07)
+
+- **Sets now follow the golden path.** Open a place in **Cast > Places** and a new **Set** section sits under its pictures with two plain ways in: **From this place's pictures** (one press, no 3D) or **From a 3D model** (a .glb/.gltf, a Blender .blend, or **Build it in Blender**). After that: **Look from the camera**, **Plan the shots** (opens DirectorCam on that set), **Edit the set** (the full builder), and **Bring it back from Blender** after changes there. Tried against a real Blender 5.2.2. Blender stays optional: without it the Blender ways are greyed with the reason.
+- **UI audit fixes:** the shot inspector no longer pushes past the window edge at 1100 px; two controls' accessible names now contain their visible text; screenshot scenes for Sets, 3D, DirectorCam, Cutouts and places; `docs/UI_AUDIT.md`.
+- **Limits, plainly:** one set per place; Blender lights, sky and materials are not carried over; the rail's Sets tool remains for editing all sets.
+
 ## 0.51.1 (2026-11-06)
 
 - **Fixes:** the Blender script now works on Blender 5.x (tried for real in Blender 5.2.2, which found it; ground, sky and light settings are still not carried over); the four-views framing ignores a few far objects (a skyline) so the set is not a speck; the 3D tab folds each model's position boxes away and the intro line mentions 3D models.

@@ -26,7 +26,7 @@ const N = ({ label, value, step = 0.1, onChange, w = 70 }: { label: string; valu
  * WorldLock, the set builder. A set is a place that exists on its own: flat pictures standing at fixed positions in metres, characters on the floor, saved cameras. A camera view is computed from the set, so
  * moving a camera never moves an object, and what the pictures do not cover is shown as a gap, never filled in. Free and local; nothing is generated or sent. 2.5D only: pictures are flat.
  */
-export function SetBuilder({ dir, onClose }: { dir: string; onClose: () => void }) {
+export function SetBuilder({ dir, onClose, openSet }: { dir: string; onClose: () => void; openSet?: string }) {
   const [list, setList] = useState<WlList | null>(null);
   const [set, setSet] = useState<WlSet | null>(null);
   const [tab, setTab] = useState<"layout" | "d3" | "cameras" | "shots" | "checks">("layout");
@@ -54,6 +54,7 @@ export function SetBuilder({ dir, onClose }: { dir: string; onClose: () => void 
   const go = async (label: string, f: () => Promise<void>) => { setErr(""); setSaid(""); setBusy(label); try { await f(); } catch (e) { setErr(errorText(e)); } finally { setBusy(""); } };
   const call = (label: string, action: Parameters<typeof api.worldlock>[0], data: Record<string, unknown> = {}) => go(label, async () => { if (!set) return; setSet(await api.worldlock<WlSet>(action, dir, { set: set.id, ...data })); });
   const open = (id: string) => go("open", async () => { setSet(await api.worldlock<WlSet>("get", dir, { set: id })); setSel(null); setView(null); setCheck(null); setMove(null); });
+  useEffect(() => { if (openSet) void open(openSet); }, [openSet]); // eslint-disable-line react-hooks/exhaustive-deps
   const bring = () => go("picture", async () => {
     const f = await openDialog({ multiple: false, filters: [{ name: "Pictures", extensions: ["png", "jpg", "jpeg", "webp", "bmp", "tif", "tiff"] }] });
     if (typeof f !== "string" || !set) return;
@@ -152,7 +153,7 @@ export function SetBuilder({ dir, onClose }: { dir: string; onClose: () => void 
           {fours && <div className="sm-row" aria-label="Four views">{fours.views.map((v) => <figure key={v.name} style={{ margin: 0 }}><img alt={`${v.name} view`} src={`${api.mediaUrl(`${dir}/${v.file}`)}?v=${v.file}`} style={{ width: 230, borderRadius: 6 }} /><figcaption className="dim">{v.name}{v.uncovered > 0.02 ? ` · ${Math.round(v.uncovered * 100)}% empty` : ""}</figcaption></figure>)}</div>}
           <h4>Blender <span className="dim">optional; the set does not need it</span></h4>
           <div className="sm-row"><button className="btn sm ghost" disabled={!!busy} onClick={() => void go("bl", async () => setBl(await api.blender<BlenderStatus>("status", dir)))}>Look for Blender</button>
-            <button className="btn sm ghost" disabled={!!busy} onClick={() => void go("blx", async () => { const r = await api.blender<BlenderStatus>("export", dir, { set: set.id }); setBl({ ...(bl ?? { found: false, path: "", version: "", note: "" }), ...r, note: `The script is written in ${r.relative}. Run it with: blender -b -P build_scene.py (experimental: not yet run in a real Blender).` }); })}>Write the Blender script</button></div>
+            <button className="btn sm ghost" disabled={!!busy} onClick={() => void go("blx", async () => { const r = await api.blender<BlenderStatus>("export", dir, { set: set.id }); setBl({ ...(bl ?? { found: false, path: "", version: "", note: "" }), ...r, note: `The script is written in ${r.relative}. Run it with: blender -b -P build_scene.py (experimental: the models and cameras come across, the ground, sky and lights do not).` }); })}>Write the Blender script</button></div>
           {bl && <p className="dim" role="status" aria-label="Blender">{bl.found ? `Blender ${bl.version} found. ` : ""}{bl.note}</p>}
         </section>}
 

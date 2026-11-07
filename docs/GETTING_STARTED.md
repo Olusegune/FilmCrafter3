@@ -87,6 +87,11 @@ Open **Cast & World** along the top. The first time, FilmCrafter fills it from y
 ![Characters: pictures, traits, wardrobe, and related states](img/film/cast.png)
 
 - **Characters, Places, Props**: each is one entry with **states** (Sarah at 8, at 28, at 70; the kitchen by day and by night). Bring your own artwork (the first picture is the master); it is copied into the film and the original is left alone. Places have a layout (doors, windows, landmarks, where actors can stand and the camera can go) so a set doesn't change between shots.
+- **A set for a place (optional)**: a set is a version of a place the camera can move around in, so it looks the same from every shot. Open a place (Cast > Places) and, under its pictures, choose how to make it: **From this place's pictures** (one press, no 3D needed) or **From a 3D model** (a .glb/.gltf file, a Blender .blend file, or **Build it in Blender**: a blank file opens in Blender, you build and save, then press **Bring it back from Blender**). **Look from the camera** shows what the set gives; **Plan the shots** opens DirectorCam on it; **Edit the set** opens the full set builder. Blender is optional and is never installed or changed by FilmCrafter.
+
+![A place with no set yet: two ways in](img/place-set.png)
+![A place with its set](img/place-set-made.png)
+
 - **Rules & style**: the visual style, the rules of the world, and how the film is made (cinematography, lighting, movement, sound).
 
 ![Rules and style: six kinds of film, a look within one, an optional genre feel, and the twelve principles of animation](img/film/bible.png)
