@@ -1782,3 +1782,9 @@ select option, select optgroup { background: #12171e; color: var(--frost); }
 .ly-mix > summary { cursor: pointer; font-size: 13px; padding: 2px 0; }
 .ly-mix[open] > summary { margin-bottom: 6px; }
 .ly-mixnote { font-size: 12px; margin: 6px 0 0; }
+
+/* Narrow windows (the app's minimum is 1100): the inspector header may shrink, so its look chip and close button never push the panel past the window edge. */
+.inspector-head { min-width: 0; gap: 8px; }
+.inspector-head .insp-title { flex: 1 1 auto; }
+.inspector-head .look-chip { min-width: 0; flex: 0 1 auto; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inspector-head .icon-btn { flex: 0 0 auto; }

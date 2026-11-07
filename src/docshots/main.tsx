@@ -11,6 +11,14 @@
 import { SoundPlan } from "../SoundPlan";
 import { SetBuilder } from "../SetBuilder";
 import set3d from "./set3d.json";
+import { DirectorCam } from "../DirectorCam";
+import { CutoutStudio } from "../CutoutStudio";
+import vpGet from "../__tests__/fixtures/engine/vp_get.json";
+import dcPlans from "../__tests__/fixtures/engine/directorcam_plans.json";
+import dcPlan from "../__tests__/fixtures/engine/directorcam_plan_get.json";
+import dcPreview from "../__tests__/fixtures/engine/directorcam_preview.json";
+import dcWlGet from "../__tests__/fixtures/engine/directorcam_worldlock_get.json";
+import dcWlList from "../__tests__/fixtures/engine/directorcam_worldlock_list.json";
 import { ReadinessSheet } from "../ReadinessSheet";
 import { PacingSheet } from "../PacingSheet";
 import { GivenToModel } from "../GivenToModel";
@@ -259,13 +267,22 @@ mockIPC((cmd, a) => {
   switch (cmd) {
     case "film_worldlock":
       switch (x.action) {
-        case "list": return { sets: [{ id: set3d.set.id, name: set3d.set.name, version: set3d.set.version, locked: false, assets: 0, cameras: set3d.set.cameras.length, updated: now }], limits: { sets: 40, assets: 200, cameras: 30, events: 200 } };
-        case "get": return x.data && "set" in x.data ? set3d.set : { shots: [] };
+        case "list": if (scene === "directorcam") return dcWlList; return { sets: [{ id: set3d.set.id, name: set3d.set.name, version: set3d.set.version, locked: false, assets: 0, cameras: set3d.set.cameras.length, updated: now }], limits: { sets: 40, assets: 200, cameras: 30, events: 200 } };
+        case "get": if (scene === "directorcam") return x.data && "set" in x.data ? dcWlGet : { shots: [] }; return x.data && "set" in x.data ? set3d.set : { shots: [] };
         case "views3d": return set3d.views;
         case "collisions": return set3d.collisions;
         default: return set3d.set;
       }
     case "film_shots": return { shots: [] };
+    case "film_vp": return vpGet;
+    case "film_vpvideo": return { ffmpeg: true, formats: ["png", "prores", "webm"] };
+    case "film_directorcam":
+      switch (x.action) {
+        case "plans": return dcPlans;
+        case "plan_get": return dcPlan;
+        case "preview": return dcPreview;
+        default: return dcPlan;
+      }
     case "film_blender": return { found: false, path: "", version: "", note: "Blender was not found. It is optional: FilmCrafter draws 3D sets without it." };
     case "agent_studio": return { version: 1, paused: false, current: "direction", updated: now,
       brief: { story: "A young man faces the memories he has avoided and chooses to come home.", style: "Cinematic storybook", duration: "3–4 minutes", aspect: "2.39:1", budget_limit: 30, checkin_mode: "balanced", checkpoints: ["story", "direction", "first_scene", "preview"] },
@@ -850,6 +867,8 @@ const scenes: Record<string, () => ReactNode> = {
   givenmodel: () => card(<GivenToModel dir={DIR} inputs={[{ role: "first_frame", label: "Keyframe S01-02", path: "s1.png", sent: true }, { role: "reference", label: "Sarah, front view", path: "s2.png", sent: true }, { role: "reference", label: "Kitchen, master", path: "s4.png", sent: true }, { role: "audio", label: "Sarah's recording", path: null, sent: true }] as never} />, 520),
   soundplan: () => <SoundPlan dir={DIR} onClose={noop} onGo={noop} />,
   sets3d: () => <div style={{ width: "min(1240px, 100vw)", height: 900, display: "flex", background: "#090b0f" }}><SetBuilder dir={DIR} onClose={noop} /></div>,
+  directorcam: () => <div style={{ width: "min(1240px, 100vw)", height: 900, display: "flex", background: "#090b0f" }}><DirectorCam dir={DIR} onClose={noop} /></div>,
+  cutouts: () => <div style={{ width: "min(1240px, 100vw)", height: 900, display: "flex", background: "#090b0f" }}><CutoutStudio dir={DIR} onClose={noop} /></div>,
   compose: () => card(<ComposeTab dir={DIR} shot="S01-01" keys={keys} />, 460),
 };
 function CompareLazy() {

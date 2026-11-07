@@ -16,7 +16,7 @@ export function PresetThumb({ p }: { p: HomePreset }) {
 export function PresetCard({ p, onPick }: { p: HomePreset; onPick: (p: HomePreset) => void }) {
   return (
     <li className="hm-pcard">
-      <button type="button" className="hm-pbtn" onClick={() => onPick(p)} aria-label={`${p.name}: ${p.description}`}>
+      <button type="button" className="hm-pbtn" onClick={() => onPick(p)}>
         <PresetThumb p={p} />
         <span className="hm-pname">{p.name}</span>
         <span className="hm-pdesc">{p.description}</span>
