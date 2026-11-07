@@ -9,6 +9,8 @@
  * A scene can be told what to do once it is up: &click=<button text> presses a button, &drag=x0,y0,x1,y1 drags a box on the Fix a hand picture (fractions of the picture).
  */
 import { SoundPlan } from "../SoundPlan";
+import { SetBuilder } from "../SetBuilder";
+import set3d from "./set3d.json";
 import { ReadinessSheet } from "../ReadinessSheet";
 import { PacingSheet } from "../PacingSheet";
 import { GivenToModel } from "../GivenToModel";
@@ -255,6 +257,16 @@ mockWindows("main");
 mockIPC((cmd, a) => {
   const x = (a ?? {}) as { action?: string; data?: Record<string, unknown> };
   switch (cmd) {
+    case "film_worldlock":
+      switch (x.action) {
+        case "list": return { sets: [{ id: set3d.set.id, name: set3d.set.name, version: set3d.set.version, locked: false, assets: 0, cameras: set3d.set.cameras.length, updated: now }], limits: { sets: 40, assets: 200, cameras: 30, events: 200 } };
+        case "get": return x.data && "set" in x.data ? set3d.set : { shots: [] };
+        case "views3d": return set3d.views;
+        case "collisions": return set3d.collisions;
+        default: return set3d.set;
+      }
+    case "film_shots": return { shots: [] };
+    case "film_blender": return { found: false, path: "", version: "", note: "Blender was not found. It is optional: FilmCrafter draws 3D sets without it." };
     case "agent_studio": return { version: 1, paused: false, current: "direction", updated: now,
       brief: { story: "A young man faces the memories he has avoided and chooses to come home.", style: "Cinematic storybook", duration: "3–4 minutes", aspect: "2.39:1", budget_limit: 30, checkin_mode: "balanced", checkpoints: ["story", "direction", "first_scene", "preview"] },
       stages: ["story", "direction", "storyboard", "first_scene", "scenes", "audio", "preview", "export"].map((id, i) => ({ id, label: ["Story & shot plan", "Cast & visual direction", "Storyboard & keyframes", "First scene preview", "Remaining scenes", "Voices & sound", "Preview cut", "Final review & export"][i], state: i === 0 ? "complete" : i === 1 ? "needs_approval" : "not_started" })),
@@ -837,6 +849,7 @@ const scenes: Record<string, () => ReactNode> = {
   pacing: () => <PacingSheet dir={DIR} onClose={noop} onGo={noop} />,
   givenmodel: () => card(<GivenToModel dir={DIR} inputs={[{ role: "first_frame", label: "Keyframe S01-02", path: "s1.png", sent: true }, { role: "reference", label: "Sarah, front view", path: "s2.png", sent: true }, { role: "reference", label: "Kitchen, master", path: "s4.png", sent: true }, { role: "audio", label: "Sarah's recording", path: null, sent: true }] as never} />, 520),
   soundplan: () => <SoundPlan dir={DIR} onClose={noop} onGo={noop} />,
+  sets3d: () => <div style={{ width: "min(1240px, 100vw)", height: 900, display: "flex", background: "#090b0f" }}><SetBuilder dir={DIR} onClose={noop} /></div>,
   compose: () => card(<ComposeTab dir={DIR} shot="S01-01" keys={keys} />, 460),
 };
 function CompareLazy() {
@@ -851,6 +864,9 @@ root.render(scenes[scene] ? scenes[scene]() : <p>Unknown scene: {scene}</p>);
 // ---------------------------------------------------------------- scripted steps, then report the size of the page for the screenshot
 const press = (text: string) => { const b = [...document.querySelectorAll("button, summary, [role=tab]")].find((e) => (e.textContent ?? "").trim().toLowerCase().startsWith(text.toLowerCase())); (b as HTMLElement | undefined)?.click(); };
 setTimeout(() => {
+  const pick = q.get("select");                                                                 // &select=<value> chooses that option in the screen's first drop-down (a set, say)
+  const sel = document.querySelector("select");
+  if (pick && sel) { Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")!.set!.call(sel, pick); sel.dispatchEvent(new Event("change", { bubbles: true })); }
   q.getAll("click").forEach((t, i) => setTimeout(() => press(t), i * 350));                 // one after another, so the screen can update between them
   const css = q.get("clickcss");
   if (css) (document.querySelector(css) as HTMLElement | null)?.click();

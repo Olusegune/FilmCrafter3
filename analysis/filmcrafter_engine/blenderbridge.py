@@ -95,7 +95,8 @@ RENDER = "--no-render" not in sys.argv
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
-scene.render.engine = "BLENDER_EEVEE_NEXT" if hasattr(bpy.types, "SceneEEVEE") and bpy.app.version >= (4, 2, 0) else "BLENDER_EEVEE"
+_engines = [e.identifier for e in bpy.types.RenderSettings.bl_rna.properties["engine"].enum_items]
+scene.render.engine = next((e for e in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE") if e in _engines), "BLENDER_WORKBENCH")   # the name changed between Blender versions
 
 if DATA["ground"].get("visible"):
     bpy.ops.mesh.primitive_plane_add(size=float(DATA["ground"].get("extent", 60)) * 2, location=(0, 0, float(DATA["ground"].get("y", 0))))

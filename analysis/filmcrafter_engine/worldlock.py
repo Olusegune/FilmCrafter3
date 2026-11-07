@@ -830,6 +830,9 @@ def views3d(d: str, sid: str, data: dict) -> dict:
     s = _load(d, sid)
     boxes = list(_world_boxes(s).values())
     if boxes:
+        if len(boxes) > 6:                                                          # a few far things (a skyline) must not shrink everything else to a speck: frame the nearest 85%
+            mid = [sorted((b[0][k] + b[1][k]) / 2 for b in boxes)[len(boxes) // 2] for k in range(3)]
+            boxes = sorted(boxes, key=lambda b: sum(((b[0][k] + b[1][k]) / 2 - mid[k]) ** 2 for k in range(3)))[:max(6, int(len(boxes) * 0.85))]
         lo = [min(b[0][k] for b in boxes) for k in range(3)]
         hi = [max(b[1][k] for b in boxes) for k in range(3)]
         center = [(lo[k] + hi[k]) / 2 for k in range(3)]

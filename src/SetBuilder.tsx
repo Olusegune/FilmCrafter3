@@ -76,7 +76,7 @@ export function SetBuilder({ dir, onClose }: { dir: string; onClose: () => void 
   return (
     <Sheet label="Set builder" className="wl-sheet" onDismiss={onClose}>
       <div className="vs-head"><h2>Sets <span className="dim">a place that stays the same from every camera</span></h2><div style={{ flex: 1 }} /><button className="icon-btn" onClick={onClose} aria-label="Close">×</button></div>
-      <p className="dim">Free and local: nothing is generated or sent. A set is flat pictures standing at fixed positions in metres. A camera view is worked out from the set, so moving a camera never moves an object, and anything the pictures do not cover shows as a gap and is never filled in.</p>
+      <p className="dim">Free and local: nothing is generated or sent. A set is flat pictures and 3D models standing at fixed positions in metres. A camera view is worked out from the set, so moving a camera never moves an object, and anything the pictures do not cover shows as a gap and is never filled in.</p>
       {err && <p className="ss-warn" role="alert">{err}</p>}
       {said && <p className="dim" role="status">{said}</p>}
       <div className="sm-row">
@@ -132,16 +132,16 @@ export function SetBuilder({ dir, onClose }: { dir: string; onClose: () => void 
             <label className="ov-check"><input type="checkbox" checked={!!set.ground?.visible} disabled={lock} onChange={(e) => void call("ground", "ground_set", { visible: e.target.checked })} /> Show the ground (a metre-checker)</label></div>
           <div className="sm-row"><label>Sky overhead <input type="color" aria-label="Sky overhead" value={set.sky?.top ?? "#1a2236"} disabled={lock} onChange={(e) => void call("sky", "sky_set", { top: e.target.value })} /></label>
             <label>Sky at the horizon <input type="color" aria-label="Sky at the horizon" value={set.sky?.horizon ?? "#d9a066"} disabled={lock} onChange={(e) => void call("sky", "sky_set", { horizon: e.target.value })} /></label>
-            <N label="Fog (0 to 1)" value={set.sky?.fog ?? 0} step={0.01} onChange={(v) => void call("sky", "sky_set", { fog: v })} /></div>
+            <N label="Fog (0 to 1)" value={set.sky?.fog ?? 0} step={0.01} w={96} onChange={(v) => void call("sky", "sky_set", { fog: v })} /></div>
           {(set.models ?? []).length === 0 ? <p className="dim">No 3D models yet.</p> : <ul className="ss-cues">{(set.models ?? []).map((m) => <li key={m.id} aria-label={`Model ${m.name}`}>
             <div className="sm-row"><b>{m.name}</b> <span className="dim">{m.summary.triangles.toLocaleString()} triangles · {m.summary.size.join(" × ")} m</span>
               <label className="ov-check"><input type="checkbox" checked={m.visible} disabled={lock} onChange={(e) => void call("model", "model_set", { id: m.id, visible: e.target.checked })} /> Shown</label>
               <label className="ov-check"><input type="checkbox" checked={m.solid} disabled={lock} onChange={(e) => void call("model", "model_set", { id: m.id, solid: e.target.checked })} /> Solid</label>
               {(set.groups ?? []).length > 0 && <select className="text-input" aria-label={`Group of ${m.name}`} value={m.parent ?? ""} disabled={lock} onChange={(e) => void call("model", "model_set", { id: m.id, parent: e.target.value || null })}><option value="">No group</option>{(set.groups ?? []).map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}</select>}
               <button className="btn sm ghost" disabled={!!busy || lock} aria-label={`Remove ${m.name}`} onClick={() => void call("model", "model_remove", { id: m.id })}>Take it out</button></div>
-            <div className="sm-row"><N label={`${m.name} across (m)`} value={m.x} onChange={(v) => void call("model", "model_set", { id: m.id, x: v })} /><N label={`${m.name} up (m)`} value={m.y} onChange={(v) => void call("model", "model_set", { id: m.id, y: v })} />
+            <details><summary className="dim">Position and size</summary><div className="sm-row"><N label={`${m.name} across (m)`} value={m.x} onChange={(v) => void call("model", "model_set", { id: m.id, x: v })} /><N label={`${m.name} up (m)`} value={m.y} onChange={(v) => void call("model", "model_set", { id: m.id, y: v })} />
               <N label={`${m.name} depth (m)`} value={m.z} onChange={(v) => void call("model", "model_set", { id: m.id, z: v })} /><N label={`${m.name} turn (°)`} value={m.yaw} step={15} onChange={(v) => void call("model", "model_set", { id: m.id, yaw: v })} />
-              <N label={`${m.name} size (×)`} value={m.scale} step={0.1} onChange={(v) => void call("model", "model_set", { id: m.id, scale: v })} /></div>
+              <N label={`${m.name} size (×)`} value={m.scale} step={0.1} onChange={(v) => void call("model", "model_set", { id: m.id, scale: v })} /></div></details>
             {m.summary.warnings.map((w) => <p key={w} className="ss-warn">{w}</p>)}</li>)}</ul>}
           <div className="sm-row"><input className="text-input" placeholder="Name a group of models" aria-label="New group name" value={gname} maxLength={60} onChange={(e) => setGname(e.target.value)} />
             <button className="btn sm" disabled={!!busy || lock || !gname.trim()} onClick={() => void call("group", "group_set", { name: gname }).then(() => setGname(""))}>Make a group</button>

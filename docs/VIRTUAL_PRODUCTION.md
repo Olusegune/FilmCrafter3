@@ -97,7 +97,15 @@ Rail > More > **Sets**. A **set** lives in the film (`worldlock/<id>/`): a world
   ![He Is Risen, frames 2](img/he-is-risen-contact-sheet-2.png)
   ![He Is Risen, final frames](img/he-is-risen-final-frames.png)
 
-  The 3D tab itself has component tests but no screenshot yet: the documentation screenshot tool does not have a Sets scene.
+  The 3D tab (real screenshots from the screenshot harness; scenes `sets3d` and `sets3dviews`):
+
+  ![The 3D tab](img/sets-3d.png)
+  ![Four views and collisions](img/sets-3d-views.png)
+
+  **Blender bridge, tried for real (Blender 5.2.2):** the script ran headless and rendered the set (19 models, camera and placement correct, real shadows). It found a bug (the engine name `BLENDER_EEVEE_NEXT` does not exist in 5.x; now picked from what the installed Blender offers). What it does **not** carry over yet: the set's ground colour, sky and light settings, so the render is washed out (white ground, black sky, strong sun):
+
+  ![Blender render of the set](img/blender-render-he-is-risen.png)
+
 - **Not built:** AI-assisted reconstruction from reference images (no vision/segmentation model is installed; planned as an honest draft layout needing approval), the fuller continuity inspector (slice 4), Fidelity integration (slice 8).
 
 ## Slice 6: DirectorCam (0.50.0)

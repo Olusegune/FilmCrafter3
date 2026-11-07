@@ -26,6 +26,8 @@ const BROWSERS = [
 // name: [file, query]
 const SCENES = {
   review: ["review.png", "scene=review"],
+  sets3d: ["sets-3d.png", "scene=sets3d&select=ws-13f194cb&click=zzz&click=3D"],
+  sets3dviews: ["sets-3d-views.png", "scene=sets3d&select=ws-13f194cb&click=zzz&click=3D&click=See it from four sides&click=Check for collisions"],
   queue: ["queue.png", "scene=queue"],
   retry: ["queue-retry.png", "scene=retry&click=Try a cheaper model"],
   kt: ["keyframetools.png", "scene=keyframetools"],
