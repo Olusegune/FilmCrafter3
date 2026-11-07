@@ -19,7 +19,7 @@ import soundfile as sf
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "analysis"))
 from filmcrafter_engine import (adrsync as AD, audiolib as AL, audiocues as Q, audioqa as QA, bible, cast_voice as C, performplan as PP, proaudio as PA, revoice as RV,  # noqa: E402
-                                shots as S, sounddesign as SD, musicdirector as MD, vpstudio as VP, vpvideo as VV, worldlock as WL, story, voiceid as VI, voiceover as V)
+                                shots as S, sounddesign as SD, musicdirector as MD, vpstudio as VP, vpvideo as VV, worldlock as WL, directorcam as DC, story, voiceid as VI, voiceover as V)
 
 OUT = os.path.join(ROOT, "src", "__tests__", "fixtures", "engine")
 DATA = os.path.join(ROOT, "analysis", "tests", "data")
@@ -143,6 +143,25 @@ def main():
         dump("worldlock_check_move", WL.check_move(d, wsid, {"from": WL.get(d, wsid)["cameras"][0]["id"], "to": wcam2, "steps": 4}))
         dump("worldlock_list", WL.list_sets(d))
         dump("worldlock_get", WL.get(d, wsid))
+        # DirectorCam: a beat planned on a set with two people, saved, previewed and packaged by the real engine
+        dsid = WL.create(d, {"name": "Market arrival"})["id"]
+        WL.asset_add(d, dsid, {"path": wl_pic("dback", 1200, 400, (40, 80, 230)), "name": "Backdrop", "y": -8, "z": 20, "width": 70, "height": 24})
+        doranges = WL.asset_add(d, dsid, {"path": wl_pic("dor", 80, 40, (240, 220, 30)), "name": "Oranges", "kind": "prop", "x": 2.0, "z": 7, "width": 0.8, "height": 0.4})["id"]
+        dgp = WL.asset_add(d, dsid, {"path": wl_pic("dgirl", 60, 120, (230, 30, 30)), "name": "Girl picture", "kind": "prop", "x": 50, "z": 50, "width": 0.5, "height": 1.2})["id"]
+        WL.character_set(d, dsid, {"name": "Girl", "x": -2.0, "z": 6.0, "facing": 90, "asset": dgp})
+        WL.character_set(d, dsid, {"name": "Vendor", "x": 3.5, "z": 8.0, "facing": -90})
+        dbeat = "The girl enters the market, sees the oranges, and rushes to help the vendor."
+        draft = DC.plan_beat(WL._load(d, dsid), dbeat)
+        dump("directorcam_plan_beat", draft)
+        dplan = DC.plan_save(d, dsid, {"name": "Market arrival", "beat": dbeat, "shots": draft["shots"]})
+        dump("directorcam_plan_get", DC.get_plan(d, dsid, dplan["id"]))
+        drush = next(x for x in dplan["shots"] if "rushes" in x["title"])
+        dump("directorcam_preview", DC.preview(d, dsid, dplan["id"], drush["id"]))
+        dump("directorcam_package", DC.package(d, dsid, dplan["id"], drush["id"], {"provider": "kie", "model": "kling/v2-5-turbo-image-to-video-pro"}))
+        dump("directorcam_path", DC.path_action(d, dsid, {"view": drush["camera"], "move": {"kind": "dolly", "amount": 2.0}}))
+        dump("directorcam_plans", DC.plans(d, dsid))
+        dump("directorcam_worldlock_list", WL.list_sets(d))
+        dump("directorcam_worldlock_get", WL.get(d, dsid))
         # the audio inspector
         os.makedirs(os.path.join(d, "exports"), exist_ok=True)
         shutil.copyfile(os.path.join(DATA, "real_speech_zira.wav"), os.path.join(d, "exports", "cut.wav"))

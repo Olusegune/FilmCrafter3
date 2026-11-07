@@ -6,10 +6,10 @@
   "has_profile": true,
   "layers": 2,
   "layers_without_sound": [
-   "ly-23e619a4"
+   "ly-d7291c4e"
   ],
   "without_sound": [
-   "fx-26416009"
+   "fx-fbc4dfb8"
   ]
  },
  "environment": {
@@ -20,16 +20,16 @@
   {
    "action": "impact",
    "approval": "approved",
-   "asset_id": "a-sfx-74215826",
+   "asset_id": "a-sfx-5bfada5f",
    "by": "LILA",
-   "created": 1794007885,
+   "created": 1794010258,
    "cue": {
     "approval": "approved"
    },
-   "cue_id": "q-3a1a4eba",
+   "cue_id": "q-93879c49",
    "distance": "near",
    "duration": null,
-   "id": "fx-f6006ed5",
+   "id": "fx-85519c57",
    "intensity": 0.5,
    "material": "",
    "motivated_by": "",
@@ -46,7 +46,7 @@
    "source_object": "basket of oranges",
    "start": 2.0,
    "surface": "",
-   "updated": 1794007885,
+   "updated": 1794010258,
    "variations": []
   },
   {
@@ -54,12 +54,12 @@
    "approval": "suggested",
    "asset_id": null,
    "by": "",
-   "created": 1794007885,
+   "created": 1794010258,
    "cue": null,
    "cue_id": null,
    "distance": "mid",
    "duration": null,
-   "id": "fx-26416009",
+   "id": "fx-fbc4dfb8",
    "intensity": 0.5,
    "material": "",
    "motivated_by": "",
@@ -76,20 +76,20 @@
    "source_object": "door",
    "start": 3.0,
    "surface": "",
-   "updated": 1794007885,
+   "updated": 1794010258,
    "variations": []
   }
  ],
  "layers": [
   {
-   "asset_id": "a-sfx-5aaa2173",
+   "asset_id": "a-sfx-0d0a88f8",
    "cue": {
     "approval": "approved"
    },
-   "cue_id": "q-27607f90",
+   "cue_id": "q-09f4dc15",
    "description": "",
    "distance": "near",
-   "id": "ly-a28d4ee1",
+   "id": "ly-33f1f05c",
    "level_db": -6.0,
    "loop": true,
    "name": "Rain on the roof",
@@ -104,7 +104,7 @@
    "cue_id": null,
    "description": "",
    "distance": "far",
-   "id": "ly-23e619a4",
+   "id": "ly-d7291c4e",
    "level_db": -6.0,
    "loop": true,
    "name": "Generator",
@@ -118,11 +118,11 @@
   "interior": true,
   "layers": [
    {
-    "asset_id": "a-sfx-5aaa2173",
-    "cue_id": "q-27607f90",
+    "asset_id": "a-sfx-0d0a88f8",
+    "cue_id": "q-09f4dc15",
     "description": "",
     "distance": "near",
-    "id": "ly-a28d4ee1",
+    "id": "ly-33f1f05c",
     "level_db": -6.0,
     "loop": true,
     "name": "Rain on the roof"
@@ -132,7 +132,7 @@
     "cue_id": null,
     "description": "",
     "distance": "far",
-    "id": "ly-23e619a4",
+    "id": "ly-d7291c4e",
     "level_db": -6.0,
     "loop": true,
     "name": "Generator"

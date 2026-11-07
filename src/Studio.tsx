@@ -62,6 +62,7 @@ import { filmDirOfRender } from "./filmPaths";
 import { FilmRail, railSteps, type ToolId } from "./FilmRail";
 import { CutoutStudio } from "./CutoutStudio";
 import { SetBuilder } from "./SetBuilder";
+import { DirectorCam } from "./DirectorCam";
 import { VoiceoverSheet } from "./VoiceoverSheet";
 import { speakers, VHEAD_H, VLANE_H, VOICE_ROWS, VOICE_ROWS_MAX, VoiceLanes } from "./VoiceLanes";
 import { CHEAD_H, CLANE_H, CueLanes, cueLaneKinds, useCues } from "./CueLanes";
@@ -180,6 +181,7 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
   const [layersOpen, setLayersOpen] = useState(false);
   const [cutoutsOpen, setCutoutsOpen] = useState(false);
   const [setsOpen, setSetsOpen] = useState(false);
+  const [dcOpen, setDcOpen] = useState(false);
   useEffect(() => { if (layersOpen) setInspector(true); }, [layersOpen]);   // the panel lives in the inspector column, so open it
   const [previewOpen, setPreviewOpen] = useState(false);
   const [colourOpen, setColourOpen] = useState(false);
@@ -536,6 +538,7 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
       case "clean": setCleanOpen(true); break;
       case "cutouts": setCutoutsOpen(true); break;
       case "worldlock": setSetsOpen(true); break;
+      case "directorcam": setDcOpen(true); break;
     }
   };
   const railProgress = useRailProgress(isFilm ? filmDirOfRender(project.dir) : null);
@@ -726,6 +729,7 @@ export function Studio({ project, onHome, onFilm, onSettings, onReload, startShe
                                      onClose={() => setPerfOpen(false)} onChanged={reloadBoard} />}
       {contOpen && <ContinuitySheet dir={project.dir} onClose={() => setContOpen(false)} onSelectShot={(id) => setSel({ kind: "shot", id })} />}
       {scriptOpen && <ScriptSheet project={project} onClose={() => setScriptOpen(false)} onDone={() => { setScriptOpen(false); onReload(); }} />}
+      {dcOpen && isFilm && <DirectorCam dir={filmDirOfRender(project.dir)} onClose={() => setDcOpen(false)} />}
       {setsOpen && isFilm && <SetBuilder dir={filmDirOfRender(project.dir)} onClose={() => setSetsOpen(false)} />}
       {cutoutsOpen && isFilm && <CutoutStudio dir={filmDirOfRender(project.dir)} onClose={() => setCutoutsOpen(false)} />}
       {libraryOpen && <LibrarySheet filmDir={isRenderDir(project.dir) ? filmDirOfRender(project.dir) : undefined} dir={project.dir} scenes={scenes.map((s) => ({ number: s.number, heading: s.heading }))}

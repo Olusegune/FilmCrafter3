@@ -34,6 +34,14 @@ import wlList from "../fixtures/engine/worldlock_list.json";
 import wlRender from "../fixtures/engine/worldlock_render.json";
 import wlCheck from "../fixtures/engine/worldlock_check.json";
 import wlMove from "../fixtures/engine/worldlock_check_move.json";
+import dcBeat from "../fixtures/engine/directorcam_plan_beat.json";
+import dcPlan from "../fixtures/engine/directorcam_plan_get.json";
+import dcPreview from "../fixtures/engine/directorcam_preview.json";
+import dcPackage from "../fixtures/engine/directorcam_package.json";
+import dcPath from "../fixtures/engine/directorcam_path.json";
+import dcPlans from "../fixtures/engine/directorcam_plans.json";
+import dcList from "../fixtures/engine/directorcam_worldlock_list.json";
+import dcSet from "../fixtures/engine/directorcam_worldlock_get.json";
 import qaFilm from "../fixtures/engine/audioqa_film.json";
 import adGet from "../fixtures/engine/adrsync_get.json";
 import adAlign from "../fixtures/engine/adrsync_align.json";
@@ -57,6 +65,7 @@ import { SoundDesign } from "../../SoundDesign";
 import { MusicDirector } from "../../MusicDirector";
 import { CutoutStudio } from "../../CutoutStudio";
 import { SetBuilder } from "../../SetBuilder";
+import { DirectorCam } from "../../DirectorCam";
 import { AudioCheck } from "../../AudioCheck";
 import { TimingAdr } from "../../TimingAdr";
 import { ProAudio } from "../../ProAudio";
@@ -212,6 +221,31 @@ describe("the screens with the real engine's answers", () => {
     fireEvent.click(screen.getByRole("button", { name: "Check the set" }));
     expect(await screen.findByLabelText("Check result")).toBeInTheDocument();
     expect(screen.getByLabelText("Restore Opening layout")).toBeInTheDocument();
+    clean(container);
+  });
+
+  it("DirectorCam: the real draft, plan with advice, preview, package and move check", async () => {
+    invoke.mockImplementation(answers({ "film_worldlock:list": dcList, "film_worldlock:get": dcSet, "film_shots:get": { shots: [{ id: "S01-01" }, { id: "S01-02" }] }, "film_directorcam:plans": dcPlans, "film_directorcam:plan_beat": dcBeat,
+      "film_directorcam:plan_save": dcPlan, "film_directorcam:plan_get": dcPlan, "film_directorcam:preview": dcPreview, "film_directorcam:package": dcPackage, "film_directorcam:path": dcPath }));
+    const { container } = render(<DirectorCam dir="film" onClose={() => {}} />);
+    await screen.findByLabelText("Set");
+    fireEvent.change(screen.getByLabelText("Set"), { target: { value: (dcSet as unknown as { id: string }).id } });
+    await screen.findByLabelText("Plan a beat");
+    fireEvent.change(screen.getByLabelText("Story beat"), { target: { value: "The girl enters the market, sees the oranges, and rushes to help the vendor." } });
+    fireEvent.click(screen.getByRole("button", { name: "Plan the shots" }));
+    expect(await screen.findByLabelText("Draft")).toHaveTextContent(/shots/);
+    fireEvent.click(screen.getByRole("button", { name: "Keep this plan" }));
+    expect(await screen.findByLabelText("Advice summary")).toHaveTextContent(/warning/);
+    const rushN = (dcPlan as unknown as { shots: { id: string; n: number }[] }).shots.find((x) => x.id === (dcPreview as unknown as { shot: string }).shot)!.n;
+    fireEvent.click(screen.getByRole("button", { name: `Select shot ${rushN}` }));
+    await screen.findByLabelText("Selected shot");
+    fireEvent.click(screen.getByRole("button", { name: "Check the move" }));
+    expect(await screen.findByLabelText("Move check")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Preview the first and last frame" }));
+    expect(await screen.findByAltText("First frame")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Make the shot package" }));
+    expect(await screen.findByLabelText("What the model can take")).toHaveTextContent(/Camera path/);
+    expect(screen.getByLabelText("Package")).toHaveTextContent(/worldlock\/ws-/);
     clean(container);
   });
 

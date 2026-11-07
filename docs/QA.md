@@ -1,4 +1,10 @@
-# QA report: FilmCrafter 0.49.0 (2026-11-06)
+# QA report: FilmCrafter 0.50.0 (2026-11-06)
+
+## 0.50.0: DirectorCam (virtual production slice 6)
+
+Engine: **2,891 tests collected, 2,884 passed, 7 skipped, none failed** (33 new in `test_directorcam.py`, on a real film and a real set with measured renders). Bandit (medium and above): **no findings; the output was read.** TypeScript clean; **913 Vitest tests in 114 files** (16 for the screen, 1 more real-engine contract test with eight new fixtures); 15 Rust tests. Security review by hand (the scan service quota is used up): every action is on the fixed list the shell checks and the command line lists its choices literally so the check can read them; plan ids are `dp-` plus letters and digits before they become a path; every number is clamped, every list limited (16 shots a plan, 40 plans a set, 3 subjects a shot); a plan or set file of the wrong shape is refused and left alone; packages are written only under the set's own folder; nothing is sent, generated or deleted (a removed shot or plan is kept). Problems found by the tests and fixed before release: the beat planner took the first person named in a clause as its subject, so "rushes to help the vendor" made the vendor the one who rushes (now the subject is who is named before the verb, carried over otherwise); choosing a shot size read the choice after waiting for the engine and sent the old one. Test mistakes corrected (not product faults): a test set with no ground under the backdrop (a 2.5D set made of vertical pictures reports the empty floor as a gap, correctly).
+
+**Still not tested:** a picture or video generated from a package; a photographic set; stories in other languages; the screens in the installed app.
 
 ## 0.49.0: WorldLock, a persistent 2.5D set (virtual production slice 3)
 

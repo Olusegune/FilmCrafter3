@@ -1,0 +1,61 @@
+{
+ "conditioning": [
+  {
+   "alternative": "",
+   "input": "first_frame",
+   "label": "First-frame render",
+   "status": "supported",
+   "why": "Image-to-video models start from a picture; this one was not checked for this model."
+  },
+  {
+   "alternative": "",
+   "input": "last_frame",
+   "label": "Last-frame render",
+   "status": "supported",
+   "why": "From the model's cached schema or the app's list of models documented to take an end frame."
+  },
+  {
+   "alternative": "Describe the person in words; use the picture as the keyframe.",
+   "input": "references",
+   "label": "Reference pictures (the set's people)",
+   "status": "not supported",
+   "why": "From the model's name, as the app's pickers do."
+  },
+  {
+   "alternative": "Use the motion words and the path strip; or make the move in the set (a rendered path preview) and use it as a reference.",
+   "input": "camera_path",
+   "label": "Camera path",
+   "status": "not supported",
+   "why": "No model here accepts a camera path as data. The motion is given in words and is approximate: check the result against the path strip."
+  },
+  {
+   "alternative": "Kept as a file in the package.",
+   "input": "depth",
+   "label": "Depth map",
+   "status": "not supported",
+   "why": "No model in this app takes a depth map. It is kept for ComfyUI workflows that do, and for checking."
+  },
+  {
+   "alternative": "Kept as a file in the package.",
+   "input": "objects",
+   "label": "Object map",
+   "status": "not supported",
+   "why": "No model in this app takes a segmentation map. It is kept for checking."
+  }
+ ],
+ "files": {
+  "depth": "worldlock/ws-98967489/packages/dp-1f6044e0-05/depth.png",
+  "first_frame": "worldlock/ws-98967489/packages/dp-1f6044e0-05/first_frame.png",
+  "last_frame": "worldlock/ws-98967489/packages/dp-1f6044e0-05/last_frame.png",
+  "objects": "worldlock/ws-98967489/packages/dp-1f6044e0-05/objects.png",
+  "path_preview": "worldlock/ws-98967489/packages/dp-1f6044e0-05/path_preview.png"
+ },
+ "folder": "C:\\Users\\eduni\\AppData\\Local\\Temp\\tmp04mq_o_o\\films\\Fixture Film\\worldlock\\ws-98967489\\packages\\dp-1f6044e0-05",
+ "frame_gap": {
+  "first": 0.0,
+  "last": 0.0
+ },
+ "motion_words": "The camera tracks alongside the person as they move.",
+ "relative": "worldlock/ws-98967489/packages/dp-1f6044e0-05",
+ "shot": "ds-291e1938"
+}

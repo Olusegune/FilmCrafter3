@@ -1,0 +1,305 @@
+{
+ "actions": [
+  "enters",
+  "helps",
+  "rushes",
+  "sees"
+ ],
+ "beat": "The girl enters the market, sees the oranges, and rushes to help the vendor.",
+ "not_found": [
+  "market"
+ ],
+ "note": "A draft from the words of the beat only: no model was asked and nothing is saved. Move any camera, change any shot, or delete it before you save.",
+ "people": [
+  "Girl",
+  "Vendor"
+ ],
+ "shots": [
+  {
+   "allow": [],
+   "approval": "suggested",
+   "because": [
+    "Every plan opens by showing where we are."
+   ],
+   "camera": {
+    "aperture": 4.0,
+    "aspect": "16:9",
+    "focal_mm": 35.0,
+    "focus": null,
+    "fov": 54.43,
+    "name": "Establishing",
+    "note": "",
+    "pitch": -0.368,
+    "sensor_mm": 36.0,
+    "x": -2.0,
+    "y": 1.6,
+    "yaw": 0.0,
+    "z": -9.556
+   },
+   "characters": [],
+   "duration": 3.0,
+   "film_shot": null,
+   "id": "ds-1cfa479f",
+   "looking_at": "Girl",
+   "move": {
+    "amount": 0.0,
+    "ease": "smooth",
+    "kind": "static"
+   },
+   "n": 1,
+   "notes": "Establishing: about 9.0 m of the set fits top to bottom, so the camera stands 15.6 m away with a 35 mm lens.",
+   "size": "establishing",
+   "subjects": [
+    "wc-9d70ffa8"
+   ],
+   "title": "Establish the place"
+  },
+  {
+   "allow": [],
+   "approval": "suggested",
+   "because": [
+    "enters"
+   ],
+   "camera": {
+    "aperture": 4.0,
+    "aspect": "16:9",
+    "focal_mm": 35.0,
+    "focus": null,
+    "fov": 54.43,
+    "name": "Wide",
+    "note": "",
+    "pitch": -7.649,
+    "sensor_mm": 36.0,
+    "x": -2.0,
+    "y": 1.6,
+    "yaw": 0.0,
+    "z": 1.16
+   },
+   "characters": [
+    {
+     "from": {
+      "facing": 90.0,
+      "x": -3.2,
+      "z": 6.8
+     },
+     "id": "wc-9d70ffa8",
+     "name": "Girl",
+     "to": {
+      "facing": 90.0,
+      "x": -2.0,
+      "z": 6.0
+     }
+    }
+   ],
+   "duration": 4.0,
+   "film_shot": null,
+   "id": "ds-8fceb0ce",
+   "looking_at": "Girl",
+   "move": {
+    "amount": 0.0,
+    "ease": "smooth",
+    "kind": "tracking"
+   },
+   "n": 2,
+   "notes": "Wide: about 2.8 m of the set fits top to bottom, so the camera stands 4.8 m away with a 35 mm lens.",
+   "size": "wide",
+   "subjects": [
+    "wc-9d70ffa8"
+   ],
+   "title": "Girl enters"
+  },
+  {
+   "allow": [],
+   "approval": "suggested",
+   "because": [
+    "sees"
+   ],
+   "camera": {
+    "aperture": 4.0,
+    "aspect": "16:9",
+    "focal_mm": 35.0,
+    "focus": null,
+    "fov": 54.43,
+    "name": "Close-Up",
+    "note": "",
+    "pitch": -6.602,
+    "sensor_mm": 36.0,
+    "x": -2.0,
+    "y": 1.6,
+    "yaw": 0.0,
+    "z": 5.136
+   },
+   "characters": [
+    {
+     "from": {
+      "facing": 90.0,
+      "x": -2.0,
+      "z": 6.0
+     },
+     "id": "wc-9d70ffa8",
+     "name": "Girl",
+     "to": {
+      "facing": 90.0,
+      "x": -2.0,
+      "z": 6.0
+     }
+    }
+   ],
+   "duration": 2.5,
+   "film_shot": null,
+   "id": "ds-06624962",
+   "looking_at": "Girl",
+   "move": {
+    "amount": 0.4,
+    "ease": "smooth",
+    "kind": "push_in"
+   },
+   "n": 3,
+   "notes": "Close-up: about 0.5 m of the set fits top to bottom, so the camera stands 0.9 m away with a 35 mm lens.",
+   "size": "close-up",
+   "subjects": [
+    "wc-9d70ffa8"
+   ],
+   "title": "Girl notices"
+  },
+  {
+   "allow": [],
+   "approval": "suggested",
+   "because": [
+    "sees",
+    "names Oranges"
+   ],
+   "camera": {
+    "aperture": 4.0,
+    "aspect": "16:9",
+    "focal_mm": 35.0,
+    "focus": null,
+    "fov": 54.43,
+    "name": "Medium",
+    "note": "",
+    "pitch": -9.579,
+    "sensor_mm": 36.0,
+    "x": 2.0,
+    "y": 1.6,
+    "yaw": 0.0,
+    "z": 4.926
+   },
+   "characters": [],
+   "duration": 2.0,
+   "film_shot": null,
+   "id": "ds-46260ae1",
+   "looking_at": "Oranges",
+   "move": {
+    "amount": 0.0,
+    "ease": "smooth",
+    "kind": "static"
+   },
+   "n": 4,
+   "notes": "Medium: about 1.2 m of the set fits top to bottom, so the camera stands 2.1 m away with a 35 mm lens.",
+   "size": "insert",
+   "subjects": [
+    "wa-a432f51b"
+   ],
+   "title": "What Girl sees: Oranges"
+  },
+  {
+   "allow": [],
+   "approval": "suggested",
+   "because": [
+    "rushes",
+    "to Vendor"
+   ],
+   "camera": {
+    "aperture": 4.0,
+    "aspect": "16:9",
+    "focal_mm": 35.0,
+    "focus": null,
+    "fov": 54.43,
+    "name": "Medium",
+    "note": "",
+    "pitch": -9.579,
+    "sensor_mm": 36.0,
+    "x": -2.0,
+    "y": 1.6,
+    "yaw": 0.0,
+    "z": 3.926
+   },
+   "characters": [
+    {
+     "from": {
+      "facing": 90.0,
+      "x": -2.0,
+      "z": 6.0
+     },
+     "id": "wc-9d70ffa8",
+     "name": "Girl",
+     "to": {
+      "facing": 70.0,
+      "x": 2.65,
+      "z": 7.69
+     }
+    }
+   ],
+   "duration": 3.5,
+   "film_shot": null,
+   "id": "ds-c0e50b51",
+   "looking_at": "Girl",
+   "move": {
+    "amount": 0.0,
+    "ease": "smooth",
+    "kind": "tracking"
+   },
+   "n": 5,
+   "notes": "Medium: about 1.2 m of the set fits top to bottom, so the camera stands 2.1 m away with a 35 mm lens.",
+   "size": "medium",
+   "subjects": [
+    "wc-9d70ffa8"
+   ],
+   "title": "Girl rushes to Vendor"
+  },
+  {
+   "allow": [],
+   "approval": "suggested",
+   "because": [
+    "helps",
+    "with Vendor"
+   ],
+   "camera": {
+    "aperture": 4.0,
+    "aspect": "16:9",
+    "focal_mm": 35.0,
+    "focus": null,
+    "fov": 54.43,
+    "name": "Over The Shoulder",
+    "note": "",
+    "pitch": -1.694,
+    "sensor_mm": 36.0,
+    "x": -2.726,
+    "y": 1.6500000000000001,
+    "yaw": 67.053,
+    "z": 5.364
+   },
+   "characters": [],
+   "duration": 3.0,
+   "film_shot": null,
+   "id": "ds-4179f20f",
+   "looking_at": "Vendor",
+   "move": {
+    "amount": 0.0,
+    "ease": "smooth",
+    "kind": "static"
+   },
+   "n": 6,
+   "notes": "Behind Girl's shoulder, looking at Vendor.",
+   "size": "over the shoulder",
+   "subjects": [
+    "wc-9d70ffa8",
+    "wc-be8653b0"
+   ],
+   "title": "Girl reaches Vendor"
+  }
+ ],
+ "things": [
+  "Oranges"
+ ]
+}

@@ -1,0 +1,134 @@
+{
+ "assets": [
+  {
+   "added": 1794010261.920267,
+   "file": "worldlock/ws-98967489/assets/wa-b1cf07fd.png",
+   "height": 24.0,
+   "id": "wa-b1cf07fd",
+   "kind": "layer",
+   "name": "Backdrop",
+   "note": "",
+   "pixels": [
+    1200,
+    400
+   ],
+   "tags": [],
+   "width": 70.0,
+   "x": 0.0,
+   "y": -8.0,
+   "z": 20.0
+  },
+  {
+   "added": 1794010261.9490092,
+   "file": "worldlock/ws-98967489/assets/wa-a432f51b.png",
+   "height": 0.4,
+   "id": "wa-a432f51b",
+   "kind": "prop",
+   "name": "Oranges",
+   "note": "",
+   "pixels": [
+    80,
+    40
+   ],
+   "tags": [],
+   "width": 0.8,
+   "x": 2.0,
+   "y": 0.0,
+   "z": 7.0
+  },
+  {
+   "added": 1794010261.9720871,
+   "file": "worldlock/ws-98967489/assets/wa-b5d42c53.png",
+   "height": 1.2,
+   "id": "wa-b5d42c53",
+   "kind": "prop",
+   "name": "Girl picture",
+   "note": "",
+   "pixels": [
+    60,
+    120
+   ],
+   "tags": [],
+   "width": 0.5,
+   "x": 50.0,
+   "y": 0.0,
+   "z": 50.0
+  }
+ ],
+ "axis": [],
+ "cameras": [
+  {
+   "fov": 50.0,
+   "id": "wk-8b880cbf",
+   "name": "Main camera",
+   "note": "",
+   "pitch": 0.0,
+   "x": 0.0,
+   "y": 1.6,
+   "yaw": 0.0,
+   "z": 0.0
+  }
+ ],
+ "can_redo": false,
+ "can_undo": true,
+ "characters": [
+  {
+   "asset": "wa-b5d42c53",
+   "facing": 90.0,
+   "id": "wc-9d70ffa8",
+   "name": "Girl",
+   "x": -2.0,
+   "z": 6.0
+  },
+  {
+   "asset": null,
+   "facing": -90.0,
+   "id": "wc-be8653b0",
+   "name": "Vendor",
+   "x": 3.5,
+   "z": 8.0
+  }
+ ],
+ "created": 1794010261.89448,
+ "environment": {
+  "atmosphere": "",
+  "time": "",
+  "weather": ""
+ },
+ "events": [],
+ "id": "ws-98967489",
+ "lights": [],
+ "locked": false,
+ "name": "Market arrival",
+ "redo_label": "",
+ "removed": [],
+ "saved_versions": [],
+ "schema": 1,
+ "shots": [],
+ "undo_label": "Place a character",
+ "updated": 1794010262.0140214,
+ "version": 6,
+ "world": {
+  "bounds": {
+   "x": [
+    -10.0,
+    10.0
+   ],
+   "y": [
+    0.0,
+    10.0
+   ],
+   "z": [
+    0.0,
+    30.0
+   ]
+  },
+  "origin": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "units": "m",
+  "up": "y"
+ }
+}

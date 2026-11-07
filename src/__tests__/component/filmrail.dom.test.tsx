@@ -85,7 +85,7 @@ describe("the one left rail", () => {
   it("lists every tool the Studio can open, once each", () => {
     const ids = TOOLS.map((t) => t.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(ids).toEqual(["project", "library", "looks", "review", "agent", "supervisor", "acting", "continuity", "layers", "lighting", "presets", "color", "colourmatch", "clean", "worldlock", "cutouts"]);
+    expect(ids).toEqual(["project", "library", "looks", "review", "agent", "supervisor", "acting", "continuity", "layers", "lighting", "presets", "color", "colourmatch", "clean", "worldlock", "directorcam", "cutouts"]);
   });
 });
 

@@ -1,0 +1,143 @@
+{
+ "first": {
+  "camera": {
+   "fov": 54.43,
+   "pitch": -9.579,
+   "x": -2.0,
+   "y": 1.6,
+   "yaw": 0.0,
+   "z": 3.926
+  },
+  "coverage": 1.0,
+  "drawn": [
+   "wa-b1cf07fd",
+   "wc-9d70ffa8"
+  ],
+  "file": "worldlock/ws-98967489/views/Medium-1794010264284.png",
+  "height": 540,
+  "id": "ws-98967489",
+  "set_version": 6,
+  "shot": null,
+  "skipped": [
+   {
+    "id": "wa-b5d42c53",
+    "why": "it is behind the camera or outside the view"
+   },
+   {
+    "id": "wa-a432f51b",
+    "why": "it is behind the camera or outside the view"
+   }
+  ],
+  "uncovered": 0.0,
+  "warnings": [],
+  "width": 960
+ },
+ "last": {
+  "camera": {
+   "fov": 54.43,
+   "pitch": -9.579,
+   "x": 2.65,
+   "y": 1.6,
+   "yaw": 0.0,
+   "z": 5.616
+  },
+  "coverage": 1.0,
+  "drawn": [
+   "wa-b1cf07fd",
+   "wc-9d70ffa8"
+  ],
+  "file": "worldlock/ws-98967489/views/Medium-1794010264560.png",
+  "height": 540,
+  "id": "ws-98967489",
+  "set_version": 6,
+  "shot": null,
+  "skipped": [
+   {
+    "id": "wa-b5d42c53",
+    "why": "it is behind the camera or outside the view"
+   },
+   {
+    "id": "wa-a432f51b",
+    "why": "it is behind the camera or outside the view"
+   }
+  ],
+  "uncovered": 0.0,
+  "warnings": [],
+  "width": 960
+ },
+ "path": [
+  {
+   "fov": 54.43,
+   "pitch": -9.579,
+   "x": -2.0,
+   "y": 1.6,
+   "yaw": 0.0,
+   "z": 3.926
+  },
+  {
+   "fov": 54.43,
+   "pitch": -9.579,
+   "x": -1.8002,
+   "y": 1.6,
+   "yaw": 0.0,
+   "z": 3.9986
+  },
+  {
+   "fov": 54.43,
+   "pitch": -9.579,
+   "x": -1.2734,
+   "y": 1.6,
+   "yaw": 0.0,
+   "z": 4.1901
+  },
+  {
+   "fov": 54.43,
+   "pitch": -9.579,
+   "x": -0.5287,
+   "y": 1.6,
+   "yaw": 0.0,
+   "z": 4.4607
+  },
+  {
+   "fov": 54.43,
+   "pitch": -9.579,
+   "x": 0.325,
+   "y": 1.6,
+   "yaw": 0.0,
+   "z": 4.771
+  },
+  {
+   "fov": 54.43,
+   "pitch": -9.579,
+   "x": 1.1787,
+   "y": 1.6,
+   "yaw": 0.0,
+   "z": 5.0813
+  },
+  {
+   "fov": 54.43,
+   "pitch": -9.579,
+   "x": 1.9234,
+   "y": 1.6,
+   "yaw": 0.0,
+   "z": 5.3519
+  },
+  {
+   "fov": 54.43,
+   "pitch": -9.579,
+   "x": 2.4502,
+   "y": 1.6,
+   "yaw": 0.0,
+   "z": 5.5434
+  },
+  {
+   "fov": 54.43,
+   "pitch": -9.579,
+   "x": 2.65,
+   "y": 1.6,
+   "yaw": 0.0,
+   "z": 5.616
+  }
+ ],
+ "shot": "ds-291e1938"
+}

@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import math
 import os
 import shutil
 import sys
@@ -42,6 +43,7 @@ from . import vpstudio as V
 from . import worldmath as WM
 
 KINDS = ("layer", "prop", "landmark")
+ASPECTS = {"16:9": 16 / 9, "2.39:1": 2.39, "1.85:1": 1.85, "4:3": 4 / 3, "1:1": 1.0, "9:16": 9 / 16, "3:4": 3 / 4}
 EVENT_KINDS = ("move", "state", "remove", "appear")
 MAX_SETS, MAX_ASSETS, MAX_CAMERAS, MAX_CHARS, MAX_EVENTS, MAX_LIGHTS, MAX_HISTORY = 40, 200, 30, 30, 200, 8, 50
 SPAN = 1000.0
@@ -166,6 +168,20 @@ def _clean_camera(x: dict, old: dict | None) -> dict:
     for k, lo, hi, dflt in (("x", -SPAN, SPAN, 0.0), ("y", -SPAN, SPAN, 1.6), ("z", -SPAN, SPAN, 0.0), ("yaw", -360, 360, 0.0), ("pitch", -85, 85, 0.0), ("fov", 10, 120, 50.0)):
         if k in x or k not in c:
             c[k] = _pos(x, k, lo, hi, c.get(k, dflt))
+    # a real camera has a filmback and a focal length: the field of view follows them (or the other way round when only the field of view is given)
+    if "sensor_mm" in x or "sensor_mm" not in c:
+        c["sensor_mm"] = round(_n(x.get("sensor_mm"), 5, 80, c.get("sensor_mm", 36.0)), 2)
+    if "focal_mm" in x:
+        c["focal_mm"] = round(_n(x["focal_mm"], 8, 400, 35.0), 1)
+        c["fov"] = round(math.degrees(2 * math.atan(c["sensor_mm"] / (2 * c["focal_mm"]))), 2)
+    elif "fov" in x or "focal_mm" not in c:
+        c["focal_mm"] = round(c["sensor_mm"] / (2 * math.tan(math.radians(c["fov"]) / 2)), 1)
+    if "aperture" in x or "aperture" not in c:
+        c["aperture"] = round(_n(x.get("aperture"), 1.0, 22.0, c.get("aperture", 4.0)), 1)
+    if "aspect" in x or "aspect" not in c:
+        c["aspect"] = x.get("aspect") if x.get("aspect") in ASPECTS else c.get("aspect", "16:9")
+    if "focus" in x or "focus" not in c:
+        c["focus"] = _t(x.get("focus", c.get("focus")), 64) or None
     if "note" in x or "note" not in c:
         c["note"] = _t(x.get("note", c.get("note", "")), 300)
     return c
@@ -632,8 +648,11 @@ def _camera_from(s: dict, data: dict) -> dict:
     raise SystemExit("The set has no camera: save one first.")
 
 
-def _layers_for(d: str, s: dict, shot: str | None) -> tuple[list[dict], list[dict]]:
+def _layers_for(d: str, s: dict, shot: str | None, overrides: dict | None = None) -> tuple[list[dict], list[dict]]:
     assets, chars = WM.state_at(s["assets"], s["characters"], s["events"], _order_for(d), shot)
+    ov = overrides if isinstance(overrides, dict) else {}                                      # a planner may stand people and things somewhere else for one view; the set is not changed
+    assets = [{**a, **{k: v for k, v in (ov.get("assets") or {}).get(a["id"], {}).items() if k in ("x", "y", "z")}} for a in assets]
+    chars = [{**c, **{k: v for k, v in (ov.get("characters") or {}).get(c["id"], {}).items() if k in ("x", "z", "facing")}} for c in chars]
     by_id = {a["id"]: a for a in s["assets"]}
     layers = list(assets)
     for c in chars:
@@ -643,8 +662,8 @@ def _layers_for(d: str, s: dict, shot: str | None) -> tuple[list[dict], list[dic
     return layers, chars
 
 
-def _draw(d: str, s: dict, cam: dict, size: tuple[int, int], shot: str | None) -> tuple[np.ndarray, list[np.ndarray], list[str], list[dict]]:
-    layers, _ = _layers_for(d, s, shot)
+def _draw(d: str, s: dict, cam: dict, size: tuple[int, int], shot: str | None, overrides: dict | None = None) -> tuple[np.ndarray, list[np.ndarray], list[str], list[dict]]:
+    layers, _ = _layers_for(d, s, shot, overrides)
     W, H = size
     out = np.zeros((H, W, 3), np.float32)
     out[...] = SKY
@@ -676,7 +695,7 @@ def render(d: str, sid: str, data: dict) -> dict:
     shot = data.get("shot") or None
     if shot and shot not in _order_for(d):
         raise SystemExit("Choose a shot in this film.")
-    out, alphas, drawn, skipped = _draw(d, s, cam, (W, H), shot)
+    out, alphas, drawn, skipped = _draw(d, s, cam, (W, H), shot, data.get("overrides"))
     gap = WM.uncovered(alphas, (W, H), 0.02)
     warnings = []
     if gap > GAP_WARN:

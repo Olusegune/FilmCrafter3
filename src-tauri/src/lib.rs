@@ -1473,6 +1473,20 @@ async fn film_vp(app: AppHandle, action: String, target: String, data: Value) ->
     tauri::async_runtime::spawn_blocking(move || run_engine_result(&app, "vpstudio", &args, &[])).await.map_err(err)?
 }
 
+/// DirectorCam (filmcrafter_engine.directorcam): plan shots on a WorldLock set from a story beat (plain word rules, no model), place cameras by shot size, move them along real paths, get advice a director
+/// can overrule (the line, the 30-degree guideline, eyelines, screen direction, objects in the way), and build shot packages (first and last frame, path strip, depth and object maps, motion in words) with an
+/// honest list of what a chosen model can take. Free and local: nothing is sent anywhere, no key is given to the engine, nothing is generated, and nothing is deleted.
+#[tauri::command]
+async fn film_directorcam(app: AppHandle, action: String, target: String, data: Value) -> Result<Value, String> {
+    const ACTIONS: [&str; 15] = ["presets", "place_camera", "path", "plan_beat", "plan_save", "plans", "plan_get", "shot_set", "shot_remove", "checks", "preview", "package", "capabilities", "apply", "plan_remove"];
+    if !ACTIONS.contains(&action.as_str()) {
+        return Err("Unknown action.".into());
+    }
+    let dir = film_dir(&target)?;
+    let args: Vec<String> = vec!["-m".into(), "filmcrafter_engine.directorcam".into(), action, dir.to_string_lossy().into(), "--data".into(), data.to_string()];
+    tauri::async_runtime::spawn_blocking(move || run_engine_result(&app, "directorcam", &args, &[])).await.map_err(err)?
+}
+
 /// WorldLock (filmcrafter_engine.worldlock): a set that exists on its own (flat pictures standing at world coordinates, characters, saved cameras, lights, events over the shots), seen from cameras
 /// by projection, with undo, saved versions, a lock and continuity checks. Free and local: nothing is sent anywhere, no key is given to the engine, nothing is generated; pictures are copied into the
 /// film's own `worldlock` folder and never altered, and nothing is deleted.
@@ -2678,7 +2692,7 @@ pub fn run() {
             key_status, set_key, delete_key, splash_close, list_projects, load_project,
             ensure_renderer, render_catalog, render_preview,
             queue_render, confirm_spend, resolve_job, export_project, list_styles, set_look, app_ready, render_estimate,
-            save_project, save_project_as, pack_film, backups, film_backup, frames, film, film_bible, film_shots, film_make, film_voice, film_cast_voice, film_revoice, film_voiceid, film_performplan, film_sounddesign, film_music, film_vp, film_vpvideo, film_worldlock, film_audioqa, film_adrsync, film_proaudio, film_voice_direct, film_audio, film_cues, film_audiogen, film_mix, film_materials, film_choreography, film_placecare, film_audioplan, film_readiness, film_pacing, film_composition, film_spending, film_outdated, model_registry, prepare_update, save_voice_take, film_check, film_assist, film_interchange, is_film, launch_path, engine_status, setup_engine, engine_setup_size, set_project_settings, import_reference, set_keyframe, director_command, undo_command, library, parse_action, providers,
+            save_project, save_project_as, pack_film, backups, film_backup, frames, film, film_bible, film_shots, film_make, film_voice, film_cast_voice, film_revoice, film_voiceid, film_performplan, film_sounddesign, film_music, film_vp, film_vpvideo, film_worldlock, film_directorcam, film_audioqa, film_adrsync, film_proaudio, film_voice_direct, film_audio, film_cues, film_audiogen, film_mix, film_materials, film_choreography, film_placecare, film_audioplan, film_readiness, film_pacing, film_composition, film_spending, film_outdated, model_registry, prepare_update, save_voice_take, film_check, film_assist, film_interchange, is_film, launch_path, engine_status, setup_engine, engine_setup_size, set_project_settings, import_reference, set_keyframe, director_command, undo_command, library, parse_action, providers,
             set_onboarding, adopt_script, lighting, ai_brain, director_chat, budget, diagnostics, media, continuity, performance, routing, local_models, supervisor, direction_library, director_style, recents, hidden_count, pack_project, open_pulse, golden, lipsync_check, review_backlog, comfy_setup, comfy_install, compose, overnight, refgen, agent_studio, fidelity, video_finish, overlays, captions, director_audit, fonts, editor_export, camera, check_update, stylebible, performance_director, title_card, cleanup, custom_frame, layer_kit, colour_match, grading, editing, proxies, smart_editor, presets, series, shot_sound, acting, track, upscale, proof, shot_history, retry_cheaper, keyframe_set, hand_fix
         ])
         .run(tauri::generate_context!())

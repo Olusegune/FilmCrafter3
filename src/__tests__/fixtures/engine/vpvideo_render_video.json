@@ -1,19 +1,19 @@
 {
  "compositions": [
   {
-   "background": "vs-8e7486e7",
+   "background": "vs-ad46082f",
    "colour": [
     0.1,
     0.1,
     0.1
    ],
-   "created": 1794007886.0332043,
-   "id": "cp-06b1e3ba",
-   "last_render": "vp/renders/cp-06b1e3ba-1794007886.png",
+   "created": 1794010259.3422527,
+   "id": "cp-e262a3a9",
+   "last_render": "vp/renders/cp-e262a3a9-1794010259.png",
    "layers": [
     {
      "anchor": "feet",
-     "cutout": "cu-962554a3",
+     "cutout": "cu-55638dd2",
      "flip": false,
      "keys": [],
      "loop": false,
@@ -37,22 +37,22 @@
     320,
     400
    ],
-   "updated": 1794007886.0332043
+   "updated": 1794010259.3422527
   },
   {
-   "background": "vs-8e7486e7",
+   "background": "vs-ad46082f",
    "colour": [
     0.1,
     0.1,
     0.1
    ],
-   "created": 1794007887.629417,
-   "id": "cp-9093b6e1",
-   "last_video": "vp/renders/cp-9093b6e1-1794007887.mp4",
+   "created": 1794010261.0054803,
+   "id": "cp-4f3c7c28",
+   "last_video": "vp/renders/cp-4f3c7c28-1794010261.mp4",
    "layers": [
     {
      "anchor": "bottom",
-     "cutout": "cu-db8a3783",
+     "cutout": "cu-a7bd6928",
      "flip": false,
      "keys": [
       {
@@ -82,15 +82,15 @@
     192,
     144
    ],
-   "updated": 1794007887.629417
+   "updated": 1794010261.0054803
   }
  ],
  "cutouts": [
   {
-   "created": 1794007886.0223415,
+   "created": 1794010259.3314097,
    "height": 400,
-   "id": "cu-962554a3",
-   "mask": "vp/cutouts/cu-962554a3/mask.png",
+   "id": "cu-55638dd2",
+   "mask": "vp/cutouts/cu-55638dd2/mask.png",
    "name": "Sarah",
    "params": {
     "clip_black": 0.0,
@@ -133,18 +133,18 @@
     "soft_edge": 0.0777,
     "subject": 0.2012
    },
-   "rgba": "vp/cutouts/cu-962554a3/cutout.png",
-   "source": "vs-17d984e5",
+   "rgba": "vp/cutouts/cu-55638dd2/cutout.png",
+   "source": "vs-a55340d5",
    "width": 320
   },
   {
-   "created": 1794007887.5520854,
+   "created": 1794010260.918935,
    "fps": 12.0,
    "frames": 24,
    "height": 144,
-   "id": "cu-db8a3783",
+   "id": "cu-a7bd6928",
    "kind": "clip",
-   "mask": "vp/cutouts/cu-db8a3783/masks/00001.png",
+   "mask": "vp/cutouts/cu-a7bd6928/masks/00001.png",
    "name": "Sarah walks cutout",
    "params": {
     "clip_black": 0.0,
@@ -192,10 +192,10 @@
     "soft_edge": 0.2968,
     "subject": 0.1238
    },
-   "rgba": "vp/cutouts/cu-db8a3783/frames/00001.png",
+   "rgba": "vp/cutouts/cu-a7bd6928/frames/00001.png",
    "seconds": 2.0,
-   "seq": "vp/cutouts/cu-db8a3783/frames/%05d.png",
-   "source": "vs-c43dd8a1",
+   "seq": "vp/cutouts/cu-a7bd6928/frames/%05d.png",
+   "source": "vs-55badf92",
    "temporal": 0.5,
    "width": 192
   }
@@ -214,12 +214,12 @@
   "similarity": 0.06,
   "softness": null
  },
- "file": "vp/renders/cp-9093b6e1-1794007887.mp4",
+ "file": "vp/renders/cp-4f3c7c28-1794010261.mp4",
  "format": "mp4",
  "fps": 12.0,
  "frames": 12,
  "height": 144,
- "id": "cp-9093b6e1",
+ "id": "cp-4f3c7c28",
  "limits": {
   "compositions": 100,
   "cutouts": 300,
@@ -230,36 +230,36 @@
  "seconds": 1.0,
  "sources": [
   {
-   "added": 1794007885.9142566,
+   "added": 1794010259.2268338,
    "bytes": 199305,
-   "file": "vp/sources/vs-17d984e5.png",
+   "file": "vp/sources/vs-a55340d5.png",
    "height": 400,
-   "id": "vs-17d984e5",
+   "id": "vs-a55340d5",
    "kind": "plate",
    "name": "Sarah on green",
    "sha1": "d65c87cdcab35914148bab7495300b20304843a1",
    "width": 320
   },
   {
-   "added": 1794007885.9318135,
+   "added": 1794010259.2413154,
    "bytes": 2891,
-   "file": "vp/sources/vs-8e7486e7.jpg",
+   "file": "vp/sources/vs-ad46082f.jpg",
    "height": 400,
-   "id": "vs-8e7486e7",
+   "id": "vs-ad46082f",
    "kind": "background",
    "name": "Street",
    "sha1": "a77fa7164bf132158e31bedcb83ca51c3c637aa3",
    "width": 320
   },
   {
-   "added": 1794007886.7394388,
+   "added": 1794010260.0878675,
    "bytes": 368482,
    "clip": true,
-   "file": "vp/sources/vs-c43dd8a1.mp4",
+   "file": "vp/sources/vs-55badf92.mp4",
    "fps": 12.0,
    "frames": 24,
    "height": 144,
-   "id": "vs-c43dd8a1",
+   "id": "vs-55badf92",
    "kind": "plate",
    "name": "Sarah walks",
    "seconds": 2.0,

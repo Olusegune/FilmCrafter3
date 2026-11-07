@@ -1,10 +1,10 @@
 {
  "assets": [
   {
-   "added": 1794007888.0002906,
-   "file": "worldlock/ws-6a720c31/assets/wa-25a0204c.png",
+   "added": 1794010261.399029,
+   "file": "worldlock/ws-a11437d3/assets/wa-6d841859.png",
    "height": 10.0,
-   "id": "wa-25a0204c",
+   "id": "wa-6d841859",
    "kind": "layer",
    "name": "Backdrop",
    "note": "",
@@ -19,10 +19,10 @@
    "z": 20.0
   },
   {
-   "added": 1794007888.0220568,
-   "file": "worldlock/ws-6a720c31/assets/wa-cdac0459.png",
+   "added": 1794010261.4265747,
+   "file": "worldlock/ws-a11437d3/assets/wa-f632963d.png",
    "height": 3.0,
-   "id": "wa-cdac0459",
+   "id": "wa-f632963d",
    "kind": "landmark",
    "name": "Fruit stall",
    "note": "",
@@ -37,10 +37,10 @@
    "z": 8.0
   },
   {
-   "added": 1794007888.0491285,
-   "file": "worldlock/ws-6a720c31/assets/wa-67c402de.png",
+   "added": 1794010261.458405,
+   "file": "worldlock/ws-a11437d3/assets/wa-3f8c27aa.png",
    "height": 0.5,
-   "id": "wa-67c402de",
+   "id": "wa-3f8c27aa",
    "kind": "prop",
    "name": "Basket",
    "note": "",
@@ -59,7 +59,7 @@
  "cameras": [
   {
    "fov": 50.0,
-   "id": "wk-cd6570ae",
+   "id": "wk-a421fd71",
    "name": "Main camera",
    "note": "",
    "pitch": 0.0,
@@ -69,11 +69,16 @@
    "z": 0.0
   },
   {
+   "aperture": 4.0,
+   "aspect": "16:9",
+   "focal_mm": 38.6,
+   "focus": null,
    "fov": 50.0,
-   "id": "wk-aeaca514",
+   "id": "wk-46227bb2",
    "name": "Right",
    "note": "",
    "pitch": 0.0,
+   "sensor_mm": 36.0,
    "x": 0.25,
    "y": 1.6,
    "yaw": 0.0,
@@ -83,7 +88,7 @@
  "can_redo": false,
  "can_undo": true,
  "characters": [],
- "created": 1794007887.9778132,
+ "created": 1794010261.376671,
  "environment": {
   "atmosphere": "",
   "time": "",
@@ -91,8 +96,8 @@
  },
  "events": [
   {
-   "asset": "wa-67c402de",
-   "id": "we-2b83dbbe",
+   "asset": "wa-3f8c27aa",
+   "id": "we-d3412332",
    "kind": "move",
    "note": "",
    "order": 0,
@@ -104,7 +109,7 @@
    }
   }
  ],
- "id": "ws-6a720c31",
+ "id": "ws-a11437d3",
  "lights": [],
  "locked": false,
  "name": "Market",
@@ -113,7 +118,7 @@
  "saved_versions": [
   {
    "assets": 3,
-   "at": 1794007888.1066434,
+   "at": 1794010261.5282876,
    "name": "Opening layout",
    "number": 1,
    "set_version": 6
@@ -122,7 +127,7 @@
  "schema": 1,
  "shots": [],
  "undo_label": "Record an event",
- "updated": 1794007888.0871725,
+ "updated": 1794010261.5042584,
  "version": 6,
  "world": {
   "bounds": {

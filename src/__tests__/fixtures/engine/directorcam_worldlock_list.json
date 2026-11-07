@@ -1,0 +1,28 @@
+{
+ "limits": {
+  "assets": 200,
+  "cameras": 30,
+  "events": 200,
+  "sets": 40
+ },
+ "sets": [
+  {
+   "assets": 3,
+   "cameras": 1,
+   "id": "ws-98967489",
+   "locked": false,
+   "name": "Market arrival",
+   "updated": 1794010262.0140214,
+   "version": 6
+  },
+  {
+   "assets": 3,
+   "cameras": 2,
+   "id": "ws-a11437d3",
+   "locked": false,
+   "name": "Market",
+   "updated": 1794010261.5042584,
+   "version": 6
+  }
+ ]
+}
