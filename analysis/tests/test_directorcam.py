@@ -504,3 +504,41 @@ def test_the_presets_and_the_command_line(film, world, capsys):
     assert DC.main(["plan_beat", film, "--data", json.dumps({"set": sid, "beat": ""})]) == 1
     lines = [json.loads(x) for x in capsys.readouterr().out.splitlines() if x.strip().startswith("{")]
     assert [x["event"] for x in lines] == ["result"] * 3 + ["error"] and lines[1]["data"]["shots"][0]["size"] == "establishing"
+
+
+def _frames_of(path):
+    from filmcrafter_engine.export import ffmpeg
+    import subprocess
+    err = subprocess.run([ffmpeg(), "-i", path, "-f", "null", "-"], capture_output=True, text=True).stderr
+    import re
+    return int(re.findall(r"frame=\s*(\d+)", err)[-1])
+
+
+def test_a_shot_becomes_a_clip_whose_length_follows_the_shot(film, plan):
+    sid, ids, p = plan
+    rush = next(x for x in p["shots"] if "rushes" in x["title"])
+    DC.shot_set(film, sid, p["id"], {"shot": rush["id"], "duration": 1.0})
+    r = DC.clip(film, sid, p["id"], rush["id"], {"width": 320, "workers": 1})
+    assert r["renderer"] == "FilmCrafter" and r["frames"] == 24 and r["size"][0] == 320 and r["file"].endswith(".mp4")
+    assert _frames_of(os.path.join(film, *r["file"].split("/"))) == 24
+    with pytest.raises(SystemExit, match="isn't in the plan"):
+        DC.clip(film, sid, p["id"], "ds-nope", {})
+
+
+def test_the_clip_cannot_use_blender_when_it_is_not_there(film, plan, monkeypatch):
+    from filmcrafter_engine import blenderbridge as BB
+    monkeypatch.setattr(BB, "status", lambda: {"found": False, "path": "", "version": "", "note": ""})
+    sid, ids, p = plan
+    with pytest.raises(SystemExit, match="Blender was not found"):
+        DC.clip(film, sid, p["id"], p["shots"][0]["id"], {"renderer": "blender"})
+
+
+def test_a_clip_can_be_drawn_by_a_real_blender(film, plan):
+    from filmcrafter_engine import blenderbridge as BB
+    if not BB.status()["found"]:
+        pytest.skip("Blender is not installed here")
+    sid, ids, p = plan
+    sh = p["shots"][0]
+    DC.shot_set(film, sid, p["id"], {"shot": sh["id"], "duration": 0.5})
+    r = DC.clip(film, sid, p["id"], sh["id"], {"renderer": "blender", "width": 160, "workers": 2, "samples": 4})
+    assert r["renderer"].startswith("Blender") and r["frames"] == 12 and _frames_of(os.path.join(film, *r["file"].split("/"))) == 12

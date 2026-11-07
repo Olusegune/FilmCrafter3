@@ -116,6 +116,10 @@ The set builder was a tool under More. The golden path now reaches it from where
 
 `blenderbridge.scene_data` is now the one place the numbers for a Blender scene are worked out (models, cameras, lights, ground colour, sky gradient, ambient level), used by the still script and by `render_animation`, which works out every frame with `worldanim.state_at` (so the animation is identical to the built-in renderer's) and has Blender draw the frames in parallel processes (fixed script, fixed arguments, a time limit of three hours, stop with `cancel.flag`). Checked against real Blender 5.2.2. What does not come across: fog, the checker pattern of the ground (a flat colour), materials beyond what the glTF carries.
 
+## Clips from DirectorCam (0.54.0)
+
+`directorcam.clip` turns a planned shot into a video: the shot's camera path (24 poses along its move, eased as the move says) becomes the animation's camera track for the shot's length at 24 fps, drawn by `worldanim` (renderer "FilmCrafter") or by Blender (`blenderbridge.render_animation`). Tested with real renders (24 frames counted by ffmpeg) and a real Blender 5.2.2 clip. People stand where the shot starts.
+
 ## Slice 6: DirectorCam (0.50.0)
 
 Rail > More > **DirectorCam** (needs a set from Sets). The order of the work is the brief's: read the set, find the people and things, propose shots, assign cameras, propose blocking, validate, preview, approve, make a package.

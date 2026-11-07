@@ -1517,7 +1517,7 @@ async fn film_placeset(app: AppHandle, action: String, target: String, data: Val
 /// honest list of what a chosen model can take. Free and local: nothing is sent anywhere, no key is given to the engine, nothing is generated, and nothing is deleted.
 #[tauri::command]
 async fn film_directorcam(app: AppHandle, action: String, target: String, data: Value) -> Result<Value, String> {
-    const ACTIONS: [&str; 15] = ["presets", "place_camera", "path", "plan_beat", "plan_save", "plans", "plan_get", "shot_set", "shot_remove", "checks", "preview", "package", "capabilities", "apply", "plan_remove"];
+    const ACTIONS: [&str; 16] = ["presets", "place_camera", "path", "plan_beat", "plan_save", "plans", "plan_get", "shot_set", "shot_remove", "checks", "preview", "package", "capabilities", "apply", "plan_remove", "clip"];
     if !ACTIONS.contains(&action.as_str()) {
         return Err("Unknown action.".into());
     }

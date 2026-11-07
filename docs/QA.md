@@ -1,4 +1,13 @@
-# QA report: FilmCrafter 0.53.0 (2026-11-07)
+# QA report: FilmCrafter 0.54.0 (2026-11-07)
+
+## 0.54.0: a clip of a planned shot (DirectorCam)
+
+Engine: **2,963 tests collected, 2,956 passed, 7 skipped, none failed** (3 new in `test_directorcam.py`: a real 24-frame clip counted by ffmpeg, the missing-shot and no-Blender messages, and a real Blender 5.2.2 clip of 12 frames). Bandit (medium and above): **no findings; the output was read** (empty). TypeScript clean; **934 Vitest tests** (2 new). Rust: the `clip` action is in the shell's list and the engine's literal choices (`test_security.py` passes). `rafter run` not run (quota). Tried and dropped: Blender fog as a world volume (renders black in EEVEE).
+
+**Still not tested:** the clip button in the installed app; people moving during a clip (they stand still by design).
+
+## Earlier: 0.53.0
+
 
 ## 0.53.0: Blender look, Blender animation, UI audit second pass
 

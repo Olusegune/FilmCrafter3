@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.54.0 (2026-11-07)
+
+- **Make a clip of a planned shot.** In DirectorCam, pick a shot and press **Make a clip of this shot**: the camera travels along the shot's move for the shot's length, drawn from the set into an MP4 you can play on the spot. Choose **Drawn by FilmCrafter** (fast) or **Drawn by Blender** (real shadows, slower; greyed with the reason when Blender is not found). Free and local; nothing is sent. This is the first video the golden path can make from a set without a generator.
+- **Limits, plainly:** people (2.5D characters) stand where the shot starts in the clip; fog is not drawn by Blender (a Blender volume was tried and renders black, so it was left out); a clip is a camera move through the set, not an animated scene.
+
 ## 0.53.0 (2026-11-07)
 
 - **Blender now gets the set's look.** The Blender scene made from a set now carries the **ground colour**, the **sky** (a gradient from the horizon colour to the colour overhead, which also lights the scene at the set's ambient level) and the lights, with colours that match what the built-in renderer shows. Checked in a real Blender 5.2.2: a green ground under a blue sky renders green under blue. Fog is not carried over.

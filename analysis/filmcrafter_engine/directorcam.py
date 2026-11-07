@@ -818,9 +818,35 @@ def checks_action(d: str, sid: str, pid: str) -> dict:
 
 # ---------------------------------------------------------------- command line
 
+def clip(d: str, sid: str, pid: str, shot: str, data: dict) -> dict:
+    """Make a short video of a planned shot: the camera travels along the shot's move for the shot's duration, drawn from the set. `renderer` is "builtin" (FilmCrafter's own, fast) or "blender" (Blender's, with
+    real shadows; needs Blender). The set is not changed. People (2.5D characters) stand where the shot starts; only the camera and the set's 3D models, lights and sky are as the set has them. Free and local."""
+    V._film(d)
+    p = _load_plan(d, sid, pid)
+    sh = next((x for x in p["shots"] if x["id"] == shot), None)
+    if not sh:
+        raise SystemExit("That shot isn't in the plan.")
+    s = WL._load(d, sid)
+    path = camera_path(sh["camera"], sh["move"], 24, target=_target(s, sh), follow=_follow(sh))
+    secs = max(0.5, min(30.0, float(sh.get("duration", 3.0))))
+    w = int(max(160, min(1920, float(data.get("width", 960))))) // 2 * 2
+    size = _size_for(sh["camera"], w)
+    keys = [{"t": round(secs * i / (len(path) - 1), 4), "x": q["x"], "y": q["y"], "z": q["z"], "yaw": q["yaw"], "pitch": q["pitch"], "fov": q["fov"], "ease": "linear"} for i, q in enumerate(path)]
+    spec = {"fps": 24, "seconds": secs, "size": list(size), "camera": keys, "name": f"{pid}-{shot}"}
+    renderer = "blender" if data.get("renderer") == "blender" else "builtin"
+    if renderer == "blender":
+        from . import blenderbridge as BB
+        r = BB.render_animation(d, sid, spec, workers=int(data.get("workers", 4)), samples=int(data.get("samples", 16)))
+    else:
+        from . import worldanim as WA
+        r = WA.render_sequence(d, sid, spec, workers=int(data.get("workers", 4)))
+        r["renderer"] = "FilmCrafter"
+    return {"shot": shot, "renderer": r["renderer"], "file": r["file"], "seconds": secs, "frames": r["frames"], "size": list(size), "took": r["took"], "people_note": "People stand where the shot starts." if sh.get("characters") else ""}
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("action", choices=["presets", "place_camera", "path", "plan_beat", "plan_save", "plans", "plan_get", "shot_set", "shot_remove", "checks", "preview", "package", "capabilities", "apply", "plan_remove"])
+    ap.add_argument("action", choices=["presets", "place_camera", "path", "plan_beat", "plan_save", "plans", "plan_get", "shot_set", "shot_remove", "checks", "preview", "package", "capabilities", "apply", "plan_remove", "clip"])
     ap.add_argument("target")
     ap.add_argument("--data", default="{}")
     a = ap.parse_args(argv)
@@ -833,7 +859,7 @@ def main(argv: list[str]) -> int:
                  "plan_save": lambda: plan_save(d, sid, x), "plans": lambda: plans(d, sid), "plan_get": lambda: get_plan(d, sid, pid), "shot_set": lambda: shot_set(d, sid, pid, x),
                  "shot_remove": lambda: shot_remove(d, sid, pid, x.get("shot", "")), "checks": lambda: checks_action(d, sid, pid), "preview": lambda: preview(d, sid, pid, x.get("shot", "")),
                  "package": lambda: package(d, sid, pid, x.get("shot", ""), x), "capabilities": lambda: capabilities(d, x.get("provider", ""), x.get("model", "")), "apply": lambda: apply(d, sid, pid, x),
-                 "plan_remove": lambda: plan_remove(d, sid, pid)}
+                 "plan_remove": lambda: plan_remove(d, sid, pid), "clip": lambda: clip(d, sid, pid, x.get("shot", ""), x)}
         emit(event="result", data=table[a.action]())
         return 0
     except SystemExit as e:
