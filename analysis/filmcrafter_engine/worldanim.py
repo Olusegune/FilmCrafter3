@@ -7,6 +7,7 @@ layer keyframes). Between two keys a number moves the way the earlier key says; 
   models   {model id or name: [{t, x, y, z, yaw, pitch, roll, scale, visible}]}
   lights   {light id or name: [{t, azimuth, elevation, intensity, colour}]}
   sky      [{t, top, horizon, fog}]
+  ambient  [{t, v}]                                          how much fill light reaches the shadows (0 to 1)
   shake    [{t0, t1, amount (metres), turn (degrees), hz}]   a deterministic hand-held or earthquake shake added to the camera
 
 Deterministic: the same spec gives the same frames. Rendering is on the CPU and slow in proportion to frames, size and triangles; progress is reported and a cancel request stops it at the next frame.
@@ -104,6 +105,11 @@ def state_at(s: dict, spec: dict, t: float) -> tuple[dict, dict]:
             v = sample(tr, t, f)
             if v is not None:
                 l[f] = v
+    amb = spec.get("ambient")
+    if isinstance(amb, list):
+        v = sample(amb, t, "v")
+        if v is not None:
+            s2["ambient"] = float(v)
     sk = spec.get("sky")
     if isinstance(sk, list):
         for f in ("top", "horizon", "fog"):

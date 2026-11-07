@@ -1,4 +1,4 @@
-# QA report: FilmCrafter 0.50.0 (2026-11-06)
+# QA report: FilmCrafter 0.51.0 (2026-11-06)
 
 ## 0.50.0: DirectorCam (virtual production slice 6)
 

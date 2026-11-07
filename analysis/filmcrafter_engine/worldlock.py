@@ -561,6 +561,8 @@ MAX_MODELS, MAX_GROUPS = 60, 40
 
 def _lights_for(s: dict) -> tuple[list[dict], float]:
     """The set's lights for the 3D renderer, and how much ambient light fills the shadows (more in the day, less at night, from the environment's time of day)."""
+    if isinstance(s.get("ambient"), (int, float)):                                  # an explicit ambient level (the animation renderer sets this per frame)
+        return [{k: l[k] for k in ("azimuth", "elevation", "colour", "intensity")} for l in s["lights"]], float(s["ambient"])
     t = (s.get("environment", {}).get("time") or "").lower()
     amb = 0.12 if any(w in t for w in ("night", "dusk", "dark")) else 0.45 if any(w in t for w in ("day", "noon", "morning")) else 0.3
     return [{k: l[k] for k in ("azimuth", "elevation", "colour", "intensity")} for l in s["lights"]], amb

@@ -83,6 +83,16 @@ Rail > More > **Sets**. A **set** lives in the film (`worldlock/<id>/`): a world
 - Generated shots are **not** guaranteed to match the set: the set is the ground truth the shots will be checked against (DirectorCam, later).
 
 #
+## Slice 5: true 3D, animation and a Blender bridge (0.51.0)
+
+- **Models:** glTF 2.0 (.glb, or .gltf with embedded buffers) read by `world3d.py`; the node tree is applied; the model is mirrored on import so its front faces the camera at rest. Limits: 60 MB, 150,000 triangles, 4096-pixel textures; skins, animations, extensions and external buffers are ignored or refused and each is listed as a warning.
+- **Renderer:** software rasteriser (near-plane clipping, depth buffer, perspective-correct textures, Lambert lighting from the set's lights plus ambient, linear light), exact ground-plane intersection, sky gradient and distance fog. No shadows, reflections or global illumination.
+- **Set:** models, groups (parent chains, loops refused), ground, sky; 60 models and 40 groups at most; **collisions** on bounding boxes, **occupancy** grid, **four views**. Everything goes through the one change path (lock check, undo, version count).
+- **Animation:** `worldanim.py` tracks for camera, models, lights, sky, ambient; shake; MP4 output; stop by flag file; multi-process.
+- **Blender bridge (experimental):** `blenderbridge.py` finds Blender and writes `build_scene.py`; not run in a real Blender.
+- **Test film:** `scripts/film/` builds "He Is Risen" (60 s).
+- **Not built:** AI-assisted reconstruction from reference images (no vision/segmentation model is installed; planned as an honest draft layout needing approval), the fuller continuity inspector (slice 4), Fidelity integration (slice 8).
+
 ## Slice 6: DirectorCam (0.50.0)
 
 Rail > More > **DirectorCam** (needs a set from Sets). The order of the work is the brief's: read the set, find the people and things, propose shots, assign cameras, propose blocking, validate, preview, approve, make a package.
