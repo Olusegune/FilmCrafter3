@@ -1269,3 +1269,8 @@
 .cw-set-ways { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 8px; }
 .cw-set-way { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,0.02); }
 .cw-set-look { margin: 10px 0 0; }
+
+/* Continuity inspector: the shot-by-shot table */
+.ss-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 6px 0; }
+.ss-table th { text-align: left; font-weight: 600; color: var(--muted, #9aa3b2); padding: 4px 8px; border-bottom: 1px solid var(--line); }
+.ss-table td { padding: 5px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; }

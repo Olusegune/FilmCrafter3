@@ -36,7 +36,7 @@ export function CastWorld({ dir, initialTab }: { dir: string; initialTab?: Tab }
   const [err, setErr] = useState("");
   const [note, setNote] = useState("");
   const [helping, setHelping] = useState("");
-  const [setView, setSetView] = useState<{ kind: "set" | "plan"; id: string } | null>(null);
+  const [setView, setSetView] = useState<{ kind: "set" | "plan" | "continuity"; id: string } | null>(null);
   const [assist, setAssist] = useState<{ kind: AssistKind; id: string | null; name: string; proposal: Record<string, unknown> } | null>(null);
   /** Optional writing help: shows the price first, asks for a yes, then shows a suggestion to pick from. Never changes anything by itself. */
   const help = async (kind: AssistKind, id: string | null, name: string) => {
@@ -100,11 +100,12 @@ export function CastWorld({ dir, initialTab }: { dir: string; initialTab?: Tab }
             })}
             <li><button className="add" onClick={add}>+ Add {tab === "environment" ? "a place" : tab === "prop" ? "a prop" : "a character"}</button></li>
           </ul>
-          {cur ? <Editor key={cur.id} dir={dir} kind={tab as Kind} item={cur} media={b.media_kinds} run={run} apply={apply} helping={helping === `${tab}:${cur.id}`} onHelp={() => help(tab as AssistKind, cur.id, cur.name)} onOpenSet={(id) => setSetView({ kind: "set", id })} onPlan={(id) => setSetView({ kind: "plan", id })} />
+          {cur ? <Editor key={cur.id} dir={dir} kind={tab as Kind} item={cur} media={b.media_kinds} run={run} apply={apply} helping={helping === `${tab}:${cur.id}`} onHelp={() => help(tab as AssistKind, cur.id, cur.name)} onOpenSet={(id) => setSetView({ kind: "set", id })} onPlan={(id) => setSetView({ kind: "plan", id })} onCheck={(id) => setSetView({ kind: "continuity", id })} />
             : <p className="dim cw-empty">{tab === "character" ? "No characters yet. They appear from the story, or add one." : tab === "environment" ? "No places yet." : "No props yet. Add anything that must look the same every time it appears."}</p>}
         </div>)}
       </div>
       {setView?.kind === "set" && <SetBuilder dir={dir} openSet={setView.id} onClose={() => setSetView(null)} />}
+      {setView?.kind === "continuity" && <SetBuilder dir={dir} openSet={setView.id} openTab="continuity" onClose={() => setSetView(null)} />}
       {setView?.kind === "plan" && <DirectorCam dir={dir} initialSet={setView.id} onClose={() => setSetView(null)} />}
       {assist && <AssistSheet dir={dir} kind={assist.kind} id={assist.id} name={assist.name} proposal={assist.proposal} bible={b} onClose={() => setAssist(null)} onApplied={(v) => { setB(v); setAssist(null); setNote("Added what you chose. Everything else is as you had it."); }} />}
     </div>
@@ -172,7 +173,7 @@ function RulesStyle({ b, onSave, onHelp, helping }: { b: BibleView; onSave: (d: 
 }
 
 /** One character, place or prop: its words, its related states, and its pictures. */
-function Editor({ dir, kind, item, media, run, onHelp, helping, onOpenSet, onPlan }: { onOpenSet: (id: string) => void; onPlan: (id: string) => void; dir: string; kind: Kind; item: Entry; media: string[]; run: (fn: () => Promise<BibleView>) => Promise<BibleView | null>; apply: (v: BibleView) => void; onHelp: () => void; helping: boolean }) {
+function Editor({ dir, kind, item, media, run, onHelp, helping, onOpenSet, onPlan, onCheck }: { onOpenSet: (id: string) => void; onPlan: (id: string) => void; onCheck: (id: string) => void; dir: string; kind: Kind; item: Entry; media: string[]; run: (fn: () => Promise<BibleView>) => Promise<BibleView | null>; apply: (v: BibleView) => void; onHelp: () => void; helping: boolean }) {
   const [draft, setDraft] = useState<Record<string, string>>({});
   const val = (k: string) => draft[k] ?? ((item as unknown as Record<string, string>)[k] ?? "");
   const spatial = (k: string) => draft[`sp:${k}`] ?? ((item as BibleEnvironment).spatial?.[k] ?? "");
@@ -226,7 +227,7 @@ function Editor({ dir, kind, item, media, run, onHelp, helping, onOpenSet, onPla
         {item.media.length === 0 && <p className="dim">{kind === "character" ? "Bring your own artwork or reference sheets: front, three-quarter, side, back, expressions. The first one is the master." : "Bring a picture so every shot can match it."}</p>}
       </section>
 
-      {kind === "environment" && <PlaceSet dir={dir} place={item.id} name={item.name} pictures={item.media.length} onOpenSet={onOpenSet} onPlan={onPlan} />}
+      {kind === "environment" && <PlaceSet dir={dir} place={item.id} name={item.name} pictures={item.media.length} onOpenSet={onOpenSet} onPlan={onPlan} onCheck={onCheck} />}
       {kind === "character" && <div className="cw-fields">{CHAR_FIELDS.map(([k, n, m]) => field(k, n, m))}</div>}
       {kind === "environment" && <>
         {field("description", "What it is", true)}{field("notes", "Notes", true)}

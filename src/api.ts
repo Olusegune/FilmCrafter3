@@ -348,6 +348,8 @@ export const api = {
   /** Animating a 3D set (filmcrafter_engine.worldanim): keyframed camera, models, lights and sky rendered to an MP4. Free and local. */
   worldAnim: <T = WlAnimResult>(action: "render" | "cancel", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_worldanim", { action, target, data }),
   /** The optional Blender bridge (filmcrafter_engine.blenderbridge). Experimental; Blender is never installed or downloaded. */
+  /** The continuity inspector for a set (filmcrafter_engine.setcontinuity): what is where in every shot, findings from the set's own data, deliberate marks, and a picture comparison. Free and local. */
+  setContinuity: <T = ScReport>(action: "inspect" | "override" | "compare", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_setcontinuity", { action, target, data }),
   /** A set for a place (filmcrafter_engine.placeset): the guided way into WorldLock. From the place's pictures, a 3D model, a Blender file, or made in Blender. Free and local. */
   placeSet: <T = PlaceSetStatus>(action: "status" | "from_pictures" | "from_model" | "from_blend" | "blender_new" | "open_blender" | "bring_back" | "preview" | "unlink", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_placeset", { action, target, data }),
   blender: <T = BlenderStatus>(action: "status" | "export", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_blender", { action, target, data }),
@@ -650,6 +652,10 @@ export type Wl3dIssue = { kind: string; ids: string[]; depth_m: number; text: st
 export type WlCollisions = { issues: Wl3dIssue[]; ok: boolean; measured: string; checked: { models: number; cameras: number } };
 export type WlViews3d = { views: (WlView & { name: string })[]; target: number[]; distance: number };
 export type WlAnimResult = { file: string; path: string; frames: number; fps: number; seconds: number; size: number[]; took: number };
+export type ScThing = { id: string; kind: "asset" | "character"; name: string; x: number; y: number; z: number; facing: number | null; state: string; in_frame: boolean | null };
+export type ScFinding = { key: string; kind: string; severity: "warning" | "advice" | "note"; shots: string[]; thing: string; text: string; overridden: boolean; note: string };
+export type ScReport = { timeline: { shot: string; camera: { id: string; name: string } | null; things: ScThing[]; events: string[] }[]; findings: ScFinding[]; counts: { warning: number; advice: number; note: number; deliberate: number }; shots_without_camera: string[]; basis: string };
+export type ScCompare = { file: string; shot: string; layout_match: number; mean_difference: number; cells: number[]; most_different: string; uncovered: number; words: string; note: string };
 export type PlaceSetStatus = { place: string; name: string; pictures: number; blender: { found: boolean; version: string }; next: string;
   set: null | { id: string; name: string; version: number; locked: boolean; mode: "pictures" | "model" | "blender"; pictures: number; models: number; cameras: number; blend?: string; blend_saved?: boolean } };
 export type DcClip = { shot: string; renderer: string; file: string; seconds: number; frames: number; size: [number, number]; took: number; people_note: string };

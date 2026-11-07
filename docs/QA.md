@@ -1,4 +1,13 @@
-# QA report: FilmCrafter 0.54.0 (2026-11-07)
+# QA report: FilmCrafter 0.55.0 (2026-11-07)
+
+## 0.55.0: the continuity inspector (slice 4)
+
+Engine: **2,982 tests collected, 2,975 passed, 7 skipped, none failed** (19 new in `test_setcontinuity.py`, each finding built from a situation made on purpose with cameras placed so the geometry says what it must: off-screen change, unseen leave and arrive, reversed screen direction and a person who turns, people out of frame / not in the set, empty view, contradicting events, deliberate marks kept and the set's version untouched, refused keys, picture comparison against the set's own render and against a flat picture). Bandit (medium and above): **no findings; the output was read** (empty). TypeScript clean; **940 Vitest tests** (6 new). Rust: the new command's actions match the engine's literal choices (`test_security.py` passes). `rafter run` not run (quota); hand review: override keys are validated as `ck-` plus 10 hex digits before use, compared pictures are opened read-only with type/size/readability checks, nothing is sent. Problems found by the tests and fixed: a picture that draws a person (parked off to the side on purpose) was reported as outside the set; my first test cameras sat on the edge of each other's view (a test mistake, not a product fault).
+
+**Still not tested:** a long film with many shots and events (speed); the tab in the installed app; the picture comparison on real generated frames (only synthetic ones).
+
+## Earlier: 0.54.0
+
 
 ## 0.54.0: a clip of a planned shot (DirectorCam)
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { Sheet } from "./Sheet";
+import { SetContinuity } from "./SetContinuity";
 import { api, errorText, type WlCamera, type WlCheck, type WlEvent, type BlenderStatus, type WlCollisions, type WlList, type WlMove, type WlSet, type WlView, type WlViews3d } from "./api";
 
 /** Where a world point goes on the floor plan: x across, z up the plan (further into the set is higher). */
@@ -26,10 +27,10 @@ const N = ({ label, value, step = 0.1, onChange, w = 70 }: { label: string; valu
  * WorldLock, the set builder. A set is a place that exists on its own: flat pictures standing at fixed positions in metres, characters on the floor, saved cameras. A camera view is computed from the set, so
  * moving a camera never moves an object, and what the pictures do not cover is shown as a gap, never filled in. Free and local; nothing is generated or sent. 2.5D only: pictures are flat.
  */
-export function SetBuilder({ dir, onClose, openSet }: { dir: string; onClose: () => void; openSet?: string }) {
+export function SetBuilder({ dir, onClose, openSet, openTab }: { dir: string; onClose: () => void; openSet?: string; openTab?: "continuity" }) {
   const [list, setList] = useState<WlList | null>(null);
   const [set, setSet] = useState<WlSet | null>(null);
-  const [tab, setTab] = useState<"layout" | "d3" | "cameras" | "shots" | "checks">("layout");
+  const [tab, setTab] = useState<"layout" | "d3" | "cameras" | "shots" | "checks" | "continuity">(openTab ?? "layout");
   const [sel, setSel] = useState<{ kind: "asset" | "camera" | "character"; id: string } | null>(null);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
@@ -91,7 +92,7 @@ export function SetBuilder({ dir, onClose, openSet }: { dir: string; onClose: ()
           <button className="btn sm ghost" disabled={!!busy || !set.can_redo || lock} onClick={() => void go("redo", async () => setSet(await api.worldlock<WlSet>("redo", dir, { set: set.id })))} title={set.redo_label}>Redo</button>
           <button className="btn sm ghost" disabled={!!busy} onClick={() => void call("lock", lock ? "unlock" : "lock")}>{lock ? "Unlock this set" : "Lock this set"}</button></div>
         {lock && <p className="dim">This set is locked: it is the approved place. You can look at it from any camera, but nothing can change it until it is unlocked.</p>}
-        <div className="cw-tabs" role="tablist">{([["layout", "Layout"], ["d3", "3D"], ["cameras", "Cameras"], ["shots", "Over the shots"], ["checks", "Checks and versions"]] as const).map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}</div>
+        <div className="cw-tabs" role="tablist">{([["layout", "Layout"], ["d3", "3D"], ["cameras", "Cameras"], ["shots", "Over the shots"], ["checks", "Checks and versions"], ["continuity", "Continuity"]] as const).map(([k, l]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>{l}</button>)}</div>
 
         {tab === "layout" && <section aria-label="Layout">
           <p className="dim">Seen from above: across is left to right, up the plan is further into the set. Click something to select it.</p>
@@ -193,6 +194,7 @@ export function SetBuilder({ dir, onClose, openSet }: { dir: string; onClose: ()
             })}>Record it</button></div>
         </section>}
 
+        {tab === "continuity" && <SetContinuity dir={dir} set={set.id} />}
         {tab === "checks" && <section aria-label="Checks and versions">
           {set.characters.length >= 2 && <div className="sm-row"><span className="dim">The line the camera must not cross runs between</span>
             {[0, 1].map((i) => <select key={i} className="text-input" aria-label={`Line person ${i + 1}`} value={set.axis[i] ?? ""} disabled={lock} onChange={(e) => { const next = [...set.axis]; next[i] = e.target.value; void call("axis", "meta_set", { axis: next.filter(Boolean) }); }}><option value="">Person…</option>{set.characters.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select>)}</div>}

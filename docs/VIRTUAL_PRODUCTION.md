@@ -17,7 +17,7 @@ The brief has three systems: **Virtual Production Studio** (green screen, transp
 | 1 (0.47.0) | Cutout studio: plate check, chroma key with despill and decontamination, edge refine, RGBA PNG and mask export, stills compositing with transform, contact shadow, colour match; plate prompt (words only) | **Done, tested on synthetic plates with known answers; not yet tried on a real photograph** |
 | 2 (0.48.0) | Production Mode on shots (Full scene, Green screen, Transparent); video: clip keying with temporal smoothing, PNG sequences and alpha video (ProRes 4444, VP9), keyframed compositions over a still or a clip, MP4 render with cancel | **Done, tested on real encoded video made for the tests; not yet tried on camera footage.** Layered scene is not built and is shown greyed |
 | 3 (0.49.0) | WorldLock package (versioned set, stable ids, undo/redo, lock, saved versions) and 2.5D set builder (flat layers at fixed world positions, parallax, saved cameras, gap warnings, events over the shots, basic continuity checks) | **Done, tested on real rendered views; layers are flat and nothing is inferred** |
-| 4 | Continuity inspector on the set (object and prop state over shots, screen direction) | Partly done in slice 3 (the line-crossing check, orphan events, bounds, missing pictures); a fuller inspector is not started |
+| 4 (0.55.0) | Continuity inspector on the set (object and prop state over shots, screen direction) | **Done for what the set's own data can say** (changes off screen, unseen arrivals and exits, reversed screen direction, people out of frame, empty views, contradicting events, deliberate marks, advisory picture comparison); it does not read pictures to find objects |
 | 5 | True 3D set (glTF import, hierarchy, lights, cameras, render of several views); Blender as an optional backend | Not started |
 | 6 (0.50.0) | DirectorCam: shot plan from a story beat on a set (plain word rules, no model), cameras placed by shot size with a real filmback, eleven camera moves as deterministic paths, advice with deliberate overrides, shot packages (first and last frame, path strip, depth map, object map, motion in words), provider support per input | **Done, tested on real renders; the planner reads words and does not understand stories** |
 | 7 | AI-assisted reconstruction from reference images (inventory, draft layout, optional image-to-3D adapters), approval and set locking | Not started |
@@ -119,6 +119,13 @@ The set builder was a tool under More. The golden path now reaches it from where
 ## Clips from DirectorCam (0.54.0)
 
 `directorcam.clip` turns a planned shot into a video: the shot's camera path (24 poses along its move, eased as the move says) becomes the animation's camera track for the shot's length at 24 fps, drawn by `worldanim` (renderer "FilmCrafter") or by Blender (`blenderbridge.render_animation`). Tested with real renders (24 frames counted by ffmpeg) and a real Blender 5.2.2 clip. People stand where the shot starts.
+
+## Slice 4: the continuity inspector (0.55.0)
+
+`setcontinuity.py`. For each film shot in order it takes the set as it stands (events of earlier shots applied, nothing in the set changed), the camera chosen for the shot and what that camera has in view (a point inside the picture by the set's own projection), and compares neighbouring shots. Findings carry a stable key; marking one deliberate stores the key and a note in `worldlock/<set>/continuity_overrides.json`. `compare` renders the set's view of the shot and sets a chosen picture beside it with a difference map and a layout correlation on a coarse grid, in words that say it is advice.
+
+![The Continuity tab](img/set-continuity.png)
+![Picture comparison: the set, a picture, and where they differ](img/set-continuity-compare.png)
 
 ## Slice 6: DirectorCam (0.50.0)
 

@@ -8,7 +8,7 @@ const MODE_LABEL = { pictures: "From pictures", model: "From a 3D model", blende
  * The set for one place, on the place's own page (Cast, Places). The golden path: a place is described, given pictures, and then (optionally) given a set the camera can move around in. Two ways in, both
  * plain: from the place's pictures (2D, nothing to learn), or from a 3D model or Blender file (for people who use them). The full set builder and DirectorCam open from here, on this place's set.
  */
-export function PlaceSet({ dir, place, name, pictures, onOpenSet, onPlan }: { dir: string; place: string; name: string; pictures: number; onOpenSet: (set: string) => void; onPlan: (set: string) => void }) {
+export function PlaceSet({ dir, place, name, pictures, onOpenSet, onPlan, onCheck }: { dir: string; place: string; name: string; pictures: number; onOpenSet: (set: string) => void; onPlan: (set: string) => void; onCheck?: (set: string) => void }) {
   const [st, setSt] = useState<PlaceSetStatus | null>(null);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
@@ -51,6 +51,7 @@ export function PlaceSet({ dir, place, name, pictures, onOpenSet, onPlan }: { di
         <div className="sm-row">
           <button className="btn sm" disabled={!!busy} onClick={() => void run("look", async () => { setLook(await api.placeSet<{ file: string; uncovered: number; warnings: string[] }>("preview", dir, { place })); return null; })}>{busy === "look" ? "Drawing…" : "Look from the camera"}</button>
           <button className="btn sm" onClick={() => onPlan(s.id)}>Plan the shots</button>
+          {onCheck && <button className="btn sm" onClick={() => onCheck(s.id)} title="What is where in every shot, and what a viewer might see go wrong">Check continuity</button>}
           <button className="btn sm ghost" onClick={() => onOpenSet(s.id)} title="The full set builder: move things, add cameras, check collisions">Edit the set</button>
           {s.mode === "blender" && <>
             <button className="btn sm" disabled={!!busy || !blender} onClick={() => void run("open", async () => { await api.placeSet("open_blender", dir, { place }); return null; })}>Open in Blender</button>

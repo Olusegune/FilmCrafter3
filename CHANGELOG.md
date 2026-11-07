@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.55.0 (2026-11-07)
+
+- **Continuity inspector for sets (free, local).** In a set's new **Continuity** tab (also **Check continuity** on a place's set in Cast > Places): a shot-by-shot table of what each shot's camera sees and what changes during it, and plain findings worked out from the set's own data, so they read the same every time: changes that happen where the camera does not look, things that arrive or leave unseen between two shots, a person who faces one way on screen and then the other without turning (reversed screen direction), people the film's shot names who are out of frame or not in the set, a camera that sees nothing, contradicting events, and the checks WorldLock already had (line crossing, missing pictures, things outside the set). Any finding can be marked **deliberate** with a note (a manual override that is kept beside the set and changes nothing in it, locked sets included). **Compare a picture with the set**: a generated picture of a shot beside the set's own view of it and a map of where they differ, labelled advice, never proof.
+- **Limits, plainly:** it reads positions, events and cameras, not pictures (the picture viewer measures layout alike or not, not what is in the picture); lighting direction and door/window positions are not checked separately; it does not understand what a shot means, so a change off screen may be exactly what you intended (mark it deliberate).
+
 ## 0.54.0 (2026-11-07)
 
 - **Make a clip of a planned shot.** In DirectorCam, pick a shot and press **Make a clip of this shot**: the camera travels along the shot's move for the shot's length, drawn from the set into an MP4 you can play on the spot. Choose **Drawn by FilmCrafter** (fast) or **Drawn by Blender** (real shadows, slower; greyed with the reason when Blender is not found). Free and local; nothing is sent. This is the first video the golden path can make from a set without a generator.
