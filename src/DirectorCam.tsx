@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Sheet } from "./Sheet";
 import { api, errorText, type DcAdvice, type DcCaps, type DcClip, type DcDraft, type DcMove, type DcPackage, type DcPath, type DcPlan, type DcPlans, type DcPlaced, type DcPreview, type WlList, type WlSet } from "./api";
 import { cameraWedge, planPoint } from "./SetBuilder";
+import { FinishClip } from "./FinishClip";
 
 export const SIZES = ["establishing", "wide", "medium wide", "medium", "medium close-up", "close-up", "extreme close-up", "over the shoulder", "insert"];
 export const MOVES: [DcMove["kind"], string, string][] = [["static", "Static", ""], ["pan", "Pan", "degrees, right is positive"], ["tilt", "Tilt", "degrees, up is positive"], ["dolly", "Dolly", "metres, forward is positive"], ["truck", "Truck", "metres, right is positive"],
@@ -121,6 +122,7 @@ export function DirectorCam({ dir, onClose, initialSet }: { dir: string; onClose
         <div className="sm-row" aria-label="Make a clip"><select className="text-input" aria-label="Drawn by" value={renderer} onChange={(e) => setRenderer(e.target.value as "builtin" | "blender")}><option value="builtin">Drawn by FilmCrafter (fast)</option><option value="blender" disabled={!blenderOn}>{blenderOn ? "Drawn by Blender (real shadows, slower)" : "Blender not found"}</option></select>
           <button className="btn sm" disabled={!!busy} onClick={() => void go("clip", async () => { const r = await api.directorCam<DcClip>("clip", dir, { set: setId, plan: plan.id, shot: cur.id, renderer, width: 960 }); setClip(r); setSaid(`The clip is made (${r.frames} frames, ${r.took} s). Nothing was sent.`); })}>{busy === "clip" ? "Making the clip…" : "Make a clip of this shot"}</button></div>
         {clip && clip.shot === cur.id && <figure aria-label="Clip" style={{ margin: 0 }}><video controls src={`${api.mediaUrl(`${dir}/${clip.file}`)}?v=${clip.file}`} style={{ maxWidth: 480, borderRadius: 6 }} /><figcaption className="dim">{clip.renderer} · {clip.seconds} s · {clip.size[0]}×{clip.size[1]}{clip.people_note ? ` · ${clip.people_note}` : ""}</figcaption></figure>}
+        {clip && clip.shot === cur.id && <FinishClip dir={dir} clip={clip.file} set={setId} />}
         {prev && prev.shot === cur.id && <div className="sm-row" aria-label="Previews">{([["First frame", prev.first], ["Last frame", prev.last]] as const).map(([l, v]) => <figure key={l} style={{ margin: 0 }}><img alt={l} src={`${api.mediaUrl(`${dir}/${v.file}`)}?v=${v.file}`} style={{ width: 240, borderRadius: 6 }} /><figcaption className="dim">{l}{v.uncovered > 0.02 ? ` · ${Math.round(v.uncovered * 100)}% not covered by the set` : ""}</figcaption></figure>)}</div>}
         <h4>Which model will make it? <span className="dim">what it can take of the package</span></h4>
         <div className="sm-row"><input className="text-input" aria-label="Provider" value={provider} onChange={(e) => setProvider(e.target.value)} style={{ width: 90 }} /><input className="text-input" aria-label="Model" placeholder="model name, e.g. kling/v2-5-turbo-image-to-video-pro" value={model} onChange={(e) => setModel(e.target.value)} />

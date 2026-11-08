@@ -348,6 +348,8 @@ export const api = {
   /** Animating a 3D set (filmcrafter_engine.worldanim): keyframed camera, models, lights and sky rendered to an MP4. Free and local. */
   worldAnim: <T = WlAnimResult>(action: "render" | "cancel", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_worldanim", { action, target, data }),
   /** The optional Blender bridge (filmcrafter_engine.blenderbridge). Experimental; Blender is never installed or downloaded. */
+  /** The finishing pipeline for a clip made from a set (filmcrafter_engine.setpipeline): measure, continuity, calm, Fidelity enhance, finish, validate. Resumable. Free and local. */
+  setPipeline: <T = PlRun>(action: "plan" | "start" | "run" | "get" | "runs" | "presets", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_setpipeline", { action, target, data }),
   /** AI-assisted set reconstruction (filmcrafter_engine.reconstruct): reference pictures, a proposed inventory (the only step that sends anything, after a confirmation), corrections, a draft set, approval. */
   reconstruct: <T = RcStatus>(action: "status" | "add_reference" | "remove_reference" | "estimate" | "propose" | "item_set" | "accept_all" | "build" | "approve", target: string, data: Record<string, unknown> = {}) => invoke<T>("film_reconstruct", { action, target, data }),
   /** The continuity inspector for a set (filmcrafter_engine.setcontinuity): what is where in every shot, findings from the set's own data, deliberate marks, and a picture comparison. Free and local. */
@@ -654,6 +656,11 @@ export type Wl3dIssue = { kind: string; ids: string[]; depth_m: number; text: st
 export type WlCollisions = { issues: Wl3dIssue[]; ok: boolean; measured: string; checked: { models: number; cameras: number } };
 export type WlViews3d = { views: (WlView & { name: string })[]; target: number[]; distance: number };
 export type WlAnimResult = { file: string; path: string; frames: number; fps: number; seconds: number; size: number[]; took: number };
+export type PlOptions = { set: string | null; look: string; profile: string; calm: string; enhance: boolean; strength: number };
+export type PlPlan = { source: string; info: { seconds: number; frames: number; fps: number; width: number; height: number; audio: boolean; codec: string }; options: PlOptions; stages: { id: string; label: string; on: boolean; seconds_estimate: number }[]; seconds_estimate: number; note: string };
+export type PlStage = { status: "pending" | "running" | "done" | "failed"; seconds?: number; error?: string; result?: Record<string, unknown> & { skipped?: string; checks?: { check: string; ok: boolean; detail: string }[]; ok?: boolean; advice?: string; note?: string } };
+export type PlRun = { id: string; source: string; options: PlOptions; stages: Record<string, PlStage>; done: boolean; delivered: string | null; valid: boolean | null; total_seconds: number; labels: Record<string, string> };
+export type PlPresets = { looks: { id: string; label: string; note: string }[]; profiles: { id: string; label: string; note: string; ext: string }[]; strengths: string[] };
 export type RcItem = { id: string; name: string; kind: string; picture: number; bbox: [number, number, number, number]; distance_m: number; width_m: number; height_m: number; depth_m: number; facing: string; on_floor: boolean; confidence: number; reason: string; hidden: string; status: "proposed" | "accepted" | "rejected"; edited?: boolean };
 export type RcStatus = { place: string; name: string; references: { id: string; file: string; name: string; width: number; height: number }[]; place_pictures: number; limits: string; image_to_3d: string; assumed: { fov: number; camera_height: number };
   proposal: null | { model: string; scene: { kind: string; summary: string; indoor: boolean; room_width_m: number; room_depth_m: number; lighting: string }; items: RcItem[]; uncertainty: string[]; missing_views: string[]; reuse: { item: string; set: string; model: string; name: string }[] };

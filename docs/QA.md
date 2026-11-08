@@ -1,4 +1,17 @@
-# QA report: FilmCrafter 0.56.0 (2026-11-07)
+# QA report: FilmCrafter 0.57.0 (2026-11-07)
+
+## 0.57.0: Fidelity integration, recovery and export validation (slice 8)
+
+Engine: **3,011 tests collected, 3,004 passed, 7 skipped, none failed** (14 new in `test_setpipeline.py`, on real video made with ffmpeg: every stage really runs; the delivered file is read back; an interrupted run resumes with the stage counts checked (inspect once, finish twice); a deleted file is made again; strong random flicker is measured, calmed and the gain is a number; calming can be switched off; the validation catches a delivered file that is shorter and has lost its sound; a failing stage says which and why and keeps the earlier ones; run ids and options are cleaned; a file outside the film is refused; the original clip's hash never changes). Bandit (medium and above): **no findings; the output was read** (empty). TypeScript clean; **952 Vitest tests** (4 new). Rust: the new command's actions match the engine's literal choices (`test_security.py` passes). `rafter run` not run (quota); hand review: run ids are `pl-` plus 8 hex digits before they become a path, every input goes through the video finisher's inside-the-film check, ffmpeg is run with list arguments (no shell), nothing is sent, no key is used.
+
+**Real run on the 60 s test film** (1440 frames at 1280x720, with sound, enhance on, film look, web profile): 315 s in all (enhance 282 s at 5.1 frames a second, calm 10 s, finish 22 s, the rest about a second); all seven checks on the delivered file passed. The time estimate said 549 s (too cautious; the constant was lowered). The film-grain look made the delivery copy 197 MB, which is the existing finisher's behaviour, now stated in the changelog.
+
+Problems found and fixed while building: the video-size parser read a codec tag as the picture size (a 31-million-pixel frame made enhancing crawl); a resumed run crashed when a stage's file had gone missing instead of making it again; my first flicker test pattern was one the existing calmer cannot remove (the test now uses irregular flicker like the finisher's own tests).
+
+**Still not tested:** the Finish panel in the installed app; clips with unusual codecs (ProRes input); very long clips (the limit is 10 minutes, untested); enhancing as a quality improvement judged by eye on real generated video (the enhancer is measured as processing, not judged as taste).
+
+## Earlier: 0.56.0
+
 
 ## 0.56.0: AI-assisted set reconstruction (slice 7)
 

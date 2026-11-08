@@ -21,7 +21,7 @@ The brief has three systems: **Virtual Production Studio** (green screen, transp
 | 5 | True 3D set (glTF import, hierarchy, lights, cameras, render of several views); Blender as an optional backend | Not started |
 | 6 (0.50.0) | DirectorCam: shot plan from a story beat on a set (plain word rules, no model), cameras placed by shot size with a real filmback, eleven camera moves as deterministic paths, advice with deliberate overrides, shot packages (first and last frame, path strip, depth map, object map, motion in words), provider support per input | **Done, tested on real renders; the planner reads words and does not understand stories** |
 | 7 (0.56.0) | AI-assisted reconstruction from reference images (inventory, draft layout, optional image-to-3D adapters), approval and set locking | **Done for what one to six pictures and a vision model can say**: inventory with confidence and reasons, draft layout (flat pictures or boxes), corrections, approval and lock; no image-to-3D adapter (none installed) |
-| 8 | Fidelity integration, performance, recovery and export validation | Not started |
+| 8 (0.57.0) | Fidelity integration, performance, recovery and export validation | **Done for clips made from a set**: measure, continuity, calm, enhance (local Fidelity), finish, validate; every stage timed and resumable. The enhancer is local image processing, not an AI model |
 
 Nothing in slices 2 to 8 exists yet: no placeholder screens were added for them.
 
@@ -135,6 +135,10 @@ The set builder was a tool under More. The golden path now reaches it from where
 ![The picture, the flat-picture draft and the box draft](img/reconstruct-result.png)
 
 Left to right: the Blender render given to the AI, the flat-picture draft drawn from the assumed camera, the box draft. The AI's list was made by a real gpt-5.5 call; the boxes are rough because the picture was dark and silhouetted and the AI's own confidences were low.
+
+## Slice 8: finishing a set clip (0.57.0)
+
+`setpipeline.py` joins what already existed, in the order the brief gives (Set Render, Continuity Validation, Fidelity Enhancement, Cinematic Finishing, Export): `fidelity.analyze` and `fidelity.enhance_image` (frame by frame through ffmpeg pipes), `setcontinuity.inspect`, `videofinish.flicker`/`restore`/`finish` and its looks and profiles, then its own validation of the delivered file. The record of a run (`worldlock/<set>/pipeline/pl-*.json`) holds each stage's status, result and seconds, and is what makes a run resumable. Nothing is generated, sent or paid for.
 
 ## Slice 6: DirectorCam (0.50.0)
 
