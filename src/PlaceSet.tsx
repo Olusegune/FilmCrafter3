@@ -2,19 +2,19 @@ import { useCallback, useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { api, errorText, type PlaceSetStatus } from "./api";
 
-const MODE_LABEL = { pictures: "From pictures", model: "From a 3D model", blender: "Made in Blender" } as const;
+const MODE_LABEL = { pictures: "From pictures", model: "From a 3D model", blender: "Made in Blender", reconstructed: "Draft from a picture (AI)" } as const;
 
 /**
  * The set for one place, on the place's own page (Cast, Places). The golden path: a place is described, given pictures, and then (optionally) given a set the camera can move around in. Two ways in, both
  * plain: from the place's pictures (2D, nothing to learn), or from a 3D model or Blender file (for people who use them). The full set builder and DirectorCam open from here, on this place's set.
  */
-export function PlaceSet({ dir, place, name, pictures, onOpenSet, onPlan, onCheck }: { dir: string; place: string; name: string; pictures: number; onOpenSet: (set: string) => void; onPlan: (set: string) => void; onCheck?: (set: string) => void }) {
+export function PlaceSet({ dir, place, name, pictures, onOpenSet, onPlan, onCheck, onReconstruct, refresh }: { dir: string; place: string; name: string; pictures: number; onOpenSet: (set: string) => void; onPlan: (set: string) => void; onCheck?: (set: string) => void; onReconstruct?: () => void; refresh?: number }) {
   const [st, setSt] = useState<PlaceSetStatus | null>(null);
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
   const [look, setLook] = useState<{ file: string; uncovered: number; warnings: string[] } | null>(null);
   const load = useCallback(() => api.placeSet("status", dir, { place }).then(setSt).catch((e) => setErr(errorText(e))), [dir, place]);
-  useEffect(() => { setSt(null); setLook(null); setErr(""); void load(); }, [load, pictures]);
+  useEffect(() => { setSt(null); setLook(null); setErr(""); void load(); }, [load, pictures, refresh]);
   const run = async (label: string, f: () => Promise<PlaceSetStatus | unknown>) => {
     setErr(""); setBusy(label);
     try { const r = await f(); if (r && typeof r === "object" && "place" in r) { setSt(r as PlaceSetStatus); setLook(null); } } catch (e) { setErr(errorText(e)); } finally { setBusy(""); }
@@ -36,6 +36,9 @@ export function PlaceSet({ dir, place, name, pictures, onOpenSet, onPlan, onChec
             <button className="btn sm" disabled={!!busy || pictures === 0} title={pictures === 0 ? "Add a picture to this place first" : ""} onClick={() => void run("pictures", () => api.placeSet("from_pictures", dir, { place }))}>
               {busy === "pictures" ? "Making…" : pictures ? `Make a set from ${pictures} picture${pictures === 1 ? "" : "s"}` : "Add a picture first"}</button>
           </div>
+          {onReconstruct && <div className="cw-set-way" aria-label="From a picture with AI">
+            <b>From a reference picture, with AI help</b><span className="dim">The AI lists what it sees and guesses where things are. You correct it and approve. An estimate from one point of view.</span>
+            <button className="btn sm" disabled={!!busy} onClick={onReconstruct}>Start with the AI…</button></div>}
           <div className="cw-set-way" aria-label="From 3D">
             <b>From a 3D model</b><span className="dim">For power users: a model you already have (.glb or .gltf), or a Blender file.</span>
             <div className="sm-row">
@@ -46,7 +49,7 @@ export function PlaceSet({ dir, place, name, pictures, onOpenSet, onPlan, onChec
             <span className="dim">{blender ? `Blender ${st.blender.version} found on this computer.` : "Blender is optional and was not found. Models and pictures work without it."}</span>
           </div>
         </div></> : <>
-        <p><b>{MODE_LABEL[s.mode]}</b> <span className="dim">· {s.mode === "pictures" ? `${s.pictures} picture${s.pictures === 1 ? "" : "s"}` : `${s.models} model${s.models === 1 ? "" : "s"}`} · {s.cameras} camera{s.cameras === 1 ? "" : "s"}{s.locked ? " · locked" : ""}</span></p>
+        <p><b>{MODE_LABEL[s.mode]}</b> <span className="dim">· {s.mode === "pictures" || s.mode === "reconstructed" && s.models === 0 ? `${s.pictures} picture${s.pictures === 1 ? "" : "s"}` : `${s.models} model${s.models === 1 ? "" : "s"}`} · {s.cameras} camera{s.cameras === 1 ? "" : "s"}{s.locked ? " · locked" : ""}</span></p>
         <p className="dim" role="status">{st.next}</p>
         <div className="sm-row">
           <button className="btn sm" disabled={!!busy} onClick={() => void run("look", async () => { setLook(await api.placeSet<{ file: string; uncovered: number; warnings: string[] }>("preview", dir, { place })); return null; })}>{busy === "look" ? "Drawing…" : "Look from the camera"}</button>

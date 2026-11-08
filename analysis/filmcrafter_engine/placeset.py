@@ -107,6 +107,8 @@ def status(d: str, pid: str) -> dict:
             res["next"] = "Open the file in Blender, build the place, save it, then press Bring it back."
         elif mode == "blender":
             res["next"] = "Changed it in Blender? Save there and press Bring it back. Otherwise the set is ready: plan the shots, or look from the camera."
+        elif mode == "reconstructed":
+            res["next"] = "The draft from your picture is ready: look from the camera, correct it in the set builder, then approve it." if not s.get("locked") else "The approved set, locked: it can no longer change."
         else:
             res["next"] = "The set is ready: look from the camera, or plan the shots."
     elif pics:

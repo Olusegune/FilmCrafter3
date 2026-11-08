@@ -452,7 +452,8 @@ def render_ground(cam: dict, size: tuple[int, int], y: float, colours: tuple[tup
     ok &= zc < depth
     if not ok.any():
         return
-    chk = ((np.floor(px) + np.floor(pz)) % 2 == 0)
+    with np.errstate(invalid="ignore"):                                                                      # pixels that never reach the ground hold infinities: they are masked out below
+        chk = ((np.floor(px) + np.floor(pz)) % 2 == 0)
     base = np.where(chk[..., None], np.array(colours[0]), np.array(colours[1]))
     lit = np.full(3, ambient)
     for d, lc in light_vectors(lights):

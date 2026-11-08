@@ -20,7 +20,7 @@ The brief has three systems: **Virtual Production Studio** (green screen, transp
 | 4 (0.55.0) | Continuity inspector on the set (object and prop state over shots, screen direction) | **Done for what the set's own data can say** (changes off screen, unseen arrivals and exits, reversed screen direction, people out of frame, empty views, contradicting events, deliberate marks, advisory picture comparison); it does not read pictures to find objects |
 | 5 | True 3D set (glTF import, hierarchy, lights, cameras, render of several views); Blender as an optional backend | Not started |
 | 6 (0.50.0) | DirectorCam: shot plan from a story beat on a set (plain word rules, no model), cameras placed by shot size with a real filmback, eleven camera moves as deterministic paths, advice with deliberate overrides, shot packages (first and last frame, path strip, depth map, object map, motion in words), provider support per input | **Done, tested on real renders; the planner reads words and does not understand stories** |
-| 7 | AI-assisted reconstruction from reference images (inventory, draft layout, optional image-to-3D adapters), approval and set locking | Not started |
+| 7 (0.56.0) | AI-assisted reconstruction from reference images (inventory, draft layout, optional image-to-3D adapters), approval and set locking | **Done for what one to six pictures and a vision model can say**: inventory with confidence and reasons, draft layout (flat pictures or boxes), corrections, approval and lock; no image-to-3D adapter (none installed) |
 | 8 | Fidelity integration, performance, recovery and export validation | Not started |
 
 Nothing in slices 2 to 8 exists yet: no placeholder screens were added for them.
@@ -126,6 +126,15 @@ The set builder was a tool under More. The golden path now reaches it from where
 
 ![The Continuity tab](img/set-continuity.png)
 ![Picture comparison: the set, a picture, and where they differ](img/set-continuity-compare.png)
+
+## Slice 7: reconstruction from reference pictures (0.56.0)
+
+`reconstruct.py`, reached from **Cast > Places > Set > From a reference picture, with AI help**. Steps are separate actions: add references (copied in as PNG; originals untouched), estimate (what is sent: pictures shrunk to 512 px and the instructions; cost from the model's price), propose (the only step that sends; refused without `confirmed` unless the brain is local), correct, build (a new draft set: `layers` crops the reference to each accepted object and stands it at the position its bounding box and distance give, from an assumed camera at 1.6 m with a 55 degree lens; `boxes` makes a glTF box of the visible size; a wide wall stays a flat picture), approve (locks). Geometry is checked by projecting results back onto the bounding boxes.
+
+![The reconstruction screen with a real proposal](img/reconstruct.png)
+![The picture, the flat-picture draft and the box draft](img/reconstruct-result.png)
+
+Left to right: the Blender render given to the AI, the flat-picture draft drawn from the assumed camera, the box draft. The AI's list was made by a real gpt-5.5 call; the boxes are rough because the picture was dark and silhouetted and the AI's own confidences were low.
 
 ## Slice 6: DirectorCam (0.50.0)
 

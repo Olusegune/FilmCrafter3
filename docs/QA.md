@@ -1,4 +1,17 @@
-# QA report: FilmCrafter 0.55.0 (2026-11-07)
+# QA report: FilmCrafter 0.56.0 (2026-11-07)
+
+## 0.56.0: AI-assisted set reconstruction (slice 7)
+
+Engine: **2,997 tests collected, 2,990 passed, 7 skipped, none failed** (15 new in `test_reconstruct.py`, using a stand-in for the AI's answer so the request it receives is inspected: pictures shrunk to JPEG, strict schema, the "never invent" instruction, nothing sent without confirmation, a local brain needing none, a messy answer cleaned, a broken answer changing nothing; geometry checked by projecting the draft back onto the bounding boxes; both drafts drawn and colours read at the objects' places; lock; refusal over another kind of set). Bandit (medium and above): **no findings; the output was read** (empty). TypeScript clean; **948 Vitest tests** (8 new). Rust: the new command's actions match the engine's literal choices (`test_security.py` passes). `rafter run` not run (quota); hand review: references are copied in as PNG after type/size/readability checks (originals untouched), the AI answer is validated and clamped field by field before use, paths are built from generated ids, the only network call is the existing AI brain behind a confirmation, and no key is passed to anything but that brain.
+
+**One real AI call (paid):** gpt-5.5, estimated $0.026 (the provider reports no exact figure), on a Blender render of the film's garden set. 18 objects, confidences 0.28 to 0.82, with notes on what it could not identify. The flat-picture draft reproduced the view; the box draft was rough. Running spend this stretch: about $0.03 on top of the earlier agent test (a few cents) and 85 estimated ElevenLabs plan credits; far under the $10 limit.
+
+Problems found and fixed: a flat picture of a floor-standing object was stretched down to the floor instead of matching the visible region (now flat pictures use exactly the region seen, boxes reach the floor); a wide wall became a box in box mode (now stays a flat picture); the ground checker raised numeric warnings; the floor plan was hidden under walls (drawn as thin lines).
+
+**Still not tested:** a real photograph (only a stylised render); more than one reference picture with a real model; a local model; the screen in the installed app; image-to-3D (not offered).
+
+## Earlier: 0.55.0
+
 
 ## 0.55.0: the continuity inspector (slice 4)
 

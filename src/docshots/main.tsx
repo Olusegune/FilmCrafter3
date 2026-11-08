@@ -12,6 +12,8 @@ import { SoundPlan } from "../SoundPlan";
 import { SetBuilder } from "../SetBuilder";
 import set3d from "./set3d.json";
 import setcont from "./setcont.json";
+import recon from "./recon.json";
+import { Reconstruct } from "../Reconstruct";
 import { DirectorCam } from "../DirectorCam";
 import { CutoutStudio } from "../CutoutStudio";
 import vpGet from "../__tests__/fixtures/engine/vp_get.json";
@@ -275,6 +277,7 @@ mockIPC((cmd, a) => {
         default: return set3d.set;
       }
     case "film_shots": return { shots: [] };
+    case "film_reconstruct": return x.action === "estimate" ? recon.estimate : recon.status;
     case "film_setcontinuity": return x.action === "compare" ? setcont.compare : setcont.report;
     case "film_placeset": {
       const made = q.get("placestate") === "made";
@@ -875,6 +878,7 @@ const scenes: Record<string, () => ReactNode> = {
   pacing: () => <PacingSheet dir={DIR} onClose={noop} onGo={noop} />,
   givenmodel: () => card(<GivenToModel dir={DIR} inputs={[{ role: "first_frame", label: "Keyframe S01-02", path: "s1.png", sent: true }, { role: "reference", label: "Sarah, front view", path: "s2.png", sent: true }, { role: "reference", label: "Kitchen, master", path: "s4.png", sent: true }, { role: "audio", label: "Sarah's recording", path: null, sent: true }] as never} />, 520),
   soundplan: () => <SoundPlan dir={DIR} onClose={noop} onGo={noop} />,
+  reconstruct: () => <Reconstruct dir={DIR} place="e_garden-tomb" name="Garden Tomb" onClose={noop} onDone={noop} />,
   setcont: () => <div style={{ width: "min(1240px, 100vw)", height: 1100, display: "flex", background: "#090b0f" }}><SetBuilder dir={DIR} openSet={setcont.set.id} openTab="continuity" onClose={noop} /></div>,
   sets3d: () => <div style={{ width: "min(1240px, 100vw)", height: 900, display: "flex", background: "#090b0f" }}><SetBuilder dir={DIR} onClose={noop} /></div>,
   directorcam: () => <div style={{ width: "min(1240px, 100vw)", height: 900, display: "flex", background: "#090b0f" }}><DirectorCam dir={DIR} onClose={noop} /></div>,
